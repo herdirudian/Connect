@@ -42,7 +42,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
         if (!booking.paymentId) {
              return NextResponse.json({ status: booking.paymentStatus });
         }
-        invoice = await Invoice.getInvoice({ invoiceID: booking.paymentId });
+        invoice = await Invoice.getInvoiceById({ invoiceId: booking.paymentId });
     } catch (e) {
         console.error("Xendit Check Error", e);
         return NextResponse.json({ error: 'Failed to check status' }, { status: 500 });
