@@ -50,7 +50,7 @@ export default function HistoryPage() {
 
       <div className="flex gap-2">
          <Button 
-            variant={filter === 'ALL' ? 'default' : 'outline'} 
+            variant={filter === 'ALL' ? 'primary' : 'outline'} 
             onClick={() => setFilter('ALL')}
             size="sm"
             className="rounded-full"
@@ -58,7 +58,7 @@ export default function HistoryPage() {
             All
          </Button>
          <Button 
-            variant={filter === 'EARN' ? 'default' : 'outline'} 
+            variant={filter === 'EARN' ? 'primary' : 'outline'} 
             onClick={() => setFilter('EARN')}
             size="sm"
             className="rounded-full"
@@ -66,7 +66,7 @@ export default function HistoryPage() {
             Earned
          </Button>
          <Button 
-            variant={filter === 'REDEEM' ? 'default' : 'outline'} 
+            variant={filter === 'REDEEM' ? 'primary' : 'outline'} 
             onClick={() => setFilter('REDEEM')}
             size="sm"
             className="rounded-full"
