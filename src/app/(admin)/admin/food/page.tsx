@@ -23,6 +23,7 @@ interface Restaurant {
 
 export default function AdminFoodPage() {
   const router = useRouter();
+  const { toast } = useToast();
   const [restaurants, setRestaurants] = useState<Restaurant[]>([]);
   const [loading, setLoading] = useState(true);
   const [isAdding, setIsAdding] = useState(false);
