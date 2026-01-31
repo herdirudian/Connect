@@ -27,10 +27,10 @@ DATABASE_URL="mysql://USER:PASSWORD@localhost:3306/familythelodge"
 # App URL (Important for Email Links)
 NEXT_PUBLIC_APP_URL="https://connect.thelodgegroup.id"
 
-# Payment Gateway (Xendit)
-XENDIT_SECRET_KEY="your_live_secret_key_here"
-XENDIT_PUBLIC_KEY="your_live_public_key_here"
-XENDIT_CALLBACK_TOKEN="your_callback_token"
+# Payment Gateway (Xendit) - LIVE KEYS
+XENDIT_SECRET_KEY="xnd_production_bJPYaeqnIop0gwQ3ZAMyiYeyRy6mycrNd2xbHYt5FBnMPFD78w9iBCzSzkXuy"
+NEXT_PUBLIC_XENDIT_PUBLIC_KEY="xnd_public_production_bkVWn_vdz2ZIQzX5xG1eT0LBYP3VJJN04mH29ZPM01IcQQY0og6OUUZT0Fst4fxX"
+XENDIT_WEBHOOK_VERIFICATION_TOKEN="W4rKKzRDPZslzjvUegWcS1wX9mQINvPp250REXRvqDWGuzwL"
 
 # Email Configuration (SMTP)
 SMTP_HOST="smtp.gmail.com"
