@@ -491,7 +491,7 @@ export default function DashboardPage() {
                 <p className="text-sm text-gray-500 font-medium mb-3">
                   {(birthdayReward as any).claimed ? 'Enjoy your free entry' : 'Claim your Free Entry Ticket'}
                 </p>
-                <Button size="sm" variant={(birthdayReward as any).claimed ? "outline" : "default"} className={`w-full rounded-full font-bold uppercase tracking-wide text-xs ${
+                <Button size="sm" variant={(birthdayReward as any).claimed ? "outline" : "primary"} className={`w-full rounded-full font-bold uppercase tracking-wide text-xs ${
                   (birthdayReward as any).claimed ? 'border-gray-200 text-gray-500' : 'bg-brand text-white hover:bg-brand-dark'
                 }`}>
                   {(birthdayReward as any).claimed ? 'View Voucher' : 'Claim Now'}
