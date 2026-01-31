@@ -220,7 +220,7 @@ export default function AdminStayPage() {
         <Button onClick={() => {
             setIsAdding(!isAdding);
             setEditingId(null);
-            setFormData({ name: '', capacity: '', price: '', originalPrice: '', stock: '1', description: '', rating: '', benefits: '', imageUrl: '', active: true, receptionEmail: '' });
+            setFormData({ name: '', capacity: '', price: '', originalPrice: '', stock: '1', description: '', rating: '', benefits: '', imageUrl: '', images: [], active: true, receptionEmail: '' });
         }}>
           {isAdding ? <><XCircle className="mr-2 h-4 w-4" /> Cancel</> : <><Plus className="mr-2 h-4 w-4" /> Add Accommodation</>}
         </Button>
