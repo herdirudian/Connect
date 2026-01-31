@@ -1,26 +1,91 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
+  --background: #f2f7f5;
   --foreground: #171717;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  --font-sans: var(--font-af-neue-berlin);
+  
+  --color-brand: #0f4d39;
+  --color-brand-light: #1a664e;
+  --color-brand-dark: #083325;
+  --color-brand-50: #f2f7f5;
+  --color-brand-100: #e1ebe6;
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-af-neue-berlin), sans-serif;
 }
+
+/* Weather Animations */
+@keyframes sun-pulse {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.1); opacity: 0.8; }
+}
+
+@keyframes sun-ray-spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+@keyframes rain-fall {
+  0% { transform: translateY(-10%); opacity: 0; }
+  20% { opacity: 1; }
+  100% { transform: translateY(120%); opacity: 0; }
+}
+
+@keyframes cloud-move {
+  0%, 100% { transform: translateX(0); }
+  50% { transform: translateX(6px); }
+}
+
+@keyframes lightning-flash {
+  0%, 100% { opacity: 0; }
+  10%, 90% { opacity: 0; }
+  50% { opacity: 1; }
+  52% { opacity: 0; }
+  54% { opacity: 1; }
+}
+
+@keyframes snow-drift {
+  0% { transform: translate(0, -10%) rotate(0deg); opacity: 0; }
+  20% { opacity: 1; }
+  100% { transform: translate(20px, 120%) rotate(180deg); opacity: 0; }
+}
+
+.weather-icon-sun-core {
+  animation: sun-pulse 3s ease-in-out infinite;
+}
+
+.weather-icon-sun-rays {
+  transform-origin: center;
+  animation: sun-ray-spin 12s linear infinite;
+}
+
+.weather-rain-drop {
+  animation: rain-fall 1.5s linear infinite;
+}
+
+.weather-cloud {
+  animation: cloud-move 4s ease-in-out infinite;
+}
+
+.weather-lightning {
+  animation: lightning-flash 3s linear infinite;
+}
+
+.weather-snow-flake {
+  animation: snow-drift 3s linear infinite;
+}
+
+.delay-100 { animation-delay: 0.1s; }
+.delay-200 { animation-delay: 0.2s; }
+.delay-300 { animation-delay: 0.3s; }
+.delay-500 { animation-delay: 0.5s; }
+

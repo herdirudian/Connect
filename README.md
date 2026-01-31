@@ -1,36 +1,48 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Family The Lodge Membership System
 
-## Getting Started
+Sistem membership terintegrasi untuk The Lodge Maribaya.
 
-First, run the development server:
+## Tech Stack
+- **Framework**: Next.js 15 (App Router)
+- **Database**: SQLite (Development) / PostgreSQL or MySQL (Production)
+- **ORM**: Prisma
+- **Styling**: Tailwind CSS
+- **Auth**: JWT (Custom Implementation)
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+## Cara Menjalankan
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+1.  **Install Dependencies**
+    ```bash
+    npm install
+    ```
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+2.  **Setup Database**
+    Secara default, project ini menggunakan SQLite untuk kemudahan development.
+    ```bash
+    npx prisma db push
+    ```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+    *Untuk menggunakan MySQL/PostgreSQL:*
+    - Edit `.env` dan ubah `DATABASE_URL`.
+    - Edit `prisma/schema.prisma` dan ubah provider dari `sqlite` ke `mysql` atau `postgresql`.
+    - Hapus folder `prisma/migrations` jika ada conflict.
 
-## Learn More
+3.  **Jalankan Server Development**
+    ```bash
+    npm run dev
+    ```
 
-To learn more about Next.js, take a look at the following resources:
+4.  **Akses Aplikasi**
+    Buka [http://localhost:3000](http://localhost:3000).
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Fitur Utama
+- **Registrasi & Login Member**: Dengan JWT dan hashing password aman.
+- **Dashboard Member**: Menampilkan status membership, poin, dan kartu digital.
+- **Digital Member Card**: QR Code unik untuk setiap member yang digenerate otomatis.
+- **Tiering System**: Struktur database siap untuk level Explorer, Nature Lover, Lodge Guardian.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Struktur Project
+- `/src/app`: Halaman-halaman website (App Router).
+- `/src/components`: Komponen UI (Button, Card, MemberCard).
+- `/src/lib`: Utility functions (Prisma client, Auth helpers).
+- `/prisma`: Schema database.

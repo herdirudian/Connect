@@ -1,0 +1,494 @@
+'use client';
+
+import { useState, useEffect } from 'react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Loader2, Plus, Minus, ShoppingCart } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
+import { PAYMENT_METHODS, calculateFee } from '@/lib/fees';
+import { TermsAndConditionsDialog } from '@/components/TermsAndConditionsDialog';
+
+interface BookingItem {
+  id: string;
+  name: string;
+  price: number;
+  originalPrice?: number;
+  type: 'WAHANA' | 'GLAMPING';
+  availability?: number;
+}
+
+interface BookingDialogProps {
+  item: BookingItem | null;
+  allItems?: BookingItem[]; // List of other available items to add
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  initialDate?: string;
+  maxQty?: number;
+}
+
+export function BookingDialog({ item, allItems = [], open, onOpenChange, initialDate, maxQty }: BookingDialogProps) {
+  const [date, setDate] = useState<string>(initialDate || '');
+  // Cart state: map of itemId -> quantity
+  const [cart, setCart] = useState<{ [key: string]: number }>({});
+  const [isAddingMore, setIsAddingMore] = useState(false);
+  const [inventory, setInventory] = useState<BookingItem[]>([]);
+  const [fetchingAvailability, setFetchingAvailability] = useState(false);
+  
+  const [recipientEmail, setRecipientEmail] = useState<string>('');
+  const [paymentMethod, setPaymentMethod] = useState<string>('VA');
+  const [agreedToTerms, setAgreedToTerms] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const { toast } = useToast();
+
+  const getLocalDateString = () => {
+    const today = new Date();
+    const year = today.getFullYear();
+    const month = String(today.getMonth() + 1).padStart(2, '0');
+    const day = String(today.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+
+  // Reset state when dialog opens
+  useEffect(() => {
+    if (open) {
+      setDate(initialDate || getLocalDateString());
+      // Initialize cart with the primary item
+      if (item) {
+        setCart({ [item.id]: 1 });
+      }
+      setIsAddingMore(false);
+      
+      // Initial inventory setup
+      // We don't need to populate inventory here anymore because we use props as fallback
+      // when inventory is empty. This prevents 'stale' inventory if date matches initialDate.
+      setInventory([]);
+    }
+  }, [open, initialDate, item, allItems, maxQty]);
+
+  // Fetch availability when date changes
+  useEffect(() => {
+    let isActive = true;
+
+    async function fetchAvailability() {
+      // If date is empty or item is missing, do nothing
+      if (!date || !item) return;
+      
+      // Only fetch availability for GLAMPING (Accommodation) items
+      // WAHANA (Attractions) do not have daily allotment logic yet
+      if (item.type !== 'GLAMPING') return;
+
+      // If date matches initialDate, revert to props data (which is presumed correct for initialDate)
+      // This handles the case where user changes date away and then back to initial
+      if (date === initialDate) {
+         if (isActive) setInventory([]); // Clearing inventory triggers fallback to props in currentItems logic
+         return;
+      }
+      
+      if (isActive) setFetchingAvailability(true);
+      try {
+        const res = await fetch(`/api/accommodations?date=${date}`);
+        if (!isActive) return;
+        
+        const data = await res.json();
+        
+        if (isActive && Array.isArray(data)) {
+           setInventory(data.map((i: any) => ({
+             id: i.id,
+             name: i.name,
+             price: i.price,
+             originalPrice: i.originalPrice,
+             type: 'GLAMPING', 
+             availability: i.availability
+           })));
+        }
+      } catch (error) {
+        if (isActive) {
+            console.error("Failed to fetch availability", error);
+            toast({
+                title: "Error",
+                description: "Gagal memuat ketersediaan untuk tanggal yang dipilih.",
+                variant: "destructive"
+            });
+        }
+      } finally {
+        if (isActive) setFetchingAvailability(false);
+      }
+    }
+
+    if (open) {
+        const timeoutId = setTimeout(fetchAvailability, 500); // Debounce
+        return () => {
+            clearTimeout(timeoutId);
+            isActive = false;
+        };
+    }
+    
+    return () => { isActive = false; };
+  }, [date, initialDate, open, toast, item]);
+
+  const handleQtyChange = (itemId: string, val: number, itemMaxQty?: number) => {
+    let newQty = val;
+    if (newQty < 0) newQty = 0; // Allow 0 to remove? Or min 1? Let's say min 1 for main item, 0 for others to remove?
+    
+    // For the main item (item.id), we might want to enforce min 1, 
+    // but if we allow removing it, the dialog should probably close or handle empty cart.
+    // For now, let's enforce min 1 for everything in the cart. 
+    // To remove, we can have a delete button.
+    if (newQty < 1) newQty = 1;
+
+    if (itemMaxQty !== undefined && newQty > itemMaxQty) {
+        newQty = itemMaxQty;
+        toast({
+            title: "Maksimal Pemesanan",
+            description: `Hanya tersisa ${itemMaxQty} unit untuk item ini.`,
+            variant: "destructive"
+        });
+    }
+    setCart(prev => ({ ...prev, [itemId]: newQty }));
+  };
+
+  const addItemToCart = (newItem: BookingItem) => {
+    setCart(prev => ({
+      ...prev,
+      [newItem.id]: (prev[newItem.id] || 0) + 1
+    }));
+    setIsAddingMore(false);
+    toast({
+      title: "Item Added",
+      description: `${newItem.name} added to booking.`,
+    });
+  };
+
+  const removeItemFromCart = (itemId: string) => {
+    // Prevent removing the last item if it's the main one? 
+    // Or just allow removing anything. If cart is empty, maybe disable Pay button.
+    const newCart = { ...cart };
+    delete newCart[itemId];
+    setCart(newCart);
+  };
+
+  if (!open || !item) return null;
+
+  // Calculate totals
+  // We need to look up item details for items in cart.
+  // The cart keys are IDs. We look for them in [item, ...allItems] or inventory.
+  // We use inventory if available to get the latest availability/price for the selected date.
+  
+  // Create a set of valid IDs from props to ensure we respect parent's filtering (e.g. active only)
+  const validItemIds = new Set<string>();
+  if (item) validItemIds.add(item.id);
+  allItems.forEach(i => validItemIds.add(i.id));
+
+  // Determine the source of truth for items.
+  // If inventory is populated (which it should be after mount), use it.
+  // But filter it to only include validItemIds to avoid showing inactive items.
+  const currentItems = inventory.length > 0 
+      ? inventory.filter(i => validItemIds.has(i.id))
+      : [item, ...allItems].filter((i): i is BookingItem => i !== null);
+
+  const availableItemsMap = new Map<string, BookingItem>();
+  currentItems.forEach(i => availableItemsMap.set(i.id, i));
+
+  const cartItems = Object.entries(cart).map(([id, qty]) => {
+    const itemDetail = availableItemsMap.get(id);
+    return itemDetail ? { ...itemDetail, qty } : null;
+  }).filter(Boolean) as (BookingItem & { qty: number })[];
+
+  const subtotal = cartItems.reduce((sum, i) => sum + (i.price * i.qty), 0);
+  const adminFee = calculateFee(subtotal, paymentMethod);
+  const totalPrice = subtotal + adminFee;
+
+  const isCartInvalid = cartItems.some(i => i.availability !== undefined && i.qty > i.availability);
+
+  async function handleBooking() {
+    if (!date) {
+      toast({
+        title: "Date required",
+        description: "Please select a date for your booking.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    if (cartItems.length === 0) {
+       toast({
+        title: "Cart Empty",
+        description: "Please add at least one item.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const response = await fetch('/api/bookings', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          type: item!.type, // Assuming mixed cart items are of same type (WAHANA) or handled by backend
+          date: new Date(date).toISOString(),
+          amount: totalPrice,
+          paymentMethod,
+          details: {
+            recipientEmail: recipientEmail || undefined,
+            paymentMethodName: PAYMENT_METHODS.find(m => m.id === paymentMethod)?.label,
+            adminFee: adminFee,
+            items: cartItems.map(i => ({
+                id: i.id,
+                name: i.name,
+                qty: i.qty,
+                price: i.price
+            }))
+          }
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Booking failed');
+      }
+
+      if (data.paymentUrl) {
+        toast({
+          title: "Booking Created",
+          description: "Redirecting to payment...",
+        });
+        window.location.href = data.paymentUrl;
+      } else {
+        toast({
+          title: "Success",
+          description: "Booking created successfully.",
+        });
+        onOpenChange(false);
+      }
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive"
+      });
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 animate-in fade-in duration-200">
+      <div className="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden animate-in zoom-in-95 duration-200">
+        <div className="p-6 border-b border-gray-100">
+          <h2 className="text-xl font-black text-brand-dark uppercase tracking-tight">
+            Book {item.name}
+          </h2>
+          <p className="text-sm text-gray-500 mt-1">Complete your booking details</p>
+        </div>
+        
+        <div className="p-6 space-y-4 max-h-[70vh] overflow-y-auto">
+          <div className="space-y-2">
+            <Label htmlFor="date">Select Date</Label>
+            <Input 
+              id="date" 
+              type="date" 
+              value={date}
+              onChange={(e) => setDate(e.target.value)}
+              min={new Date().toISOString().split('T')[0]}
+              className="w-full"
+            />
+          </div>
+
+          <div className="space-y-4">
+             <Label>Items</Label>
+             {cartItems.map((cartItem) => (
+                <div key={cartItem.id} className="flex flex-col gap-2 p-3 border rounded-lg bg-gray-50">
+                    <div className="flex justify-between items-start">
+                        <span className="font-bold text-sm">{cartItem.name}</span>
+                        <div className="text-right">
+                             {cartItem.originalPrice && cartItem.originalPrice > cartItem.price && (
+                                <div className="text-xs text-gray-400 line-through">
+                                    {new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(cartItem.originalPrice)}
+                                </div>
+                             )}
+                             <div className="font-medium text-sm">
+                                {new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(cartItem.price)}
+                             </div>
+                        </div>
+                    </div>
+                    {cartItem.availability !== undefined && cartItem.qty > cartItem.availability && (
+                         <div className="text-xs text-red-500 font-medium bg-red-50 p-1 rounded mb-2">
+                            {cartItem.availability === 0 
+                                ? "Maaf, kamar ini sudah penuh untuk tanggal yang dipilih." 
+                                : `Hanya tersisa ${cartItem.availability} unit.`}
+                         </div>
+                    )}
+                    <div className="flex items-center justify-between">
+                         <Button 
+                             variant="ghost" 
+                             size="sm" 
+                             className="text-red-500 h-8 px-2 text-xs"
+                             onClick={() => removeItemFromCart(cartItem.id)}
+                             disabled={cartItems.length <= 1} // Prevent removing the last item completely? User can cancel dialog instead. But user might want to swap main item.
+                         >
+                             Remove
+                         </Button>
+                         <div className="flex items-center gap-2">
+                            <Button 
+                                variant="outline" 
+                                size="icon"
+                                onClick={() => handleQtyChange(cartItem.id, cartItem.qty - 1, cartItem.availability)}
+                                className="h-8 w-8"
+                                disabled={cartItem.qty <= 1}
+                            >
+                                -
+                            </Button>
+                            <Input 
+                                type="number" 
+                                min="1" 
+                                max={cartItem.availability}
+                                value={cartItem.qty}
+                                onChange={(e) => handleQtyChange(cartItem.id, parseInt(e.target.value) || 1, cartItem.availability)}
+                                className="text-center font-bold h-8 w-16"
+                            />
+                            <Button 
+                                variant="outline" 
+                                size="icon"
+                                onClick={() => handleQtyChange(cartItem.id, cartItem.qty + 1, cartItem.availability)}
+                                className="h-8 w-8"
+                                disabled={cartItem.availability !== undefined && cartItem.qty >= cartItem.availability}
+                            >
+                                +
+                            </Button>
+                         </div>
+                    </div>
+                </div>
+             ))}
+
+             {allItems.length > 0 && (
+                <div className="mt-2">
+                    {!isAddingMore ? (
+                        <Button variant="outline" size="sm" className="w-full border-dashed" onClick={() => setIsAddingMore(true)}>
+                            + Add Item
+                        </Button>
+                    ) : (
+                        <div className="border rounded-lg p-3 space-y-2 animate-in fade-in slide-in-from-top-2">
+                            <div className="flex justify-between items-center mb-2">
+                                <span className="text-sm font-semibold">Select Item</span>
+                                <Button variant="ghost" size="sm" className="h-6 w-6 p-0" onClick={() => setIsAddingMore(false)}>✕</Button>
+                            </div>
+                            <div className="space-y-2 max-h-40 overflow-y-auto">
+                                {allItems.filter(i => !cart[i.id] && (i.availability === undefined || i.availability > 0)).map(i => (
+                                    <div key={i.id} className="flex justify-between items-center p-2 hover:bg-gray-50 rounded cursor-pointer border" onClick={() => addItemToCart(i)}>
+                                        <div className="flex flex-col">
+                                            <span className="text-sm font-medium">{i.name}</span>
+                                            <span className="text-[10px] text-gray-500">Available: {i.availability !== undefined ? `${i.availability} unit` : 'Unlimited'}</span>
+                                        </div>
+                                        <span className="text-xs font-bold text-brand">
+                                            {new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(i.price)}
+                                        </span>
+                                    </div>
+                                ))}
+                                {allItems.filter(i => !cart[i.id] && (i.availability === undefined || i.availability > 0)).length === 0 && (
+                                    <p className="text-xs text-gray-400 text-center py-2">No more items available</p>
+                                )}
+                            </div>
+                        </div>
+                    )}
+                </div>
+             )}
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="payment">Payment Method</Label>
+            <select
+              id="payment"
+              className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+              value={paymentMethod}
+              onChange={(e) => setPaymentMethod(e.target.value)}
+            >
+              {['Virtual Accounts', 'Cards', 'E-Wallets', 'QR Code', 'Direct Debit', 'Retail', 'PayLater'].map(group => (
+                <optgroup key={group} label={group}>
+                  {PAYMENT_METHODS.filter(m => m.group === group).map(m => (
+                    <option key={m.id} value={m.id}>
+                      {m.label}
+                    </option>
+                  ))}
+                </optgroup>
+              ))}
+            </select>
+          </div>
+
+          <div className="bg-gray-50 p-4 rounded-xl border border-gray-100 mt-4">
+            <div className="flex justify-between items-center mb-2">
+              <span className="text-gray-600 text-sm">Subtotal</span>
+              <span className="font-medium">
+                {new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(subtotal)}
+              </span>
+            </div>
+            <div className="flex justify-between items-center mb-2">
+              <span className="text-gray-600 text-sm">Admin Fee</span>
+              <span className="font-medium text-brand">
+                {new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(adminFee)}
+              </span>
+            </div>
+            <div className="flex justify-between items-center text-lg font-black text-brand-dark pt-2 border-t border-gray-200">
+              <span>Total Payment</span>
+              <span>
+                {new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(totalPrice)}
+              </span>
+            </div>
+          </div>
+
+          <div className="flex items-start space-x-2 pt-2 px-1">
+            <Checkbox 
+              id="terms" 
+              checked={agreedToTerms} 
+              onChange={(e) => setAgreedToTerms(e.target.checked)}
+              className="mt-0.5" 
+            />
+            <div className="text-sm leading-snug text-gray-600">
+              <label htmlFor="terms" className="cursor-pointer">
+                I agree to the{' '}
+              </label>
+              <TermsAndConditionsDialog>
+                <button type="button" className="text-brand font-semibold hover:underline focus:outline-none">
+                  Terms & Conditions
+                </button>
+              </TermsAndConditionsDialog>
+              <label htmlFor="terms" className="cursor-pointer">
+                {' '}and Refund Policy. I understand that tickets are non-refundable.
+              </label>
+            </div>
+          </div>
+        </div>
+
+        <div className="p-6 bg-gray-50 border-t border-gray-100 flex gap-3">
+          <Button 
+            variant="outline" 
+            className="flex-1"
+            onClick={() => onOpenChange(false)}
+            disabled={loading}
+          >
+            Cancel
+          </Button>
+          <Button 
+            className="flex-1 bg-brand-dark hover:bg-brand text-white font-bold"
+            onClick={handleBooking}
+            disabled={loading || fetchingAvailability || isCartInvalid || !agreedToTerms}
+          >
+            {loading ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Processing...
+              </>
+            ) : (
+              'Pay Now'
+            )}
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
+}

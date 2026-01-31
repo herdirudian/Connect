@@ -1,0 +1,386 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+// Enums
+enum Role {
+  MEMBER
+  ADMIN
+  STAFF
+  VERIFICATOR
+}
+
+enum Tier {
+  EXPLORER
+  NATURE_LOVER
+  LODGE_GUARDIAN
+}
+
+enum TransactionType {
+  EARN
+  REDEEM
+}
+
+enum TicketStatus {
+  ACTIVE
+  USED
+  EXPIRED
+  CANCELLED
+}
+
+// Models
+
+model User {
+  id            String    @id @default(uuid())
+  email         String    @unique
+  password      String
+  name          String
+  role          Role      @default(MEMBER)
+  tier          Tier      @default(EXPLORER)
+  points        Int       @default(0)
+  referralCode  String    @unique
+  phoneNumber   String?
+  dateOfBirth   DateTime?
+  avatarUrl     String?
+  permissions   String?   @db.Text // JSON string list of specific permissions
+  
+  verificationCode          String?
+  verificationCodeExpiresAt DateTime?
+  isVerified                Boolean   @default(false)
+  
+  // Password Reset
+  resetToken                String?
+  resetTokenExpiry          DateTime?
+
+  // Referral System
+  referredById  String?
+  referredBy    User?     @relation("UserReferrals", fields: [referredById], references: [id])
+  referrals     User[]    @relation("UserReferrals")
+
+  // Family Relation
+  familyId      String?
+  family        Family?   @relation(fields: [familyId], references: [id])
+  isFamilyHead  Boolean   @default(false)
+  familyRelation String?  // e.g. "Spouse", "Child", "Sibling"
+  
+  // Relations
+  transactions  Transaction[]
+  tickets       Ticket[]
+  bookings      Booking[]
+  notifications Notification[]
+  userRewards   UserReward[]
+  partnerPromoClaims PartnerPromoClaim[]
+  restaurantReservations RestaurantReservation[]
+  foodOrders             FoodOrder[]
+  reviews                Review[]
+  
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+}
+
+model Notification {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  title     String
+  message   String
+  isRead    Boolean  @default(false)
+  createdAt DateTime @default(now())
+  @@index([isRead])
+}
+
+model TierConfig {
+  id          String   @id @default(uuid())
+  tier        Tier     @unique
+  name        String
+  minPoints   Int      @default(0)
+  benefits    String   @db.Text // JSON string list
+  color       String   @default("bg-blue-500")
+  icon        String   @default("Star")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Review {
+  id              String         @id @default(uuid())
+  userId          String
+  user            User           @relation(fields: [userId], references: [id])
+  
+  // Target: Accommodation
+  accommodationId String?
+  accommodation   Accommodation? @relation(fields: [accommodationId], references: [id])
+  
+  // Target: Restaurant
+  restaurantId    String?
+  restaurant      Restaurant?    @relation(fields: [restaurantId], references: [id])
+  
+  // Source Transaction (to ensure one review per visit)
+  bookingId       String?        @unique
+  booking         Booking?       @relation(fields: [bookingId], references: [id])
+  
+  foodOrderId     String?        @unique
+  foodOrder       FoodOrder?     @relation(fields: [foodOrderId], references: [id])
+  
+  rating          Int            // 1-5
+  comment         String?        @db.Text
+  
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+}
+
+model Family {
+  id        String   @id @default(uuid())
+  name      String
+  members   User[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Transaction {
+  id          String          @id @default(uuid())
+  userId      String
+  user        User            @relation(fields: [userId], references: [id])
+  amount      Int
+  type        TransactionType
+  description String
+  source      String?         // e.g., "TICKET_PURCHASE", "F&B", "REFERRAL"
+  createdAt   DateTime        @default(now())
+}
+
+model Ticket {
+  id          String       @id @default(uuid())
+  userId      String
+  user        User         @relation(fields: [userId], references: [id])
+  title       String
+  description String?
+  qrCode      String?      // Base64 or URL
+  status      TicketStatus @default(ACTIVE)
+  validUntil  DateTime
+  usedAt      DateTime?
+  
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  bookingId   String?
+  booking     Booking?     @relation(fields: [bookingId], references: [id])
+  @@index([status])
+}
+
+model Booking {
+  tickets     Ticket[]
+  id          String   @id @default(uuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id])
+  type        String   // "GLAMPING", "EVENT", "WAHANA"
+  details     String   // JSON string for specific details
+  date        DateTime
+  status      String   // "PENDING", "CONFIRMED", "CANCELLED"
+  
+  // Payment Info
+  amount        Float    @default(0)
+  paymentId     String?  @unique // Xendit Invoice ID
+  paymentUrl    String?  // Xendit Invoice URL
+  paymentStatus String   @default("PENDING") // PENDING, PAID, EXPIRED, FAILED
+
+  review        Review?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([status])
+  @@index([paymentStatus])
+}
+
+model Attraction {
+  id          String   @id @default(uuid())
+  name        String
+  description String
+  price       Float
+  imageUrl    String?
+  benefits    String?  @db.Text // JSON string list of benefits
+  active      Boolean  @default(true)
+  originalPrice Float? // Price before discount (for display only)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Restaurant {
+  id          String   @id @default(uuid())
+  name        String
+  type        String   // e.g. "Buffet", "Coffee"
+  description String
+  rating      Float    @default(0)
+  status      String   // "Open", "Closed"
+  imageUrl    String?
+  menuUrl     String?
+  active      Boolean  @default(true)
+  
+  allowReservations Boolean @default(true)
+  allowOrders       Boolean @default(true)
+  
+  menuItems     MenuItem[]
+  reservations  RestaurantReservation[]
+  orders        FoodOrder[]
+  reviews       Review[]
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model MenuItem {
+  id            String      @id @default(uuid())
+  restaurantId  String
+  restaurant    Restaurant  @relation(fields: [restaurantId], references: [id])
+  name          String
+  description   String?
+  price         Float
+  category      String      // e.g. "Main", "Drink"
+  imageUrl      String?
+  originalPrice Float?      // Price before discount (for display only)
+  available     Boolean     @default(true)
+  
+  orderItems    FoodOrderItem[]
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+}
+
+model RestaurantReservation {
+  id            String      @id @default(uuid())
+  userId        String
+  user          User        @relation(fields: [userId], references: [id])
+  restaurantId  String
+  restaurant    Restaurant  @relation(fields: [restaurantId], references: [id])
+  date          DateTime
+  time          String      // e.g. "19:00"
+  pax           Int
+  status        String      // "PENDING", "CONFIRMED", "CANCELLED", "COMPLETED"
+  notes         String?
+  
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+}
+
+model FoodOrder {
+  id            String      @id @default(uuid())
+  userId        String
+  user          User        @relation(fields: [userId], references: [id])
+  restaurantId  String
+  restaurant    Restaurant  @relation(fields: [restaurantId], references: [id])
+  status        String      // "PENDING", "PREPARING", "READY", "COMPLETED", "CANCELLED"
+  totalAmount   Float
+  
+  // Payment integration
+  paymentId     String?     @unique
+  paymentUrl    String?
+  paymentStatus String      @default("PENDING")
+  
+  items         FoodOrderItem[]
+  review        Review?
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+}
+
+model FoodOrderItem {
+  id            String      @id @default(uuid())
+  orderId       String
+  order         FoodOrder   @relation(fields: [orderId], references: [id])
+  menuItemId    String
+  menuItem      MenuItem    @relation(fields: [menuItemId], references: [id])
+  quantity      Int
+  price         Float       // Snapshot price
+}
+
+model Accommodation {
+  id          String   @id @default(uuid())
+  name        String
+  capacity    String
+  price       Float
+  stock       Int      @default(0)
+  description String
+  rating      Float    @default(0)
+  imageUrl    String?
+  images      Json?    // Array of image URLs for slider
+  benefits    String?  @db.Text
+  active      Boolean  @default(true)
+  originalPrice Float? // Price before discount (for display only)
+  receptionEmail String? // Email for booking notifications
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  allotments  AccommodationAllotment[]
+  reviews     Review[]
+}
+
+model AccommodationAllotment {
+  id              String        @id @default(uuid())
+  accommodationId String
+  accommodation   Accommodation @relation(fields: [accommodationId], references: [id], onDelete: Cascade)
+  date            DateTime
+  quota           Int           // Available stock for this specific date
+  price           Float?        // Optional specific price for this date
+  
+  @@unique([accommodationId, date])
+}
+
+model Reward {
+  id          String   @id @default(uuid())
+  name        String
+  description String
+  cost        Int
+  type        String   // "VOUCHER", "MERCH", "TICKET", "BIRTHDAY"
+  imageUrl    String?
+  active      Boolean  @default(true)
+  userRewards UserReward[]
+}
+
+model UserReward {
+  id        String    @id @default(uuid())
+  userId    String
+  user      User      @relation(fields: [userId], references: [id])
+  rewardId  String
+  reward    Reward    @relation(fields: [rewardId], references: [id])
+  status    String    @default("ACTIVE") // ACTIVE, USED
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+}
+
+model PartnerPromo {
+  id          String   @id @default(uuid())
+  title       String
+  description String
+  imageUrl    String?
+  validUntil  DateTime?
+  active      Boolean  @default(true)
+  claimable   Boolean  @default(false)
+  isPartner   Boolean  @default(true) // True for Partner Promos, False for Internal/Admin Banners
+  showButton  Boolean  @default(true) // Toggle "View Details" button
+  claims      PartnerPromoClaim[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model PartnerPromoClaim {
+  id         String       @id @default(uuid())
+  promoId    String
+  promo      PartnerPromo @relation(fields: [promoId], references: [id])
+  userId     String
+  user       User         @relation(fields: [userId], references: [id])
+  uniqueCode String?      @unique
+  status     String       @default("ACTIVE")
+  usedAt     DateTime?
+  createdAt  DateTime     @default(now())
+}
+
+model SystemSetting {
+  key         String   @id
+  value       String   @db.Text
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
