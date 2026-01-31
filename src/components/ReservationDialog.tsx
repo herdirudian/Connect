@@ -29,6 +29,7 @@ export function ReservationDialog({ restaurant, open, onOpenChange }: Reservatio
     if (!open || !restaurant) return null;
 
     async function handleReserve() {
+        if (!restaurant) return;
         if (!date || !time) {
             toast({ title: "Required", description: "Please select date and time", variant: "destructive" });
             return;
