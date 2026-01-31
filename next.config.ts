@@ -24,7 +24,7 @@ export default withSentryConfig(nextConfig, {
   silent: true,
   org: "family-the-lodge",
   project: "javascript-nextjs",
-}, {
+
   // For all available options, see:
   // https://docs.sentry.io/platforms/javascript/guides/nextjs/manual-setup/
 
