@@ -4,9 +4,19 @@ Since you are deploying to a VPS that already hosts another system, we will run 
 
 ## 1. Preparation
 
-Ensure your VPS has **Node.js** (v18 or v20 recommended) and **Nginx** installed.
+Ensure your VPS has **Node.js** (v18 or v20 recommended), **Nginx**, and **Git** installed.
 
-## 2. Environment Variables
+## 2. Clone Repository
+
+SSH into your VPS and clone the repository:
+
+```bash
+cd /var/www  # or your preferred directory
+git clone https://github.com/herdirudian/Connect.git thelodge-connect
+cd thelodge-connect
+```
+
+## 3. Environment Variables
 
 Create a `.env` file in the root directory of your project on the VPS. You can copy your local `.env` but **MUST** update the following values:
 
@@ -34,7 +44,7 @@ FROM_EMAIL="The Lodge Connect <no-reply@thelodgegroup.id>"
 JWT_SECRET="generate_a_strong_random_secret_here"
 ```
 
-## 3. Installation & Build
+## 4. Installation & Build
 
 Run the following commands in your project folder on the VPS:
 
@@ -45,11 +55,14 @@ npm install
 # Generate Prisma Client
 npx prisma generate
 
+# Push Database Schema (Create Tables)
+npx prisma db push
+
 # Build the application
 npm run build
 ```
 
-## 4. Running the Application (PM2)
+## 5. Running the Application (PM2)
 
 Use **PM2** to keep the application running in the background.
 
@@ -113,7 +126,7 @@ Use Certbot to secure your domain with HTTPS:
 sudo certbot --nginx -d connect.thelodgegroup.id
 ```
 
-## 7. Webhook Configuration (Xendit)
+## 8. Webhook Configuration (Xendit)
 
 Don't forget to update your Xendit Dashboard Webhook URL to:
 `https://connect.thelodgegroup.id/api/webhooks/xendit`
