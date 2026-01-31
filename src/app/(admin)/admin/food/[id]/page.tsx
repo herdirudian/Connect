@@ -31,6 +31,7 @@ export default function AdminRestaurantMenuPage({ params }: { params: Promise<{ 
     name: '',
     description: '',
     price: '',
+    originalPrice: '',
     category: 'Main Course',
     imageUrl: '',
     available: true
@@ -64,6 +65,7 @@ export default function AdminRestaurantMenuPage({ params }: { params: Promise<{ 
       name: '',
       description: '',
       price: '',
+      originalPrice: '',
       category: 'Main Course',
       imageUrl: '',
       available: true
@@ -77,6 +79,7 @@ export default function AdminRestaurantMenuPage({ params }: { params: Promise<{ 
       name: item.name,
       description: item.description,
       price: item.price.toString(),
+      originalPrice: item.originalPrice ? item.originalPrice.toString() : '',
       category: item.category,
       imageUrl: item.imageUrl || '',
       available: item.available
