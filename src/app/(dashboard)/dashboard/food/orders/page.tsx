@@ -1,33 +1,41 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Loader2, Calendar } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Loader2, Calendar, Star } from 'lucide-react';
 import { format } from 'date-fns';
+import { ReviewDialog } from '@/components/reviews/review-dialog';
 
 export default function MyOrdersPage() {
   const [orders, setOrders] = useState<any[]>([]);
   const [reservations, setReservations] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [reviewDialog, setReviewDialog] = useState<{
+    open: boolean;
+    foodOrderId?: string;
+    restaurantId?: string;
+  }>({ open: false });
+
+  const fetchData = useCallback(async () => {
+    try {
+      const [ordersRes, reservationsRes] = await Promise.all([
+        fetch('/api/food/orders'),
+        fetch('/api/food/reservations')
+      ]);
+      
+      if (ordersRes.ok) setOrders(await ordersRes.json());
+      if (reservationsRes.ok) setReservations(await reservationsRes.json());
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
   useEffect(() => {
-    async function fetchData() {
-      try {
-        const [ordersRes, reservationsRes] = await Promise.all([
-          fetch('/api/food/orders'),
-          fetch('/api/food/reservations')
-        ]);
-        
-        if (ordersRes.ok) setOrders(await ordersRes.json());
-        if (reservationsRes.ok) setReservations(await reservationsRes.json());
-      } catch (e) {
-        console.error(e);
-      } finally {
-        setLoading(false);
-      }
-    }
     fetchData();
-  }, []);
+  }, [fetchData]);
 
   if (loading) return <div className="p-8 flex justify-center"><Loader2 className="animate-spin text-brand" /></div>;
 
@@ -128,7 +136,7 @@ export default function MyOrdersPage() {
         foodOrderId={reviewDialog.foodOrderId}
         restaurantId={reviewDialog.restaurantId}
         onSuccess={() => {
-          setReviewDialog({ open: false });
+          setReviewDialog(prev => ({ ...prev, open: false }));
           fetchData();
         }}
       />
