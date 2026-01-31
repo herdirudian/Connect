@@ -17,6 +17,8 @@ interface Restaurant {
   imageUrl?: string;
   menuUrl?: string;
   active: boolean;
+  allowReservations?: boolean;
+  allowOrders?: boolean;
 }
 
 export default function FoodPage() {
