@@ -24,7 +24,15 @@ export default async function UsersPage({
       } : {})
     },
     orderBy: { createdAt: 'desc' },
-    take: 50
+    take: 50,
+    include: {
+      referredBy: {
+        select: { name: true }
+      },
+      _count: {
+        select: { referrals: true }
+      }
+    }
   });
 
   return (
