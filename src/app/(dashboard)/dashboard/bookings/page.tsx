@@ -122,7 +122,7 @@ export default function BookingsPage() {
           </Card>
         ) : (
           bookings.map((booking) => {
-             let details = { items: [] };
+             let details: { items: any[] } = { items: [] };
              try {
                 details = JSON.parse(booking.details);
              } catch(e) {}
