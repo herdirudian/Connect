@@ -1,3 +1,4 @@
+
 const { PrismaClient } = require('@prisma/client');
 const bcrypt = require('bcryptjs');
 
@@ -5,43 +6,32 @@ const prisma = new PrismaClient();
 
 async function main() {
   const email = 'admin@thelodge.com';
-  const password = 'password123';
-  const name = 'Super Admin';
-  
+  const password = 'admin123';
+  const hashedPassword = await bcrypt.hash(password, 10);
+
   try {
-    console.log('Creating admin user...');
-    
-    // Check if admin exists
-    const existingAdmin = await prisma.user.findUnique({
-      where: { email },
-    });
-
-    if (existingAdmin) {
-      console.log('Admin user already exists.');
-      return;
-    }
-
-    const hashedPassword = await bcrypt.hash(password, 10);
-    
-    // Generate a simple referral code for admin
-    const referralCode = 'ADMIN001';
-
-    const admin = await prisma.user.create({
-      data: {
-        name,
-        email,
+    const user = await prisma.user.upsert({
+      where: { email: email },
+      update: {
         password: hashedPassword,
         role: 'ADMIN',
-        tier: 'LODGE_GUARDIAN', // Highest tier
-        referralCode,
-        phoneNumber: '081234567890',
+        isVerified: true,
+      },
+      create: {
+        email: email,
+        name: 'Super Admin',
+        password: hashedPassword,
+        role: 'ADMIN',
+        isVerified: true,
+        phoneNumber: '081234567890', // Dummy phone
+        referralCode: 'ADMIN' + Math.floor(1000 + Math.random() * 9000),
       },
     });
 
-    console.log('Admin user created successfully!');
-    console.log('Email:', email);
-    console.log('Password:', password);
-    
+    console.log(`\nSUCCESS!`);
+    console.log(`Admin user '${email}' is ready.`);
+    console.log(`Password: ${password}`);
+    console.log(`Role: ${user.role}`);
   } catch (e) {
     console.error('Error creating admin:', e);
   } finally {

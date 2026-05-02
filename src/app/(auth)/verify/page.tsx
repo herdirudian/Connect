@@ -12,6 +12,7 @@ function VerifyForm() {
   const email = searchParams.get('email');
   const [code, setCode] = useState('');
   const [loading, setLoading] = useState(false);
+  const [resendLoading, setResendLoading] = useState(false);
   const [error, setError] = useState('');
 
   if (!email) {
@@ -49,6 +50,32 @@ function VerifyForm() {
       setError(err.message);
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function handleResend() {
+    if (!email) return;
+    setResendLoading(true);
+    setError('');
+    
+    try {
+      const res = await fetch('/api/auth/resend-verification', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.error || 'Gagal mengirim ulang kode');
+      }
+
+      alert(data.message);
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setResendLoading(false);
     }
   }
 
@@ -95,7 +122,9 @@ function VerifyForm() {
           </Button>
           
           <div className="text-center text-sm text-gray-500 mt-4">
-            Tidak menerima kode? <button type="button" className="text-brand font-bold hover:underline">Kirim Ulang</button>
+            Tidak menerima kode? <button type="button" onClick={handleResend} disabled={resendLoading} className="text-brand font-bold hover:underline disabled:opacity-50">
+              {resendLoading ? 'Mengirim...' : 'Kirim Ulang'}
+            </button>
           </div>
         </form>
       </div>

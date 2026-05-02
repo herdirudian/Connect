@@ -5,6 +5,7 @@ import { StarRating } from './star-rating';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { formatDistanceToNow } from 'date-fns';
 import { Loader2 } from 'lucide-react';
+import { maskName } from '@/lib/utils';
 
 interface Review {
   id: string;
@@ -20,9 +21,10 @@ interface Review {
 interface ReviewListProps {
   accommodationId?: string;
   restaurantId?: string;
+  attractionId?: string;
 }
 
-export function ReviewList({ accommodationId, restaurantId }: ReviewListProps) {
+export function ReviewList({ accommodationId, restaurantId, attractionId }: ReviewListProps) {
   const [reviews, setReviews] = useState<Review[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -32,8 +34,9 @@ export function ReviewList({ accommodationId, restaurantId }: ReviewListProps) {
         const params = new URLSearchParams();
         if (accommodationId) params.set('accommodationId', accommodationId);
         if (restaurantId) params.set('restaurantId', restaurantId);
+        if (attractionId) params.set('attractionId', attractionId);
         
-        const res = await fetch(`/api/reviews?${params.toString()}`);
+        const res = await fetch(`/api/reviews?${params.toString()}`, { cache: 'no-store' });
         if (res.ok) {
           const data = await res.json();
           setReviews(data);
@@ -46,7 +49,7 @@ export function ReviewList({ accommodationId, restaurantId }: ReviewListProps) {
     }
     
     fetchReviews();
-  }, [accommodationId, restaurantId]);
+  }, [accommodationId, restaurantId, attractionId]);
 
   if (loading) {
     return <div className="flex justify-center py-8"><Loader2 className="h-6 w-6 animate-spin text-gray-400" /></div>;
@@ -74,7 +77,7 @@ export function ReviewList({ accommodationId, restaurantId }: ReviewListProps) {
               <div className="flex-1">
                 <div className="flex justify-between items-start">
                   <div>
-                    <p className="font-medium text-gray-900">{review.user.name}</p>
+                    <p className="font-medium text-gray-900">{maskName(review.user.name)}</p>
                     <div className="flex items-center gap-2 mt-1">
                       <StarRating rating={review.rating} readOnly size={14} />
                       <span className="text-xs text-gray-400">• {formatDistanceToNow(new Date(review.createdAt), { addSuffix: true })}</span>

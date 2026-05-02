@@ -158,14 +158,14 @@ export default function VouchersPage() {
             <h3 className="text-xl font-black text-brand-dark uppercase tracking-tight">Your Active Vouchers</h3>
             <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
                 {myVouchers.map((voucher) => (
-                    <Card key={voucher.id} className={`border-l-4 shadow-md overflow-hidden flex flex-col h-full rounded-xl bg-white ${voucher.status === 'USED' ? 'border-l-gray-300 opacity-60' : 'border-l-brand'}`}>
+                    <Card key={voucher.id} className={`border-l-4 shadow-md overflow-hidden flex flex-col h-full rounded-xl bg-white ${voucher.status === 'USED' ? 'border-l-gray-300' : 'border-l-brand'}`}>
                         <CardContent className="p-6 flex flex-col h-full">
                             <div className="flex justify-between items-start mb-4">
                                 <div className="w-12 h-12 bg-brand-50 rounded-full flex items-center justify-center text-brand">
                                     <Ticket className="h-6 w-6" />
                                 </div>
-                                <span className={`px-2 py-1 rounded text-xs font-bold uppercase ${voucher.status === 'USED' ? 'bg-gray-100 text-gray-500' : 'bg-green-100 text-green-700'}`}>
-                                    {voucher.status}
+                                <span className={`px-2 py-1 rounded text-xs font-bold uppercase ${voucher.status === 'USED' ? 'bg-red-100 text-red-600' : 'bg-green-100 text-green-700'}`}>
+                                    {voucher.status === 'USED' ? 'CLAIMED' : voucher.status}
                                 </span>
                             </div>
                             <h4 className="font-bold text-gray-900 text-lg mb-1">{voucher.reward.name}</h4>
@@ -180,9 +180,12 @@ export default function VouchersPage() {
                                         Show QR Code
                                     </Button>
                                 ) : (
-                                    <div className="text-center text-sm font-bold text-gray-400 flex items-center justify-center gap-2">
-                                        <CheckCircle className="h-4 w-4" /> Redeemed on {new Date(voucher.usedAt || '').toLocaleDateString()}
-                                    </div>
+                                    <Button 
+                                        disabled
+                                        className="w-full bg-red-600 text-white font-bold uppercase tracking-wider opacity-100 disabled:opacity-100 disabled:bg-red-600 disabled:text-white"
+                                    >
+                                        Claimed
+                                    </Button>
                                 )}
                             </div>
                         </CardContent>

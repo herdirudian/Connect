@@ -1,9 +1,10 @@
 import { prisma } from '@/lib/prisma';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Download, Search, History, Gift } from 'lucide-react';
+import { ArrowLeft, Search, History, Gift } from 'lucide-react';
 import Link from 'next/link';
 import RedeemReceiptButton from '@/components/RedeemReceiptButton';
+import ExportButton from '@/components/admin/ExportButton';
 
 export const dynamic = 'force-dynamic';
 
@@ -11,9 +12,10 @@ export default async function RedeemHistoryPage() {
   const transactions = await prisma.transaction.findMany({
     where: {
       type: 'REDEEM',
-      source: {
-        startsWith: 'REWARD:'
-      }
+      OR: [
+        { source: { startsWith: 'REWARD:' } },
+        { source: { startsWith: 'PROMO_REDEEM:' } }
+      ]
     },
     orderBy: { createdAt: 'desc' },
     take: 100,
@@ -41,10 +43,14 @@ export default async function RedeemHistoryPage() {
           </div>
           <p className="text-gray-500 ml-10">Daftar penukaran poin member dengan voucher/reward.</p>
         </div>
-        <div className="flex gap-2">
-            <Button variant="outline">
-                <Download className="mr-2 h-4 w-4" /> Export CSV
-            </Button>
+        <div className="flex flex-col sm:flex-row gap-2 w-full md:w-auto">
+            <div className="w-full sm:w-auto">
+                <ExportButton 
+                    endpoint="/api/admin/transactions/export?mode=rewards" 
+                    filename="reward-history.csv"
+                    className="w-full sm:w-auto"
+                />
+            </div>
         </div>
       </div>
 

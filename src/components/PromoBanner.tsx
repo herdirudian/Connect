@@ -64,7 +64,7 @@ export function PromoBanner() {
 
   return (
     <div className="relative mb-8 group">
-      <Card className="overflow-hidden border-none shadow-lg bg-gray-900 text-white relative h-[200px] md:h-[280px]">
+      <Card className="overflow-hidden border-none shadow-lg bg-gray-900 text-white relative h-[280px] md:h-[320px]">
         {/* Background Image */}
         <div className="absolute inset-0 z-0">
           {currentPromo.imageUrl ? (
@@ -82,22 +82,22 @@ export function PromoBanner() {
 
         {/* Content */}
         <div className="relative z-20 h-full flex flex-col justify-center px-6 md:px-12 max-w-3xl">
-          <div className="inline-flex items-center gap-2 px-3 py-1 bg-brand rounded-full w-fit mb-4">
+          <div className="inline-flex items-center gap-2 px-3 py-1 bg-brand rounded-full w-fit mb-3 md:mb-4">
             <Tag className="w-3 h-3 text-white" />
             <span className="text-[10px] font-bold uppercase tracking-wider text-white">Special Offer</span>
           </div>
           
-          <h3 className="text-2xl md:text-4xl font-black uppercase tracking-tight mb-2 text-white leading-none">
+          <h3 className="text-xl sm:text-2xl md:text-4xl font-black uppercase tracking-tight mb-2 text-white leading-tight">
             {currentPromo.title}
           </h3>
           
-          <p className="text-gray-200 text-sm md:text-base line-clamp-2 mb-6 max-w-lg font-medium">
+          <p className="text-gray-200 text-xs sm:text-sm md:text-base line-clamp-3 md:line-clamp-2 mb-4 md:mb-6 max-w-lg font-medium">
             {currentPromo.description}
           </p>
           
           {(currentPromo.showButton === undefined || currentPromo.showButton) && (
             <Link href={`/dashboard/promos`}>
-              <Button className="bg-white text-brand-dark hover:bg-gray-100 font-bold border-none">
+              <Button className="bg-white text-brand-dark hover:bg-gray-100 font-bold border-none h-9 md:h-10 text-xs md:text-sm">
                 View Details
               </Button>
             </Link>

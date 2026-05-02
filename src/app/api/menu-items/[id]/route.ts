@@ -1,21 +1,25 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { verifyToken } from '@/lib/auth';
-import { cookies } from 'next/headers';
+import { PERMISSIONS } from '@/lib/permissions';
+import { getAuthUser } from '@/lib/serverAuth';
+
+async function canManage() {
+    const auth = await getAuthUser();
+    if (!auth) return false;
+    if (auth.role === 'ADMIN') return true;
+    return auth.permissions.includes(PERMISSIONS.MANAGE_FOOD);
+}
 
 export async function PUT(req: Request, { params }: { params: Promise<{ id: string }> }) {
     try {
         const { id } = await params;
-        const cookieStore = await cookies();
-        const token = cookieStore.get('token')?.value || '';
-        const decoded = verifyToken(token) as any;
-
-        if (!decoded || decoded.role !== 'ADMIN') {
+        if (!(await canManage())) {
              return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
         }
 
         const body = await req.json();
-        const { name, description, price, originalPrice, category, imageUrl, available } = body;
+        const { name, description, price, originalPrice, category, imageUrl, available, stock, soldOut, minOrderQty } = body;
+        const minQty = Math.max(1, parseInt(String(minOrderQty ?? 1), 10) || 1);
 
         const menuItem = await prisma.menuItem.update({
             where: { id },
@@ -26,7 +30,10 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
                 originalPrice: originalPrice ? parseFloat(originalPrice) : null,
                 category,
                 imageUrl,
-                available
+                available,
+                stock: stock === '' || stock === null || typeof stock === 'undefined' ? null : parseInt(String(stock), 10),
+                soldOut: !!soldOut,
+                minOrderQty: minQty
             }
         });
 
@@ -39,17 +46,21 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
 export async function DELETE(req: Request, { params }: { params: Promise<{ id: string }> }) {
     try {
         const { id } = await params;
-        const cookieStore = await cookies();
-        const token = cookieStore.get('token')?.value || '';
-        const decoded = verifyToken(token) as any;
-
-        if (!decoded || decoded.role !== 'ADMIN') {
+        if (!(await canManage())) {
              return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
         }
 
-        await prisma.menuItem.delete({
-            where: { id }
-        });
+        try {
+            await prisma.menuItem.delete({
+                where: { id }
+            });
+        } catch (err: any) {
+            // Handle FK constraint (item dipakai di order)
+            if (err?.code === 'P2003' || /foreign key/i.test(String(err?.message))) {
+                return NextResponse.json({ error: 'Item sudah dipakai di pesanan. Nonaktifkan saja (Available = false / Sold Out).'}, { status: 409 });
+            }
+            throw err;
+        }
 
         return NextResponse.json({ success: true });
     } catch (error) {

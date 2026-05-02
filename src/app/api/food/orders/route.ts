@@ -20,7 +20,7 @@ export async function POST(req: Request) {
     }
 
     const body = await req.json();
-    const { restaurantId, items, totalAmount } = body; 
+    const { restaurantId, items } = body; 
 
     // Check if orders are allowed
     const restaurant = await prisma.restaurant.findUnique({
@@ -36,17 +36,48 @@ export async function POST(req: Request) {
         return NextResponse.json({ error: 'Food ordering is currently disabled for this restaurant' }, { status: 400 });
     }
 
+    if (!Array.isArray(items) || items.length === 0) {
+        return NextResponse.json({ error: 'No items provided' }, { status: 400 });
+    }
+
+    const menuIds = items.map((i: any) => i.menuItemId);
+    const menuItems = await prisma.menuItem.findMany({
+        where: { id: { in: menuIds }, restaurantId },
+        select: { id: true, name: true, price: true, available: true, soldOut: true, stock: true, minOrderQty: true }
+    });
+    const menuMap = new Map(menuItems.map(mi => [mi.id, { name: mi.name, price: mi.price, available: mi.available, soldOut: mi.soldOut, stock: mi.stock ?? null, minOrderQty: mi.minOrderQty ?? 1 }]));
+
+    let subtotal = 0;
+    for (const it of items) {
+        const meta = menuMap.get(it.menuItemId);
+        const qty = Number(it.quantity);
+        if (!meta || !Number.isFinite(qty) || qty <= 0) {
+            return NextResponse.json({ error: 'Invalid menu item' }, { status: 400 });
+        }
+        const minQty = Math.max(1, Number(meta.minOrderQty) || 1);
+        if (qty > 0 && qty < minQty) {
+            return NextResponse.json({ error: `Minimal order untuk ${meta.name} adalah ${minQty}` }, { status: 400 });
+        }
+        if (!meta.available || meta.soldOut) {
+            return NextResponse.json({ error: 'Item is not available' }, { status: 400 });
+        }
+        if (meta.stock !== null && qty > meta.stock) {
+            return NextResponse.json({ error: 'Quantity exceeds stock' }, { status: 400 });
+        }
+        subtotal += meta.price * qty;
+    }
+
     const order = await prisma.foodOrder.create({
       data: {
         userId: decoded.userId,
         restaurantId,
         status: 'PENDING',
-        totalAmount,
+        totalAmount: subtotal,
         items: {
             create: items.map((item: any) => ({
                 menuItemId: item.menuItemId,
-                quantity: item.quantity,
-                price: item.price
+                quantity: Number(item.quantity),
+                price: menuMap.get(item.menuItemId)!.price
             }))
         }
       },
@@ -61,7 +92,7 @@ export async function POST(req: Request) {
             data: {
                 externalId: `FOOD-${order.id}`,
                 amount: order.totalAmount,
-                payerEmail: order.user.email,
+                payerEmail: order.user?.email ?? undefined,
                 description: `Food Order #${order.id.substring(0,8)}`,
                 invoiceDuration: 86400,
                 currency: 'IDR',

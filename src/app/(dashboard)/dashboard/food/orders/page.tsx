@@ -98,12 +98,44 @@ export default function MyOrdersPage() {
                     ))}
                   </ul>
                   <p className="text-xs text-gray-400 mt-4 text-right">{format(new Date(order.createdAt), 'PP p')}</p>
+                  <div className="mt-3 flex flex-wrap gap-2 justify-end">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => window.open(`/api/food/orders/${order.id}/invoice`, '_blank')}
+                    >
+                      Download Invoice
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={async () => {
+                        try {
+                          const res = await fetch(`/api/food/orders/${order.id}/send-invoice`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({}),
+                          });
+                          if (res.ok) {
+                            // Simple UX feedback; could integrate toast
+                            alert('Invoice terkirim ke email Anda.');
+                          } else {
+                            const data = await res.json().catch(() => ({}));
+                            alert(data.error || 'Gagal mengirim invoice');
+                          }
+                        } catch (e) {
+                          alert('Gagal mengirim invoice');
+                        }
+                      }}
+                    >
+                      Kirim Invoice ke Email
+                    </Button>
+                  </div>
                   
                   {order.status === 'COMPLETED' && (
                     <div className="mt-4 flex justify-end">
                       {order.review ? (
                         <div className="flex items-center gap-1 text-yellow-500 font-bold bg-yellow-50 px-3 py-1.5 rounded-lg border border-yellow-100">
-                          <Star className="h-4 w-4 fill-current" />
                           <span>{order.review.rating}/5</span>
                         </div>
                       ) : (

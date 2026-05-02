@@ -7,6 +7,7 @@ export async function GET(req: Request) {
     const { searchParams } = new URL(req.url);
     const startDate = searchParams.get('startDate');
     const endDate = searchParams.get('endDate');
+    const mode = searchParams.get('mode');
 
     const where: any = {};
     
@@ -15,6 +16,14 @@ export async function GET(req: Request) {
         gte: new Date(startDate),
         lte: new Date(endDate),
       };
+    }
+
+    if (mode === 'rewards') {
+      where.type = 'REDEEM';
+      where.OR = [
+        { source: { startsWith: 'REWARD:' } },
+        { source: { startsWith: 'PROMO_REDEEM:' } }
+      ];
     }
 
     const transactions = await prisma.transaction.findMany({

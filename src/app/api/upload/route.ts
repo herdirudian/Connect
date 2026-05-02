@@ -29,6 +29,14 @@ export async function POST(request: Request) {
     
     // Save to public/uploads/avatars
     const uploadDir = path.join(process.cwd(), 'public/uploads/avatars');
+    
+    // Ensure directory exists
+    try {
+        await require('fs/promises').mkdir(uploadDir, { recursive: true });
+    } catch (error) {
+        console.error('Error creating directory:', error);
+    }
+    
     const filepath = path.join(uploadDir, filename);
     
     await writeFile(filepath, buffer);

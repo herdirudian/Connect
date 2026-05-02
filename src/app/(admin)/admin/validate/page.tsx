@@ -101,7 +101,7 @@ export default function ValidatePage() {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <form onSubmit={handleSearch} className="flex gap-4">
+          <form onSubmit={handleSearch} className="flex flex-col sm:flex-row gap-4">
             <div className="grid w-full items-center gap-1.5">
               <Label htmlFor="ticketId">Ticket ID / QR Code</Label>
               <Input 
@@ -112,10 +112,10 @@ export default function ValidatePage() {
                 className="text-lg font-mono uppercase"
               />
             </div>
-            <div className="flex items-end">
-              <Button type="submit" size="lg" disabled={loading || !ticketId}>
+            <div className="flex items-end w-full sm:w-auto">
+              <Button type="submit" size="lg" disabled={loading || !ticketId} className="w-full sm:w-auto">
                 {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />}
-                <span className="ml-2 hidden sm:inline">Check</span>
+                <span className="ml-2 inline">Check</span>
               </Button>
             </div>
           </form>

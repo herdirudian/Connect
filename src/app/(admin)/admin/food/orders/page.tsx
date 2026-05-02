@@ -10,18 +10,75 @@ export default function AdminFoodOrdersPage() {
     const [orders, setOrders] = useState<any[]>([]);
     const [reservations, setReservations] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
+    const [live, setLive] = useState(true);
+    const [prevOrdersMap, setPrevOrdersMap] = useState<Map<string, string>>(new Map());
 
     useEffect(() => {
-        fetchData();
+        triggerFetch();
     }, [activeTab]);
 
-    async function fetchData() {
-        setLoading(true);
+    useEffect(() => {
+        if (!live) return;
+        const intervalId = setInterval(() => {
+            fetchData(true);
+        }, 7000);
+        const onVisibility = () => {
+            if (document.visibilityState === 'visible') fetchData(true);
+        };
+        document.addEventListener('visibilitychange', onVisibility);
+        return () => {
+            clearInterval(intervalId);
+            document.removeEventListener('visibilitychange', onVisibility);
+        };
+    }, [activeTab, live]);
+
+    function playTone(type: 'new' | 'paid') {
+        try {
+            const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
+            const o = ctx.createOscillator();
+            const g = ctx.createGain();
+            o.type = 'sine';
+            o.frequency.value = type === 'paid' ? 880 : 660; // higher for payment
+            g.gain.value = 0.05;
+            o.connect(g);
+            g.connect(ctx.destination);
+            o.start();
+            setTimeout(() => {
+                o.stop();
+                ctx.close();
+            }, type === 'paid' ? 600 : 300);
+        } catch {}
+    }
+
+    async function triggerFetch() {
+        await fetchData(false);
+    }
+
+    async function fetchData(silent?: boolean) {
+        if (!silent) setLoading(true);
         try {
             if (activeTab === 'orders') {
                 const res = await fetch('/api/admin/food/orders');
                 const data = await res.json();
-                if (Array.isArray(data)) setOrders(data);
+                if (Array.isArray(data)) {
+                    // Detect new orders and paid transitions
+                    const currentMap = new Map<string, string>();
+                    data.forEach((o: any) => currentMap.set(o.id, o.status || ''));
+                    if (prevOrdersMap.size > 0) {
+                        // New order
+                        const newOnes = data.filter((o: any) => !prevOrdersMap.has(o.id));
+                        if (newOnes.length > 0) playTone('new');
+                        // Paid transitions (PENDING -> CONFIRMED/COMPLETED)
+                        for (const [id, status] of currentMap.entries()) {
+                            const prev = prevOrdersMap.get(id);
+                            if (prev && prev === 'PENDING' && (status === 'CONFIRMED' || status === 'COMPLETED')) {
+                                playTone('paid');
+                            }
+                        }
+                    }
+                    setPrevOrdersMap(currentMap);
+                    setOrders(data);
+                }
             } else {
                 const res = await fetch('/api/admin/food/reservations');
                 const data = await res.json();
@@ -30,7 +87,7 @@ export default function AdminFoodOrdersPage() {
         } catch (e) {
             console.error(e);
         } finally {
-            setLoading(false);
+            if (!silent) setLoading(false);
         }
     }
 
@@ -43,7 +100,7 @@ export default function AdminFoodOrdersPage() {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ id, status })
             });
-            if (res.ok) fetchData();
+            if (res.ok) triggerFetch();
         } catch (e) {
             console.error(e);
         }
@@ -82,6 +139,17 @@ export default function AdminFoodOrdersPage() {
                         Reservations
                     </div>
                 </button>
+                {activeTab === 'orders' && (
+                  <div className="ml-auto flex items-center gap-3">
+                    <span className="inline-flex items-center gap-2 px-2 py-1 rounded-full text-xs font-bold border border-green-200">
+                      <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
+                      Live
+                    </span>
+                    <Button variant="outline" size="sm" onClick={() => setLive((v) => !v)}>
+                      {live ? 'Pause' : 'Resume'}
+                    </Button>
+                  </div>
+                )}
             </div>
 
             {loading ? (
@@ -109,7 +177,13 @@ export default function AdminFoodOrdersPage() {
                                                         {order.status}
                                                     </span>
                                                 </div>
-                                                <p className="text-sm text-gray-600">User: {order.user.name} ({order.user.email})</p>
+                                                <p className="text-sm text-gray-600">
+                                                    {order.user ? (
+                                                        <>User: {order.user.name} ({order.user.email})</>
+                                                    ) : (
+                                                        <>Room Service: Kamar {order.roomNumber || '-'} • {order.guestName || '-'} {order.guestPhone ? `(${order.guestPhone})` : ''}</>
+                                                    )}
+                                                </p>
                                                 <p className="text-sm text-gray-600">Restaurant: {order.restaurant.name}</p>
                                                 <p className="text-sm text-gray-500 mt-1">{new Date(order.createdAt).toLocaleString()}</p>
                                                 
@@ -117,9 +191,14 @@ export default function AdminFoodOrdersPage() {
                                                     <p className="font-semibold text-sm mb-1">Items:</p>
                                                     <ul className="text-sm space-y-1">
                                                         {order.items.map((item: any) => (
-                                                            <li key={item.id} className="flex justify-between w-64">
-                                                                <span>{item.quantity}x {item.menuItem.name}</span>
-                                                                <span className="text-gray-500">Rp {(item.price * item.quantity).toLocaleString()}</span>
+                                                            <li key={item.id} className="w-full">
+                                                                <div className="flex justify-between w-64">
+                                                                    <span>{item.quantity}x {item.menuItem.name}</span>
+                                                                    <span className="text-gray-500">Rp {(item.price * item.quantity).toLocaleString()}</span>
+                                                                </div>
+                                                                {item.requestNote && (
+                                                                    <div className="text-xs text-gray-500 italic mt-0.5">Catatan: {item.requestNote}</div>
+                                                                )}
                                                             </li>
                                                         ))}
                                                     </ul>

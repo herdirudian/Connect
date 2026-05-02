@@ -35,7 +35,8 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
         }
 
         const body = await req.json();
-        const { name, description, price, originalPrice, category, imageUrl, available } = body;
+        const { name, description, price, originalPrice, category, imageUrl, available, stock, soldOut, minOrderQty } = body;
+        const minQty = Math.max(1, parseInt(String(minOrderQty ?? 1), 10) || 1);
 
         const menuItem = await prisma.menuItem.create({
             data: {
@@ -46,7 +47,10 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
                 originalPrice: originalPrice ? parseFloat(originalPrice) : null,
                 category,
                 imageUrl,
-                available: available ?? true
+                available: available ?? true,
+                stock: stock === '' || stock === null || typeof stock === 'undefined' ? null : parseInt(String(stock), 10),
+                soldOut: !!soldOut,
+                minOrderQty: minQty
             }
         });
 

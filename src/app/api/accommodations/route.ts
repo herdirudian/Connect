@@ -3,6 +3,8 @@ import { prisma } from '@/lib/prisma';
 import { verifyToken } from '@/lib/auth';
 import { cookies } from 'next/headers';
 
+export const revalidate = 60; // Cache for 60 seconds
+
 export async function GET(req: Request) {
   try {
     const url = new URL(req.url);
@@ -92,7 +94,7 @@ export async function POST(req: Request) {
 
     const body = await req.json();
     console.log('Creating accommodation:', body);
-    const { name, capacity, price, originalPrice, stock, description, rating, benefits, imageUrl, images, active, receptionEmail } = body;
+    const { name, capacity, price, originalPrice, points, stock, description, rating, benefits, imageUrl, images, active, receptionEmail } = body;
 
     const accommodation = await prisma.accommodation.create({
       data: {
@@ -100,14 +102,15 @@ export async function POST(req: Request) {
         capacity,
         price: parseFloat(price),
         originalPrice: originalPrice ? parseFloat(originalPrice) : null,
+        points: points ? parseInt(points) : 0,
         stock: parseInt(stock) || 0,
         description,
         rating: parseFloat(rating),
         benefits: JSON.stringify(benefits || []),
         imageUrl,
         images: images || [],
-        active: active ?? true,
-        receptionEmail: receptionEmail || null,
+        active: active !== undefined ? active : true,
+        receptionEmail
       },
     });
 

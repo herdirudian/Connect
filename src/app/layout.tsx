@@ -59,6 +59,7 @@ export const metadata: Metadata = {
 };
 
 import { Toaster } from "@/components/ui/toaster";
+import Script from "next/script";
 
 export default function RootLayout({
   children,
@@ -70,6 +71,15 @@ export default function RootLayout({
       <body
         className={`${afNeueBerlin.variable} font-sans antialiased`}
       >
+        <Script src="https://www.googletagmanager.com/gtag/js?id=G-GEWZ1FHYZJ" strategy="afterInteractive" />
+        <Script id="gtag-init" strategy="afterInteractive">
+          {`
+            window.dataLayer = window.dataLayer || [];
+            function gtag(){dataLayer.push(arguments);}
+            gtag('js', new Date());
+            gtag('config', 'G-GEWZ1FHYZJ');
+          `}
+        </Script>
         {children}
         <Toaster />
       </body>

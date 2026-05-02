@@ -18,7 +18,16 @@ export type RedemptionHistoryItem = {
   title: string;
   description?: string;
   userName: string;
+  userEmail?: string;
+  amount?: number;
+  transactionId?: string;
   usedAt: Date;
+  items?: Array<{ name: string; qty: number; price: number }>;
+  pax?: number;
+  originalSubtotal?: number;
+  adminFee?: number;
+  discount?: number;
+  promoCode?: string;
 };
 
 export async function getTicketDetails(id: string): Promise<TicketValidationResult> {
@@ -26,7 +35,20 @@ export async function getTicketDetails(id: string): Promise<TicketValidationResu
     return { success: false, message: 'ID is required' };
   }
 
-  const searchId = id.trim();
+  let searchId = id.trim();
+
+  // URL handling: If input is a URL, try to extract 'code' param
+  if (searchId.startsWith('http')) {
+      try {
+          const url = new URL(searchId);
+          const codeParam = url.searchParams.get('code');
+          if (codeParam) {
+              searchId = codeParam.trim();
+          }
+      } catch (e) {
+          // invalid url, ignore
+      }
+  }
 
   try {
     // 0. Handle JSON (User QR - Access Pass)
@@ -37,7 +59,7 @@ export async function getTicketDetails(id: string): Promise<TicketValidationResu
                 const userId = parsed.id;
                 
                 // Fetch all items
-                const [tickets, vouchers, promoClaims] = await Promise.all([
+                const [tickets, vouchers, promoClaims, bookings] = await Promise.all([
                     prisma.ticket.findMany({
                         where: { userId, status: 'ACTIVE', validUntil: { gte: new Date() } },
                         include: { user: { select: { name: true, email: true, tier: true } } }
@@ -54,6 +76,17 @@ export async function getTicketDetails(id: string): Promise<TicketValidationResu
                         include: {
                             user: { select: { name: true, email: true, tier: true } },
                             promo: true
+                        }
+                    }),
+                    prisma.booking.findMany({
+                        where: { 
+                            userId, 
+                            paymentStatus: 'PAID',
+                            status: { notIn: ['CANCELLED', 'COMPLETED', 'USED'] },
+                            date: { gte: new Date(new Date().setHours(0,0,0,0)) } // Today or future
+                        },
+                        include: {
+                            user: { select: { name: true, email: true, tier: true } }
                         }
                     })
                 ]);
@@ -76,6 +109,48 @@ export async function getTicketDetails(id: string): Promise<TicketValidationResu
                     }
                 }
 
+                // Map bookings to list items
+                const activeBookings = bookings.map(b => {
+                    let title = `Booking ${b.type}`;
+                    let description = `Date: ${b.date.toLocaleDateString()}`;
+                    let pax = 0;
+                    let items: Array<{ id: string; name: string; qty: number; price: number }> = [];
+                    let ktpPromo: any = null;
+                    try {
+                        const details = JSON.parse(b.details);
+                        if (details.items && Array.isArray(details.items)) {
+                            title = details.items.map((i: any) => i.name).join(', ');
+                            description = `${details.items.length} Items - ${b.date.toLocaleDateString()}`;
+                            items = details.items.map((it: any) => ({
+                              id: it.id,
+                              name: it.name,
+                              qty: it.qty || 1,
+                              price: it.price || 0
+                            }));
+                            pax = items.reduce((s, it) => s + (it.qty || 1), 0);
+                        }
+                        if (details.ktpPromo) {
+                          ktpPromo = details.ktpPromo;
+                        }
+                    } catch (e) {}
+
+                    return {
+                        id: b.id,
+                        type: 'BOOKING',
+                        status: 'ACTIVE',
+                        validUntil: b.date,
+                        user: b.user,
+                        amount: b.amount,
+                        pax,
+                        items,
+                        ktpPromo,
+                        reward: { 
+                            name: title, 
+                            description: description 
+                        }
+                    };
+                });
+
                 const allItems = [
                     ...tickets.map(t => ({ 
                         ...t, 
@@ -83,7 +158,8 @@ export async function getTicketDetails(id: string): Promise<TicketValidationResu
                         reward: { name: t.title, description: t.description || 'Entry Ticket' } 
                     })),
                     ...vouchers.map(v => ({ ...v, type: 'VOUCHER' })),
-                    ...activePromos
+                    ...activePromos,
+                    ...activeBookings
                 ];
 
                 if (allItems.length === 0) {
@@ -169,7 +245,14 @@ export async function getTicketDetails(id: string): Promise<TicketValidationResu
     });
 
     if (ticket) {
-      return { success: true, message: 'Ticket found', type: 'TICKET', ticket, data: ticket };
+      // Normalize fields for UI details
+      const normalized = {
+        ...ticket,
+        amount: 0,
+        pax: 1,
+        items: ticket ? [{ id: ticket.id, name: ticket.title, qty: 1, price: 0 }] : []
+      };
+      return { success: true, message: 'Ticket found', type: 'TICKET', ticket: normalized, data: normalized };
     }
 
     // 2. Try to find as Voucher (UserReward)
@@ -195,7 +278,92 @@ export async function getTicketDetails(id: string): Promise<TicketValidationResu
     });
 
     if (voucher) {
-      return { success: true, message: 'Voucher found', type: 'VOUCHER', data: voucher };
+      const normalized = {
+        ...voucher,
+        amount: voucher.reward?.cost || 0,
+        pax: 1,
+        items: [{ id: voucher.id, name: voucher.reward?.name || 'Voucher', qty: 1, price: voucher.reward?.cost || 0 }]
+      };
+      return { success: true, message: 'Voucher found', type: 'VOUCHER', data: normalized };
+    }
+
+    // 2.5 Try to find as Booking (Attraction/Glamping)
+    const booking = await prisma.booking.findFirst({
+        where: {
+            OR: [
+                { id: searchId },
+                { id: { startsWith: searchId } }
+            ]
+        },
+        include: {
+            user: {
+                select: {
+                    name: true,
+                    email: true,
+                    tier: true
+                }
+            }
+        }
+    });
+
+    if (booking) {
+        // Map Booking to Ticket-like structure for UI
+        let status = 'ACTIVE';
+        if (booking.status === 'COMPLETED' || booking.status === 'USED') {
+            status = 'USED';
+        } else if (booking.status === 'CANCELLED') {
+            status = 'CANCELLED';
+        } else if (booking.paymentStatus !== 'PAID') {
+             status = 'EXPIRED'; // Treat unpaid as invalid/expired for scanner
+        }
+
+        let title = `Booking ${booking.type}`;
+        let description = `Date: ${booking.date.toLocaleDateString()}`;
+        let detailsObj: any = null;
+        try { detailsObj = JSON.parse(booking.details); } catch {}
+        if (detailsObj?.items && Array.isArray(detailsObj.items)) {
+          title = detailsObj.items.map((i: any) => i.name).join(', ');
+          description = `${detailsObj.items.length} Items - ${booking.date.toLocaleDateString()}`;
+        }
+
+        // Compute pax and include items for UI
+        let pax = 0;
+        let items: Array<{ id: string; name: string; qty: number; price: number }> = [];
+        if (detailsObj?.items && Array.isArray(detailsObj.items)) {
+          items = detailsObj.items.map((it: any) => ({
+            id: it.id,
+            name: it.name,
+            qty: it.qty || 1,
+            price: it.price || 0
+          }));
+          pax = items.reduce((s, it) => s + (it.qty || 1), 0);
+        }
+
+        const mappedTicket = {
+            id: booking.id,
+            title: title,
+            description: description,
+            status: status, 
+            validUntil: booking.date, 
+            usedAt: booking.updatedAt, 
+            user: booking.user,
+            type: 'BOOKING',
+            amount: booking.amount,
+            pax,
+            items,
+            ktpPromo: detailsObj?.ktpPromo || null
+        };
+
+        // Only return success if it's PAID or valid
+        if (booking.paymentStatus === 'PAID') {
+             return { 
+                success: true, 
+                message: 'Booking found', 
+                type: 'TICKET', 
+                ticket: mappedTicket, 
+                data: mappedTicket 
+            };
+        }
     }
 
     // 3. Try to find as PartnerPromoClaim (Manual entry support)
@@ -203,6 +371,7 @@ export async function getTicketDetails(id: string): Promise<TicketValidationResu
         where: {
             OR: [
                 { id: searchId },
+                { uniqueCode: searchId },
                 { id: { startsWith: searchId } },
                 { id: searchId.toLowerCase() },
                 { id: { startsWith: searchId.toLowerCase() } }
@@ -257,13 +426,13 @@ export async function getRedemptionHistory(limit: number = 20, dateStr?: string)
     lt: new Date(`${dateStr}T23:59:59.999`)
   } : undefined;
 
-  const [usedTickets, usedVouchers, promoTxs] = await Promise.all([
+  const [usedTickets, usedVouchers, promoTxs, usedBookings] = await Promise.all([
     prisma.ticket.findMany({
       where: { 
         status: 'USED', 
         usedAt: whereDate || { not: null } 
       },
-      include: { user: { select: { name: true } } },
+      include: { user: { select: { name: true, email: true } } },
       orderBy: { usedAt: 'desc' },
       take: limit,
     }),
@@ -272,7 +441,7 @@ export async function getRedemptionHistory(limit: number = 20, dateStr?: string)
         status: 'USED', 
         usedAt: whereDate || { not: null } 
       },
-      include: { user: { select: { name: true } }, reward: true },
+      include: { user: { select: { name: true, email: true } }, reward: true },
       orderBy: { usedAt: 'desc' },
       take: limit,
     }),
@@ -284,13 +453,22 @@ export async function getRedemptionHistory(limit: number = 20, dateStr?: string)
       orderBy: { createdAt: 'desc' },
       take: limit,
     }),
+    prisma.booking.findMany({
+      where: { 
+        status: { in: ['COMPLETED', 'USED'] },
+        updatedAt: whereDate ? whereDate : undefined
+      },
+      include: { user: { select: { name: true, email: true } } },
+      orderBy: { updatedAt: 'desc' },
+      take: limit,
+    }),
   ]);
 
   const promoIds = promoTxs.map(tx => tx.source?.split(':')[1]).filter(Boolean) as string[];
   const promoClaims = promoIds.length
     ? await prisma.partnerPromoClaim.findMany({
         where: { id: { in: promoIds } },
-        include: { promo: true, user: { select: { name: true } } },
+        include: { promo: true, user: { select: { name: true, email: true } } },
       })
     : [];
   const claimMap = new Map(promoClaims.map(c => [c.id, c]));
@@ -302,6 +480,11 @@ export async function getRedemptionHistory(limit: number = 20, dateStr?: string)
       title: t.title,
       description: t.description || 'Ticket',
       userName: t.user?.name || 'Unknown',
+      userEmail: t.user?.email || '',
+      amount: 0,
+      items: [{ name: t.title, qty: 1, price: 0 }],
+      pax: 1,
+      transactionId: t.id,
       usedAt: t.usedAt as Date,
     })),
     ...usedVouchers.map(v => ({
@@ -310,6 +493,11 @@ export async function getRedemptionHistory(limit: number = 20, dateStr?: string)
       title: v.reward?.name || 'Voucher',
       description: v.reward?.description || '',
       userName: v.user?.name || 'Unknown',
+      userEmail: v.user?.email || '',
+      amount: v.reward?.cost || 0,
+      items: [{ name: v.reward?.name || 'Voucher', qty: 1, price: v.reward?.cost || 0 }],
+      pax: 1,
+      transactionId: v.id,
       usedAt: v.usedAt as Date,
     })),
     ...promoTxs.map(tx => {
@@ -321,8 +509,54 @@ export async function getRedemptionHistory(limit: number = 20, dateStr?: string)
         title: claim?.promo?.title || 'Partner Promo',
         description: claim?.promo?.description || '',
         userName: claim?.user?.name || 'Unknown',
+        userEmail: claim?.user?.email || '',
+        amount: 0,
+        transactionId: tx.id,
         usedAt: tx.createdAt,
       };
+    }),
+    ...usedBookings.map(b => {
+        let title = `Booking ${b.type}`;
+        let itemsArr: Array<{ name: string; qty: number; price: number }> = [];
+        let pax = 0;
+        let originalSubtotal = 0;
+        let adminFee = 0;
+        let discount = 0;
+        let promoCode = '';
+        try {
+            const details = JSON.parse(b.details);
+            if (details.items && Array.isArray(details.items)) {
+                title = details.items.map((i: any) => i.name).join(', ');
+                itemsArr = details.items.map((i: any) => ({
+                  name: i.name,
+                  qty: i.qty || 1,
+                  price: i.price || 0
+                }));
+                pax = itemsArr.reduce((s, it) => s + (it.qty || 1), 0);
+            }
+            if (Number.isFinite(details.originalSubtotal)) originalSubtotal = details.originalSubtotal;
+            if (Number.isFinite(details.adminFee)) adminFee = details.adminFee;
+            if (details.promo && Number.isFinite(details.promo.discount)) discount = details.promo.discount;
+            if (details.promo && typeof details.promo.code === 'string') promoCode = details.promo.code;
+        } catch (e) {}
+
+        return {
+            id: b.id,
+            type: 'TICKET' as const, // Display as Ticket in history
+            title: title,
+            description: `Public Booking - ${b.date.toLocaleDateString()}`,
+            userName: b.user?.name || 'Guest',
+            userEmail: b.user?.email || '',
+            amount: b.amount,
+            items: itemsArr,
+            pax,
+            originalSubtotal: originalSubtotal || undefined,
+            adminFee: adminFee || undefined,
+            discount: discount || undefined,
+            promoCode: promoCode || undefined,
+            transactionId: b.id,
+            usedAt: b.updatedAt // Use updatedAt as redemption time for bookings
+        };
     }),
   ];
 
@@ -384,6 +618,43 @@ export async function redeemTicket(id: string): Promise<TicketValidationResult> 
       
       revalidatePath('/admin/validate');
       return { success: true, message: 'Voucher successfully redeemed', type: 'VOUCHER', data: updatedVoucher };
+    }
+
+    // 2.5 Try Booking
+    const booking = await prisma.booking.findUnique({ where: { id } });
+    if (booking) {
+         if (booking.status === 'COMPLETED' || booking.status === 'USED') {
+            return { success: false, message: `Booking is already ${booking.status}` };
+         }
+         if (booking.paymentStatus !== 'PAID') {
+            return { success: false, message: 'Booking is not PAID' };
+         }
+         
+         // Update status to COMPLETED
+         await prisma.booking.update({
+            where: { id },
+            data: { status: 'COMPLETED' }
+         });
+
+         // Map for return
+         let title = `Booking ${booking.type}`;
+         try {
+             const details = JSON.parse(booking.details);
+             if (details.items && Array.isArray(details.items)) {
+                 title = details.items.map((i: any) => i.name).join(', ');
+             }
+         } catch (e) {}
+         
+         const mappedData = {
+            id: booking.id,
+            title: title,
+            status: 'USED',
+            usedAt: new Date(),
+            type: 'BOOKING'
+         };
+
+         revalidatePath('/admin/validate');
+         return { success: true, message: 'Booking redeemed successfully', type: 'TICKET', data: mappedData };
     }
 
     // 3. Try Partner Promo Claim

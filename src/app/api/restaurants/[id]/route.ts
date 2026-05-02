@@ -10,7 +10,9 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
       where: { id },
       include: { 
         menuItems: { 
-            where: { available: true },
+            where: { 
+              available: true
+            },
             orderBy: { category: 'asc' }
         } 
       }
@@ -38,7 +40,8 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
 
     const { id } = await params;
     const body = await req.json();
-    const { name, type, description, status, imageUrl, menuUrl, active, allowReservations, allowOrders } = body;
+    const { name, type, description, status, imageUrl, menuUrl, active, allowReservations, allowOrders, minOrderAmount } = body;
+    const minOrder = Number.isFinite(Number(minOrderAmount)) ? Number(minOrderAmount) : 0;
 
     try {
       const restaurant = await prisma.restaurant.update({
@@ -53,6 +56,7 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
           active: active ?? true,
           allowReservations: allowReservations ?? true,
           allowOrders: allowOrders ?? true,
+          minOrderAmount: minOrder,
         },
       });
       return NextResponse.json(restaurant);

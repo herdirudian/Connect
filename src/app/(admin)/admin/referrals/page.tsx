@@ -70,7 +70,7 @@ export default function AdminReferralSettingsPage() {
         </div>
       </div>
 
-      <div className="grid gap-6 md:grid-cols-2">
+      <div className="grid gap-6 grid-cols-1 md:grid-cols-2">
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
@@ -133,7 +133,7 @@ export default function AdminReferralSettingsPage() {
       </div>
 
       <div className="flex justify-end">
-        <Button onClick={handleSave} disabled={saving} className="bg-brand hover:bg-brand-dark min-w-[150px]">
+        <Button onClick={handleSave} disabled={saving} className="bg-brand hover:bg-brand-dark min-w-[150px] w-full sm:w-auto">
           {saving ? (
             <>
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />

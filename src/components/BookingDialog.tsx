@@ -37,7 +37,10 @@ export function BookingDialog({ item, allItems = [], open, onOpenChange, initial
   const [fetchingAvailability, setFetchingAvailability] = useState(false);
   
   const [recipientEmail, setRecipientEmail] = useState<string>('');
-  const [paymentMethod, setPaymentMethod] = useState<string>('VA');
+  const [promoCode, setPromoCode] = useState<string>('');
+  const [promoApplying, setPromoApplying] = useState(false);
+  const [promoDiscount, setPromoDiscount] = useState(0);
+  const [paymentMethod, setPaymentMethod] = useState<string>(PAYMENT_METHODS[0]?.id || 'BCA_VA');
   const [agreedToTerms, setAgreedToTerms] = useState(false);
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
@@ -64,6 +67,8 @@ export function BookingDialog({ item, allItems = [], open, onOpenChange, initial
       // We don't need to populate inventory here anymore because we use props as fallback
       // when inventory is empty. This prevents 'stale' inventory if date matches initialDate.
       setInventory([]);
+      setPromoCode('');
+      setPromoDiscount(0);
     }
   }, [open, initialDate, item, allItems, maxQty]);
 
@@ -75,9 +80,26 @@ export function BookingDialog({ item, allItems = [], open, onOpenChange, initial
       // If date is empty or item is missing, do nothing
       if (!date || !item) return;
       
-      // Only fetch availability for GLAMPING (Accommodation) items
-      // WAHANA (Attractions) do not have daily allotment logic yet
-      if (item.type !== 'GLAMPING') return;
+      // Fetch availability/pricing based on type
+      if (item.type !== 'GLAMPING') {
+        // For WAHANA, fetch attractions with effective pricing for date
+        try {
+          const res = await fetch(`/api/attractions?date=${date}`);
+          const data = await res.json();
+          if (Array.isArray(data)) {
+            setInventory(data.map((i: any) => ({
+              id: i.id,
+              name: i.name,
+              price: i.price,
+              originalPrice: i.originalPrice,
+              type: 'WAHANA'
+            })));
+          }
+        } catch (e) {
+          // Ignore silently; UI falls back to props prices
+        }
+        return;
+      }
 
       // If date matches initialDate, revert to props data (which is presumed correct for initialDate)
       // This handles the case where user changes date away and then back to initial
@@ -198,9 +220,87 @@ export function BookingDialog({ item, allItems = [], open, onOpenChange, initial
 
   const subtotal = cartItems.reduce((sum, i) => sum + (i.price * i.qty), 0);
   const adminFee = calculateFee(subtotal, paymentMethod);
-  const totalPrice = subtotal + adminFee;
+  const totalPrice = subtotal + adminFee - promoDiscount;
 
   const isCartInvalid = cartItems.some(i => i.availability !== undefined && i.qty > i.availability);
+
+  const cartPayloadItems = cartItems.map(i => ({
+    id: i.id,
+    name: i.name,
+    qty: i.qty,
+    price: i.price
+  }));
+
+  async function handleApplyPromo() {
+    if (!promoCode) {
+      toast({
+        title: "Kode promo wajib diisi",
+        description: "Silakan masukkan kode promo terlebih dahulu.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    if (cartPayloadItems.length === 0) {
+      toast({
+        title: "Keranjang kosong",
+        description: "Tambahkan item sebelum menggunakan kode promo.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setPromoApplying(true);
+    try {
+      const res = await fetch('/api/promocodes/validate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          code: promoCode,
+          type: item!.type,
+          items: cartPayloadItems,
+          paymentMethod
+        })
+      });
+
+      const contentType = res.headers.get('content-type') || '';
+      let data: any = null;
+
+      if (contentType.includes('application/json')) {
+        data = await res.json();
+      } else {
+        const text = await res.text();
+        console.error('Promo validate non-JSON response:', text);
+        throw new Error('Server mengirim respons tidak valid untuk kode promo.');
+      }
+
+      if (!res.ok || !data.valid) {
+        setPromoDiscount(0);
+        toast({
+          title: "Kode promo tidak dapat digunakan",
+          description: data.error || 'Silakan periksa kembali kode promo Anda.',
+          variant: "destructive"
+        });
+        return;
+      }
+
+      setPromoCode(data.code);
+      setPromoDiscount(data.discount);
+      toast({
+        title: "Kode promo berhasil diterapkan",
+        description: data.description || `Potongan sebesar ${new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(data.discount)} telah diterapkan.`,
+      });
+    } catch (error: any) {
+      setPromoDiscount(0);
+      toast({
+        title: "Error",
+        description: error.message || 'Gagal memproses kode promo.',
+        variant: "destructive"
+      });
+    } finally {
+      setPromoApplying(false);
+    }
+  }
 
   async function handleBooking() {
     if (!date) {
@@ -233,16 +333,12 @@ export function BookingDialog({ item, allItems = [], open, onOpenChange, initial
           date: new Date(date).toISOString(),
           amount: totalPrice,
           paymentMethod,
+          promoCode: promoDiscount > 0 ? promoCode : undefined,
           details: {
             recipientEmail: recipientEmail || undefined,
             paymentMethodName: PAYMENT_METHODS.find(m => m.id === paymentMethod)?.label,
             adminFee: adminFee,
-            items: cartItems.map(i => ({
-                id: i.id,
-                name: i.name,
-                qty: i.qty,
-                price: i.price
-            }))
+            items: cartPayloadItems
           }
         }),
       });
@@ -420,6 +516,27 @@ export function BookingDialog({ item, allItems = [], open, onOpenChange, initial
             </select>
           </div>
 
+          <div className="space-y-2">
+            <Label htmlFor="promo">Kode Promo</Label>
+            <div className="flex gap-2">
+              <Input 
+                id="promo"
+                placeholder="Masukkan kode promo"
+                value={promoCode}
+                onChange={(e) => setPromoCode(e.target.value.toUpperCase())}
+                className="flex-1"
+              />
+              <Button 
+                type="button"
+                variant="outline"
+                onClick={handleApplyPromo}
+                disabled={promoApplying || cartItems.length === 0}
+              >
+                {promoApplying ? 'Checking...' : 'Apply'}
+              </Button>
+            </div>
+          </div>
+
           <div className="bg-gray-50 p-4 rounded-xl border border-gray-100 mt-4">
             <div className="flex justify-between items-center mb-2">
               <span className="text-gray-600 text-sm">Subtotal</span>
@@ -433,6 +550,14 @@ export function BookingDialog({ item, allItems = [], open, onOpenChange, initial
                 {new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(adminFee)}
               </span>
             </div>
+            {promoDiscount > 0 && (
+              <div className="flex justify-between items-center mb-2">
+                <span className="text-gray-600 text-sm">Promo Discount</span>
+                <span className="font-medium text-red-500">
+                  -{new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(promoDiscount)}
+                </span>
+              </div>
+            )}
             <div className="flex justify-between items-center text-lg font-black text-brand-dark pt-2 border-t border-gray-200">
               <span>Total Payment</span>
               <span>

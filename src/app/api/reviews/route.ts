@@ -3,24 +3,29 @@ import { prisma } from '@/lib/prisma';
 import { verifyToken } from '@/lib/auth';
 import { cookies } from 'next/headers';
 
+export const dynamic = 'force-dynamic';
+
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
   const accommodationId = searchParams.get('accommodationId');
   const restaurantId = searchParams.get('restaurantId');
+  const attractionId = searchParams.get('attractionId');
+  const bookingId = searchParams.get('bookingId');
   const limit = parseInt(searchParams.get('limit') || '10');
 
-  if (!accommodationId && !restaurantId) {
+  if (!accommodationId && !restaurantId && !attractionId && !bookingId) {
     return NextResponse.json({ error: 'Target ID required' }, { status: 400 });
   }
 
   try {
+    const whereClause: any = {};
+    if (accommodationId) whereClause.accommodationId = accommodationId;
+    if (restaurantId) whereClause.restaurantId = restaurantId;
+    if (attractionId) whereClause.attractionId = attractionId;
+    if (bookingId) whereClause.bookingId = bookingId;
+
     const reviews = await prisma.review.findMany({
-      where: {
-        OR: [
-          { accommodationId: accommodationId || undefined },
-          { restaurantId: restaurantId || undefined }
-        ]
-      },
+      where: whereClause,
       include: {
         user: {
           select: {
@@ -55,7 +60,7 @@ export async function POST(req: Request) {
 
   try {
     const body = await req.json();
-    const { rating, comment, bookingId, foodOrderId, accommodationId, restaurantId } = body;
+    const { rating, comment, bookingId, foodOrderId, accommodationId, restaurantId, attractionId } = body;
 
     if (!rating || rating < 1 || rating > 5) {
       return NextResponse.json({ error: 'Invalid rating' }, { status: 400 });
@@ -117,7 +122,8 @@ export async function POST(req: Request) {
         bookingId,
         foodOrderId,
         accommodationId,
-        restaurantId
+        restaurantId,
+        attractionId
       }
     });
 
@@ -140,6 +146,17 @@ export async function POST(req: Request) {
       });
       await prisma.restaurant.update({
         where: { id: restaurantId },
+        data: { rating: agg._avg.rating || 0 }
+      });
+    }
+
+    if (attractionId) {
+      const agg = await prisma.review.aggregate({
+        where: { attractionId },
+        _avg: { rating: true }
+      });
+      await prisma.attraction.update({
+        where: { id: attractionId },
         data: { rating: agg._avg.rating || 0 }
       });
     }

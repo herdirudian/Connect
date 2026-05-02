@@ -3,9 +3,10 @@
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Ticket } from 'lucide-react';
+import { Ticket, Star } from 'lucide-react';
 import Image from 'next/image';
 import { BookingDialog } from '@/components/BookingDialog';
+import { ReviewsListDialog } from '@/components/reviews/reviews-list-dialog';
 import Link from 'next/link';
 
 interface Attraction {
@@ -17,6 +18,7 @@ interface Attraction {
   imageUrl?: string;
   active: boolean;
   originalPrice?: number;
+  rating?: number;
 }
 
 export default function TicketsPage() {
@@ -24,6 +26,9 @@ export default function TicketsPage() {
   const [loading, setLoading] = useState(true);
   const [selectedItem, setSelectedItem] = useState<Attraction | null>(null);
   const [isBookingOpen, setIsBookingOpen] = useState(false);
+  
+  const [reviewsOpen, setReviewsOpen] = useState(false);
+  const [reviewTarget, setReviewTarget] = useState<{id: string, name: string} | null>(null);
 
   useEffect(() => {
     fetchAttractions();
@@ -31,7 +36,7 @@ export default function TicketsPage() {
 
   async function fetchAttractions() {
     try {
-      const res = await fetch('/api/attractions');
+      const res = await fetch('/api/attractions', { cache: 'no-store' });
       const data = await res.json();
       setAttractions(data);
     } catch (error) {
@@ -44,6 +49,11 @@ export default function TicketsPage() {
   const handleBook = (item: Attraction) => {
     setSelectedItem(item);
     setIsBookingOpen(true);
+  };
+
+  const handleShowReviews = (item: Attraction) => {
+    setReviewTarget({ id: item.id, name: item.name });
+    setReviewsOpen(true);
   };
 
   return (
@@ -86,6 +96,14 @@ export default function TicketsPage() {
               <CardHeader className="pb-2 pt-6 px-6">
                 <div className="flex justify-between items-start gap-4">
                   <CardTitle className="text-xl font-black text-gray-900 leading-tight uppercase tracking-tight">{item.name}</CardTitle>
+                </div>
+                <div 
+                  className="flex items-center gap-1 mt-1 cursor-pointer hover:bg-gray-50 p-1 -ml-1 rounded-lg w-fit transition-colors"
+                  onClick={() => handleShowReviews(item)}
+                >
+                   <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
+                   <span className="font-bold text-gray-900 text-sm">{item.rating?.toFixed(1) || '0.0'}</span>
+                   <span className="text-xs text-gray-500 font-medium ml-1">See Reviews</span>
                 </div>
                 <div className="mt-2">
                   {item.originalPrice && item.originalPrice > item.price && (
@@ -150,6 +168,14 @@ export default function TicketsPage() {
         }))}
         open={isBookingOpen}
         onOpenChange={setIsBookingOpen}
+      />
+
+      <ReviewsListDialog 
+        open={reviewsOpen}
+        onOpenChange={setReviewsOpen}
+        targetId={reviewTarget?.id || ''}
+        targetName={reviewTarget?.name || ''}
+        type="attraction"
       />
     </div>
   );

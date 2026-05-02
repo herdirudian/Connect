@@ -49,6 +49,16 @@ export default function RestaurantDetails({ params }: { params: Promise<{ id: st
 
   const handleCheckout = async () => {
     if (cartTotal === 0) return;
+    const itemsToCheck = Object.entries(cart).map(([menuItemId, quantity]) => {
+      const item = restaurant?.menuItems?.find((i: any) => i.id === menuItemId);
+      const minQty = Math.max(1, Number(item?.minOrderQty) || 1);
+      return { name: item?.name || 'Item', quantity, minQty };
+    });
+    const invalid = itemsToCheck.find(i => i.quantity > 0 && i.quantity < i.minQty);
+    if (invalid) {
+      toast({ title: "Minimal order item belum terpenuhi", description: `${invalid.name}: minimal ${invalid.minQty}`, variant: "destructive" });
+      return;
+    }
     setOrdering(true);
     
     const items = Object.entries(cart).map(([menuItemId, quantity]) => {

@@ -1,4 +1,5 @@
 import { PrismaClient } from '@prisma/client'
+import '@/lib/paymentScheduler'
 
 const globalForPrisma = global as unknown as { prisma: PrismaClient }
 

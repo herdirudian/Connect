@@ -6,12 +6,23 @@ import { createPortal } from 'react-dom';
 import Image from 'next/image';
 import Link from 'next/link';
 import { Card, CardContent } from '@/components/ui/card';
-import { X, ZoomIn } from 'lucide-react';
+import { X, ZoomIn, Ticket, Calendar } from 'lucide-react';
+
+interface ActiveItem {
+  id: string;
+  type: string;
+  name: string;
+  category: string;
+  date: string | null;
+  status: string;
+}
 
 export default function MemberCard({ user }: { user: any }) {
   const [qrUrl, setQrUrl] = useState('');
   const [showQrModal, setShowQrModal] = useState(false);
   const [tiers, setTiers] = useState<any[]>([]);
+  const [activeItems, setActiveItems] = useState<ActiveItem[]>([]);
+  const [loadingItems, setLoadingItems] = useState(false);
 
   useEffect(() => {
     if (user?.id) {
@@ -24,6 +35,27 @@ export default function MemberCard({ user }: { user: any }) {
   useEffect(() => {
     fetchTiers();
   }, []);
+
+  useEffect(() => {
+    if (showQrModal) {
+      fetchActiveItems();
+    }
+  }, [showQrModal]);
+
+  async function fetchActiveItems() {
+    setLoadingItems(true);
+    try {
+      const res = await fetch('/api/user/active-items');
+      if (res.ok) {
+        const data = await res.json();
+        setActiveItems(data);
+      }
+    } catch (error) {
+      console.error('Failed to fetch active items', error);
+    } finally {
+      setLoadingItems(false);
+    }
+  }
 
   async function fetchTiers() {
     try {
@@ -114,31 +146,69 @@ export default function MemberCard({ user }: { user: any }) {
         {/* QR Code Modal - Moved to Portal */}
         {showQrModal && createPortal(
            <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
-              <div className="bg-white rounded-3xl p-8 max-w-sm w-full relative shadow-2xl animate-in zoom-in-95 duration-200" onClick={(e) => e.stopPropagation()}>
+              <div className="bg-white rounded-3xl p-6 max-w-md w-full relative shadow-2xl animate-in zoom-in-95 duration-200 flex flex-col max-h-[90vh]" onClick={(e) => e.stopPropagation()}>
                  <button 
                     onClick={() => setShowQrModal(false)}
-                    className="absolute top-4 right-4 p-2 bg-gray-100 hover:bg-gray-200 rounded-full transition-colors"
+                    className="absolute top-4 right-4 p-2 bg-gray-100 hover:bg-gray-200 rounded-full transition-colors z-10"
                  >
                     <X className="h-6 w-6 text-gray-600" />
                  </button>
                  
-                 <div className="text-center space-y-6">
+                 <div className="text-center space-y-4 shrink-0">
                     <div>
                        <h3 className="text-2xl font-black text-brand-dark uppercase tracking-tight">Access Pass</h3>
                        <p className="text-gray-500 font-medium text-sm">Scan at the gate</p>
                     </div>
                     
                     <div className="bg-white border-2 border-brand-100 p-4 rounded-3xl inline-block shadow-lg">
-                       <img src={qrUrl} alt="Large Member QR" className="w-64 h-64 mix-blend-multiply" />
+                       <img src={qrUrl} alt="Large Member QR" className="w-48 h-48 mix-blend-multiply" />
                     </div>
 
                     <div>
-                       <p className="font-bold text-lg text-gray-900">{user.name}</p>
-                       <p className="text-brand font-bold uppercase tracking-widest text-xs">{user.tier || 'MEMBER'}</p>
-                    </div>
-                 </div>
-              </div>
-              <div className="absolute inset-0 -z-10" onClick={() => setShowQrModal(false)}></div>
+                      <p className="font-bold text-lg text-gray-900">{user.name}</p>
+                      <p className="text-brand font-bold uppercase tracking-widest text-xs mb-1">{user.tier || 'MEMBER'}</p>
+                      <div className="flex items-center justify-center gap-2 mt-2">
+                         <p className="text-sm text-gray-800 font-black font-mono bg-yellow-100 px-4 py-2 rounded-lg border border-yellow-200 shadow-sm tracking-wider">
+                            ID: {user.id}
+                         </p>
+                      </div>
+                   </div>
+                </div>
+
+                {/* Active Items Section */}
+                <div className="mt-6 border-t border-gray-100 pt-4 flex-1 overflow-y-auto min-h-0">
+                   <h4 className="text-sm font-bold text-gray-500 uppercase tracking-wider mb-3 text-center">Your Active Items</h4>
+                   {loadingItems ? (
+                      <div className="text-center py-4 text-gray-400 text-sm">Loading items...</div>
+                   ) : activeItems.length > 0 ? (
+                      <div className="space-y-3">
+                         {activeItems.map((item) => (
+                            <div key={item.id} className="bg-gray-50 p-3 rounded-xl border border-gray-100 flex items-start gap-3">
+                               <div className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 ${item.type === 'VOUCHER' ? 'bg-purple-100 text-purple-600' : 'bg-blue-100 text-blue-600'}`}>
+                                  {item.type === 'VOUCHER' ? <Ticket size={18} /> : <Calendar size={18} />}
+                               </div>
+                               <div className="flex-1 min-w-0 text-left">
+                                  <p className="font-bold text-gray-900 text-sm truncate">{item.name}</p>
+                                  <div className="flex items-center gap-2 mt-0.5">
+                                     <span className="text-xs text-gray-500 font-medium">{item.category}</span>
+                                     {item.date && (
+                                        <span className="text-[10px] bg-white px-1.5 py-0.5 rounded border border-gray-200 text-gray-500">
+                                           {new Date(item.date).toLocaleDateString('id-ID', { day: 'numeric', month: 'short' })}
+                                        </span>
+                                     )}
+                                  </div>
+                               </div>
+                            </div>
+                         ))}
+                      </div>
+                   ) : (
+                      <div className="text-center py-4 text-gray-400 text-sm bg-gray-50 rounded-xl border border-dashed border-gray-200">
+                         No active vouchers or bookings found.
+                      </div>
+                   )}
+                </div>
+             </div>
+             <div className="absolute inset-0 -z-10" onClick={() => setShowQrModal(false)}></div>
            </div>,
            document.body
         )}
@@ -178,6 +248,7 @@ export default function MemberCard({ user }: { user: any }) {
              <div className="text-right">
                 <p className="text-xs text-brand-100 uppercase tracking-wider mb-1">Joined Date</p>
                 <p className="text-sm font-medium">{new Date(user.createdAt).toLocaleDateString('id-ID', { year: 'numeric', month: 'long', day: 'numeric' })}</p>
+                <p className="text-[10px] text-white/50 font-mono mt-1">#{user.id.substring(0,8)}</p>
              </div>
           </div>
         </div>

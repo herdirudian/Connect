@@ -7,6 +7,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { CheckCircle, XCircle, Search, Ticket, Gift, Tag, Calendar } from 'lucide-react';
 import { getTicketDetails, redeemTicket, TicketValidationResult, getRedemptionHistory, RedemptionHistoryItem } from '@/app/actions/ticket';
 import { useToast } from '@/hooks/use-toast';
+import RedeemReceiptButton from '@/components/RedeemReceiptButton';
 
 export default function AdminScanPage() {
   const [code, setCode] = useState('');
@@ -14,7 +15,13 @@ export default function AdminScanPage() {
   const [selectedItem, setSelectedItem] = useState<any>(null);
   const [loading, setLoading] = useState(false);
   const [history, setHistory] = useState<RedemptionHistoryItem[]>([]);
-  const [dateFilter, setDateFilter] = useState<string>('');
+  const [dateFilter, setDateFilter] = useState<string>(() => {
+    const today = new Date();
+    const year = today.getFullYear();
+    const month = String(today.getMonth() + 1).padStart(2, '0');
+    const day = String(today.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  });
   const { toast } = useToast();
 
   useEffect(() => {
@@ -119,6 +126,13 @@ export default function AdminScanPage() {
     let status = item.status;
     let id = item.id;
     let Icon = Ticket;
+    const amount: number | undefined = item.amount !== undefined ? item.amount : undefined;
+    const pax: number | undefined = item.pax !== undefined ? item.pax : (Array.isArray(item.items) ? item.items.reduce((s: number, it: any) => s + (it.qty || 1), 0) : undefined);
+    const items: Array<{ name: string; qty: number; price: number }> | undefined =
+      Array.isArray(item.items)
+        ? item.items.map((it: any) => ({ name: it.name, qty: it.qty || 1, price: it.price || 0 }))
+        : undefined;
+    const ktpPromo = item.ktpPromo || null;
 
     if (type === 'VOUCHER') {
         title = item.reward?.name || 'Voucher';
@@ -134,28 +148,28 @@ export default function AdminScanPage() {
         Icon = Ticket;
     }
 
-    return { title, description, userName, status, id, Icon };
+    return { title, description, userName, status, id, Icon, amount, pax, items, ktpPromo };
   };
 
   const display = getDisplayData();
 
   return (
-    <div className="max-w-2xl mx-auto space-y-8">
+    <div className="max-w-full md:max-w-2xl mx-auto space-y-8">
       <div>
         <h2 className="text-3xl font-black text-brand-dark uppercase tracking-tight">Scan Voucher</h2>
         <p className="text-gray-500 font-medium mt-1">Verify and redeem member vouchers, tickets, and promos</p>
       </div>
 
       <Card className="border-none shadow-lg">
-        <CardContent className="p-8">
-          <form onSubmit={handleSearch} className="flex gap-4 mb-8">
+        <CardContent className="p-4 sm:p-8">
+          <form onSubmit={handleSearch} className="flex flex-col sm:flex-row gap-4 mb-8">
             <Input 
               placeholder="Enter code (Ticket, Voucher, Promo)..." 
               value={code}
               onChange={(e) => setCode(e.target.value)}
               className="h-12 text-lg font-mono uppercase"
             />
-            <Button type="submit" className="h-12 px-8 bg-brand-dark hover:bg-brand" disabled={loading}>
+            <Button type="submit" className="h-12 w-full sm:w-auto px-8 bg-brand-dark hover:bg-brand" disabled={loading}>
               <Search className="h-5 w-5" />
             </Button>
           </form>
@@ -212,7 +226,7 @@ export default function AdminScanPage() {
                <h3 className="text-2xl font-black text-gray-900 mb-2">{display.title}</h3>
                <p className="text-gray-500 font-medium mb-6">{display.description}</p>
                
-               <div className="grid grid-cols-2 gap-4 mb-8 text-left max-w-sm mx-auto bg-white p-4 rounded-xl shadow-sm">
+              <div className="grid grid-cols-2 gap-4 mb-8 text-left max-w-sm mx-auto bg-white p-4 rounded-xl shadow-sm">
                   <div>
                     <p className="text-xs text-gray-400 uppercase font-bold mb-1">Holder</p>
                     <p className="font-bold text-gray-900">{display.userName}</p>
@@ -228,6 +242,95 @@ export default function AdminScanPage() {
                     <p className="font-mono text-sm text-gray-600 break-all">{display.id}</p>
                   </div>
                </div>
+
+              {/* Extra detail: Ticket name, Customer, Price, Pax */}
+              <div className="grid grid-cols-2 gap-4 mb-8 text-left max-w-sm mx-auto bg-white p-4 rounded-xl shadow-sm">
+                 <div className="col-span-2">
+                   <p className="text-xs text-gray-400 uppercase font-bold mb-1">Nama Tiket</p>
+                   <p className="font-bold text-gray-900">{display.title}</p>
+                 </div>
+                 <div>
+                   <p className="text-xs text-gray-400 uppercase font-bold mb-1">Nama Customer</p>
+                   <p className="font-bold text-gray-900">{display.userName}</p>
+                 </div>
+                 <div>
+                   <p className="text-xs text-gray-400 uppercase font-bold mb-1">Jumlah Pax</p>
+                   <p className="font-bold text-gray-900">{display.pax ?? '-'}</p>
+                 </div>
+                 <div className="col-span-2">
+                   <p className="text-xs text-gray-400 uppercase font-bold mb-1">Harga</p>
+                   <p className="font-bold text-gray-900">
+                     {display.amount !== undefined 
+                      ? new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(display.amount)
+                      : '-'}
+                   </p>
+                 </div>
+              </div>
+
+              {/* Items table */}
+              {Array.isArray(display.items) && display.items.length > 0 && (
+                <div className="mb-8 max-w-2xl mx-auto w-full">
+                  <div className="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm">
+                    <div className="px-4 py-3 border-b border-gray-100 bg-gray-50">
+                      <p className="text-sm font-bold text-gray-700 uppercase tracking-wider">Detail Item</p>
+                    </div>
+                    <table className="w-full text-sm">
+                      <thead>
+                        <tr className="text-left text-gray-500 border-b border-gray-100">
+                          <th className="px-4 py-2">Nama</th>
+                          <th className="px-4 py-2 text-center">Qty</th>
+                          <th className="px-4 py-2 text-right">Harga</th>
+                          <th className="px-4 py-2 text-right">Subtotal</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {display.items.map((it, idx) => {
+                          const subtotal = (it.qty || 1) * (it.price || 0);
+                          return (
+                            <tr key={idx} className="border-b border-gray-100">
+                              <td className="px-4 py-2 font-medium text-gray-900">{it.name}</td>
+                              <td className="px-4 py-2 text-center">{it.qty}</td>
+                              <td className="px-4 py-2 text-right">
+                                {new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(it.price)}
+                              </td>
+                              <td className="px-4 py-2 text-right">
+                                {new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(subtotal)}
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                      <tfoot>
+                        <tr>
+                          <td className="px-4 py-3 text-right font-bold text-gray-700" colSpan={3}>Total</td>
+                          <td className="px-4 py-3 text-right font-bold text-gray-900">
+                            {new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(
+                              display.items.reduce((sum, it) => sum + (it.qty || 1) * (it.price || 0), 0)
+                            )}
+                          </td>
+                        </tr>
+                      </tfoot>
+                    </table>
+                  </div>
+                </div>
+              )}
+
+              {display.ktpPromo && (display.ktpPromo.province || display.ktpPromo.regency || display.ktpPromo.district) && (
+                <div className="grid grid-cols-1 gap-2 mb-8 text-left max-w-sm mx-auto bg-white p-4 rounded-xl shadow-sm">
+                  <div>
+                    <p className="text-xs text-gray-400 uppercase font-bold mb-1">Domisili (KTP)</p>
+                    <p className="font-bold text-gray-900">
+                      {[display.ktpPromo.province, display.ktpPromo.regency, display.ktpPromo.district].filter(Boolean).join(', ')}
+                    </p>
+                  </div>
+                  {display.ktpPromo.visitDate && (
+                    <div>
+                      <p className="text-xs text-gray-400 uppercase font-bold mb-1">Tanggal Kunjungan</p>
+                      <p className="font-bold text-gray-900">{display.ktpPromo.visitDate}</p>
+                    </div>
+                  )}
+                </div>
+              )}
 
                {display.status === 'ACTIVE' ? (
                   <Button onClick={() => handleRedeem(display.id)} disabled={loading} className="w-full bg-brand text-white hover:bg-brand-dark h-12 rounded-xl font-bold uppercase tracking-wider text-lg shadow-lg shadow-brand/20">
@@ -278,8 +381,21 @@ export default function AdminScanPage() {
                       <p className="text-xs text-gray-500">by {h.userName}</p>
                     </div>
                   </div>
-                  <div className="text-right">
+                  <div className="text-right flex flex-col items-end gap-2">
                     <span className="text-xs text-gray-500">{new Date(h.usedAt).toLocaleString('id-ID', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</span>
+                    <RedeemReceiptButton 
+                        transactionId={h.transactionId || h.id}
+                        description={h.title}
+                        amount={h.amount || 0}
+                        originalSubtotal={h.originalSubtotal}
+                        adminFee={h.adminFee}
+                        discount={h.discount}
+                        promoCode={h.promoCode}
+                        createdAt={new Date(h.usedAt).toISOString()}
+                        userName={h.userName}
+                        userEmail={h.userEmail || ''}
+                        items={h.items}
+                    />
                   </div>
                 </div>
               ))}

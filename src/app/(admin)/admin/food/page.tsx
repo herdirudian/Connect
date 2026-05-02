@@ -164,14 +164,20 @@ export default function AdminFoodPage() {
 
   return (
     <div className="space-y-8">
-      <div className="flex justify-between items-center">
+      <div className="flex flex-col xl:flex-row justify-between items-start xl:items-center gap-4">
         <div>
           <h2 className="text-3xl font-bold tracking-tight text-gray-900">Manage Food & Beverage</h2>
           <p className="text-muted-foreground">Add or edit restaurants and cafes.</p>
         </div>
-        <div className="flex gap-2">
-            <Button variant="outline" onClick={() => router.push('/admin/food/orders')}>
-                View Orders & Reservations
+        <div className="flex flex-col sm:flex-row gap-2 w-full xl:w-auto">
+            <Button variant="outline" onClick={() => router.push('/admin/food/orders-paid')} className="w-full sm:w-auto">
+                Paid Orders (Live)
+            </Button>
+            <Button variant="outline" onClick={() => router.push('/admin/food/transactions')} className="w-full sm:w-auto">
+                Transactions List
+            </Button>
+            <Button variant="outline" onClick={() => router.push('/admin/food/roomservice')} className="w-full sm:w-auto">
+                Room Service QR
             </Button>
             <Button 
               onClick={() => {
@@ -181,6 +187,7 @@ export default function AdminFoodPage() {
                     setIsAdding(true);
                 }
               }} 
+              className="w-full sm:w-auto"
             >
               {isAdding ? <><XCircle size={16} className="mr-2" /> Cancel</> : <><Plus size={16} className="mr-2" /> Add New</>}
             </Button>
@@ -305,7 +312,7 @@ export default function AdminFoodPage() {
         </Card>
       )}
 
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+      <div className="grid gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
         {restaurants.map((item) => (
           <Card key={item.id} className={`border-gray-200 shadow-sm hover:shadow-md transition-shadow ${!item.active ? 'opacity-60 bg-gray-50' : 'bg-white'}`}>
             <CardContent className="p-6">

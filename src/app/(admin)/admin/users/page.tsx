@@ -37,25 +37,25 @@ export default async function UsersPage({
 
   return (
     <div className="space-y-6">
-       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+       <div className="flex flex-col xl:flex-row justify-between items-start xl:items-center gap-4">
         <div>
           <h2 className="text-2xl font-bold text-gray-800">Manajemen Member</h2>
           <p className="text-gray-500">Lihat dan kelola data member aplikasi.</p>
         </div>
-        <div className="flex gap-2 w-full md:w-auto">
-            <a href="/api/admin/users/export" target="_blank" rel="noopener noreferrer">
-                <Button variant="outline">
+        <div className="flex flex-col sm:flex-row gap-2 w-full xl:w-auto">
+            <a href="/api/admin/users/export" target="_blank" rel="noopener noreferrer" className="w-full sm:w-auto">
+                <Button variant="outline" className="w-full sm:w-auto">
                     <Download className="mr-2 h-4 w-4" /> Export CSV
                 </Button>
             </a>
-            <form className="flex gap-2 flex-1 md:flex-none">
-                <div className="relative">
+            <form className="flex gap-2 flex-1 md:flex-none w-full sm:w-auto">
+                <div className="relative flex-1 sm:flex-none">
                     <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500" />
                     <Input 
                         name="q" 
                         defaultValue={q} 
                         placeholder="Cari nama, email, kode..." 
-                        className="pl-9 w-full md:w-[250px]" 
+                        className="pl-9 w-full sm:w-[250px]" 
                     />
                 </div>
                 <Button type="submit">Cari</Button>

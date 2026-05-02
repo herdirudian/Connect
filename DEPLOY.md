@@ -1,6 +1,6 @@
 # Deployment Guide for The Lodge Connect
 
-Since you are deploying to a VPS that already hosts another system, we will run this application on a specific port (e.g., `3001`) and use Nginx as a reverse proxy to serve it under `https://connect.thelodgegroup.id`.
+Since you are deploying to a VPS that already hosts another system, we will run this application on a specific port (e.g., `3001`) and use Nginx as a reverse proxy to serve it under `https://family.thelodgegroup.id`.
 
 ## 1. Preparation
 
@@ -82,12 +82,12 @@ pm2 startup
 
 Create a new Nginx configuration file for your domain.
 
-File: `/etc/nginx/sites-available/connect.thelodgegroup.id`
+File: `/etc/nginx/sites-available/family.thelodgegroup.id`
 
 ```nginx
 server {
     listen 80;
-    server_name connect.thelodgegroup.id;
+    server_name family.thelodgegroup.id;
 
     location / {
         proxy_pass http://localhost:3001; # Forward to Next.js app on port 3001
@@ -109,7 +109,7 @@ Enable the site and restart Nginx:
 
 ```bash
 # Link the configuration
-sudo ln -s /etc/nginx/sites-available/connect.thelodgegroup.id /etc/nginx/sites-enabled/
+sudo ln -s /etc/nginx/sites-available/family.thelodgegroup.id /etc/nginx/sites-enabled/
 
 # Test configuration
 sudo nginx -t
@@ -123,10 +123,10 @@ sudo systemctl restart nginx
 Use Certbot to secure your domain with HTTPS:
 
 ```bash
-sudo certbot --nginx -d connect.thelodgegroup.id
+sudo certbot --nginx -d family.thelodgegroup.id
 ```
 
 ## 8. Webhook Configuration (Xendit)
 
 Don't forget to update your Xendit Dashboard Webhook URL to:
-`https://connect.thelodgegroup.id/api/webhooks/xendit`
+`https://family.thelodgegroup.id/api/webhooks/xendit`

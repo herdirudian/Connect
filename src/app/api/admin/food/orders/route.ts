@@ -1,15 +1,26 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { verifyToken } from '@/lib/auth';
-import { cookies } from 'next/headers';
+import { PERMISSIONS } from '@/lib/permissions';
+import { getAuthUser } from '@/lib/serverAuth';
+
+function canRead(role: string, perms: string[]) {
+    if (role === 'ADMIN') return true;
+    return (
+        perms.includes(PERMISSIONS.MANAGE_FOOD) ||
+        perms.includes(PERMISSIONS.VIEW_RS_ORDERS) ||
+        perms.includes(PERMISSIONS.PROCESS_RS_ORDERS)
+    );
+}
+
+function canWrite(role: string, perms: string[]) {
+    if (role === 'ADMIN') return true;
+    return perms.includes(PERMISSIONS.MANAGE_FOOD) || perms.includes(PERMISSIONS.PROCESS_RS_ORDERS);
+}
 
 export async function GET(req: Request) {
     try {
-        const cookieStore = await cookies();
-        const token = cookieStore.get('token')?.value || '';
-        const decoded = verifyToken(token) as any;
-
-        if (!decoded || decoded.role !== 'ADMIN') {
+        const auth = await getAuthUser();
+        if (!auth || !canRead(auth.role, auth.permissions)) {
              return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
         }
 
@@ -30,11 +41,8 @@ export async function GET(req: Request) {
 
 export async function PATCH(req: Request) {
     try {
-        const cookieStore = await cookies();
-        const token = cookieStore.get('token')?.value || '';
-        const decoded = verifyToken(token) as any;
-
-        if (!decoded || decoded.role !== 'ADMIN') {
+        const auth = await getAuthUser();
+        if (!auth || !canWrite(auth.role, auth.permissions)) {
              return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
         }
 

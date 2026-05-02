@@ -156,14 +156,14 @@ export default function AdminRewardsPage() {
           <h2 className="text-2xl font-bold text-gray-800">Manajemen Rewards</h2>
           <p className="text-gray-500">Buat voucher dan atur penukaran poin.</p>
         </div>
-        <div className="flex gap-2">
-            <Link href="/admin/rewards/history">
-                <Button variant="outline" className="flex items-center gap-2">
+        <div className="flex flex-col sm:flex-row gap-2 w-full md:w-auto">
+            <Link href="/admin/rewards/history" className="w-full sm:w-auto">
+                <Button variant="outline" className="flex items-center gap-2 w-full sm:w-auto">
                     <History size={16} />
                     Riwayat Redeem
                 </Button>
             </Link>
-            <Button onClick={() => setIsAdding(true)} className="flex items-center gap-2">
+            <Button onClick={() => setIsAdding(true)} className="flex items-center gap-2 w-full sm:w-auto">
             <Plus size={16} />
             Tambah Reward
             </Button>
@@ -268,7 +268,7 @@ export default function AdminRewardsPage() {
         </Card>
       )}
 
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+      <div className="grid gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
         {rewards.map((item) => (
           <Card key={item.id} className={`border-gray-200 shadow-sm hover:shadow-md transition-shadow ${!item.active ? 'opacity-60 bg-gray-50' : 'bg-white'}`}>
             <CardContent className="p-6">

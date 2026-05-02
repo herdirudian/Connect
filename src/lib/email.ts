@@ -1,25 +1,29 @@
 import nodemailer from 'nodemailer';
 import QRCode from 'qrcode';
+import jsPDF from 'jspdf';
 
 const transporter = nodemailer.createTransport({
   host: process.env.SMTP_HOST,
   port: parseInt(process.env.SMTP_PORT || '465'),
-  secure: process.env.SMTP_SECURE === 'true',
+  secure: process.env.SMTP_SECURE === 'true' || process.env.SMTP_SECURE === '1', // Handle 'true' string or '1'
   auth: {
     user: process.env.SMTP_USER,
     pass: process.env.SMTP_PASS,
   },
 });
 
+const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+
 export async function sendVerificationEmail(to: string, code: string) {
   const mailOptions = {
     from: process.env.FROM_EMAIL,
     to,
-    subject: 'Kode Verifikasi - The Lodge Connect',
+    subject: 'Kode Verifikasi - The Lodge Maribaya',
     html: `
       <div style="font-family: Arial, sans-serif; padding: 20px; color: #333; max-width: 600px; margin: 0 auto; border: 1px solid #eee; border-radius: 10px;">
         <div style="text-align: center; margin-bottom: 20px;">
-          <h2 style="color: #2e7d32; margin: 0;">The Lodge Connect</h2>
+          <img src="${APP_URL}/logotlm.png" alt="The Lodge Maribaya" style="height: 48px; margin-bottom: 8px;" />
+          <h2 style="color: #1b5e20; margin: 0;">The Lodge Maribaya</h2>
         </div>
         <div style="background-color: #f9f9f9; padding: 20px; border-radius: 8px; text-align: center;">
           <p style="margin-top: 0;">Kode verifikasi Anda adalah:</p>
@@ -46,11 +50,12 @@ export async function sendPasswordResetEmail(to: string, resetLink: string) {
   const mailOptions = {
     from: process.env.FROM_EMAIL,
     to,
-    subject: 'Reset Password - The Lodge Connect',
+    subject: 'Reset Password - The Lodge Maribaya',
     html: `
       <div style="font-family: Arial, sans-serif; padding: 20px; color: #333; max-width: 600px; margin: 0 auto; border: 1px solid #eee; border-radius: 10px;">
         <div style="text-align: center; margin-bottom: 20px;">
-          <h2 style="color: #2e7d32; margin: 0;">The Lodge Connect</h2>
+          <img src="${APP_URL}/logotlm.png" alt="The Lodge Maribaya" style="height: 48px; margin-bottom: 8px;" />
+          <h2 style="color: #1b5e20; margin: 0;">The Lodge Maribaya</h2>
         </div>
         <div style="background-color: #f9f9f9; padding: 20px; border-radius: 8px; text-align: center;">
           <p style="margin-top: 0;">Kami menerima permintaan untuk mereset password Anda.</p>
@@ -86,11 +91,12 @@ export async function sendRewardClaimEmail(to: string, userName: string, rewardN
     const mailOptions = {
       from: process.env.FROM_EMAIL,
       to,
-      subject: `Tiket/Voucher Anda: ${rewardName} - The Lodge Connect`,
+      subject: `Tiket/Voucher Anda: ${rewardName} - The Lodge Maribaya`,
       html: `
         <div style="font-family: Arial, sans-serif; padding: 20px; color: #333; max-width: 600px; margin: 0 auto; border: 1px solid #eee; border-radius: 10px;">
           <div style="text-align: center; margin-bottom: 20px;">
-            <h2 style="color: #2e7d32; margin: 0;">The Lodge Connect</h2>
+            <img src="${APP_URL}/logotlm.png" alt="The Lodge Maribaya" style="height: 48px; margin-bottom: 8px;" />
+            <h2 style="color: #1b5e20; margin: 0;">The Lodge Maribaya</h2>
           </div>
           <div style="background-color: #f9f9f9; padding: 20px; border-radius: 8px; text-align: center;">
             <p style="margin-top: 0; font-size: 16px;">Halo <strong>${userName}</strong>,</p>
@@ -136,11 +142,12 @@ export async function sendPartnerPromoEmail(to: string, userName: string, promoT
     const mailOptions = {
       from: process.env.FROM_EMAIL,
       to,
-      subject: `Voucher Promo Partner: ${promoTitle} - The Lodge Connect`,
+      subject: `Voucher Promo Partner: ${promoTitle} - The Lodge Maribaya`,
       html: `
         <div style="font-family: Arial, sans-serif; padding: 20px; color: #333; max-width: 600px; margin: 0 auto; border: 1px solid #eee; border-radius: 10px;">
           <div style="text-align: center; margin-bottom: 20px;">
-            <h2 style="color: #2e7d32; margin: 0;">The Lodge Connect</h2>
+            <img src="${APP_URL}/logotlm.png" alt="The Lodge Maribaya" style="height: 48px; margin-bottom: 8px;" />
+            <h2 style="color: #1b5e20; margin: 0;">The Lodge Maribaya</h2>
           </div>
           <div style="background-color: #f9f9f9; padding: 20px; border-radius: 8px; text-align: center;">
             <p style="margin-top: 0; font-size: 16px;">Halo <strong>${userName}</strong>,</p>
@@ -186,11 +193,12 @@ export async function sendBookingPendingEmail(to: string, userName: string, book
   const mailOptions = {
     from: process.env.FROM_EMAIL,
     to,
-    subject: `Menunggu Pembayaran - Family The Lodge`,
+    subject: `Menunggu Pembayaran - The Lodge Maribaya`,
     html: `
       <div style="font-family: Arial, sans-serif; padding: 20px; color: #333; max-width: 600px; margin: 0 auto; border: 1px solid #eee; border-radius: 10px;">
         <div style="text-align: center; margin-bottom: 20px;">
-          <h2 style="color: #2e7d32; margin: 0;">Family The Lodge</h2>
+          <img src="${APP_URL}/logotlm.png" alt="The Lodge Maribaya" style="height: 48px; margin-bottom: 8px;" />
+          <h2 style="color: #1b5e20; margin: 0;">E‑Voucher The Lodge Maribaya</h2>
         </div>
         <div style="background-color: #f9f9f9; padding: 20px; border-radius: 8px; text-align: center;">
           <p style="margin-top: 0; font-size: 16px;">Halo <strong>${userName}</strong>,</p>
@@ -226,26 +234,166 @@ export async function sendBookingPendingEmail(to: string, userName: string, book
   }
 }
 
-export async function sendBookingSuccessEmail(to: string, userName: string, bookingId: string, type: string, amount: number) {
+export async function sendBookingSuccessEmail(
+  to: string,
+  userName: string,
+  bookingId: string,
+  type: string,
+  amount: number,
+  items?: Array<{ name: string; qty: number; price: number }>,
+  meta?: { ktpPromo?: { province?: string; regency?: string; district?: string; visitDate?: string } }
+) {
   try {
     // Generate QR Code for Booking ID
     const qrCodeDataUrl = await QRCode.toDataURL(bookingId);
+    const displayType = type === 'WAHANA' ? 'E-Voucher Tiket The Lodge Maribaya' : type;
+    const domicileLine = meta?.ktpPromo?.province || meta?.ktpPromo?.regency || meta?.ktpPromo?.district
+      ? `${meta?.ktpPromo?.province || '-'}, ${meta?.ktpPromo?.regency || '-'}, ${meta?.ktpPromo?.district || '-'}`
+      : '';
+    const visitDateLine = meta?.ktpPromo?.visitDate ? String(meta.ktpPromo.visitDate) : '';
+    // Generate simple PDF receipt
+    let pdfBuffer: Buffer | null = null;
+    try {
+      const doc = new jsPDF({ unit: 'pt', format: 'a4' });
+      const margin = 40;
+      const w = doc.internal.pageSize.getWidth();
+      const line = (y: number) => doc.line(margin, y, w - margin, y);
+
+      doc.setFont('helvetica', 'bold'); doc.setFontSize(16);
+      doc.text('INVOICE - THE LODGE MARIBAYA', margin, 60);
+      doc.setFontSize(10);
+      doc.text(`Nomor: ${bookingId}`, margin, 80);
+      doc.text(`Tanggal: ${new Date().toLocaleString('id-ID')}`, margin, 95);
+      line(110);
+
+      doc.setFont('helvetica', 'bold'); doc.setFontSize(12);
+      doc.text('DETAIL PEMBAYARAN', margin, 130);
+      doc.setFont('helvetica', 'normal'); doc.setFontSize(10);
+      doc.text(`Metode: Gateway Xendit`, margin, 150);
+      doc.text(`Status: Lunas`, margin, 165);
+      line(180);
+
+      doc.setFont('helvetica', 'bold'); doc.setFontSize(12);
+      doc.text('DATA PEMESAN', margin, 200);
+      doc.setFont('helvetica', 'normal'); doc.setFontSize(10);
+      doc.text(`Nama: ${userName}`, margin, 220);
+      doc.text(`Email: ${to}`, margin, 235);
+
+      doc.setFont('helvetica', 'bold'); doc.setFontSize(12);
+      doc.text('DETAIL PERUSAHAAN', w / 2, 200);
+      doc.setFont('helvetica', 'normal'); doc.setFontSize(10);
+      doc.text(`Nama: The Lodge Maribaya`, w / 2, 220);
+      doc.text(`Alamat: Maribaya, Bandung`, w / 2, 235);
+      line(255);
+
+      doc.setFont('helvetica', 'bold'); doc.setFontSize(12);
+      doc.text('DETAIL PRODUK', margin, 275);
+      doc.setFont('helvetica', 'normal'); doc.setFontSize(10);
+      doc.text(`Jenis: ${displayType}`, margin, 295);
+      let infoY = 310;
+      doc.text(`Booking ID: ${bookingId}`, margin, infoY);
+      infoY += 15;
+      if (visitDateLine) {
+        doc.text(`Tanggal Kunjungan: ${visitDateLine}`, margin, infoY);
+        infoY += 15;
+      }
+      if (domicileLine) {
+        doc.text(`Domisili KTP: ${domicileLine}`, margin, infoY);
+        infoY += 15;
+      }
+      const dividerY = infoY + 10;
+      line(dividerY);
+
+      const purchaseHeaderY = dividerY + 20;
+      doc.setFont('helvetica', 'bold'); doc.setFontSize(12);
+      doc.text('DETAIL PEMBELIAN', margin, purchaseHeaderY);
+      doc.setFont('helvetica', 'normal'); doc.setFontSize(10);
+      const tableY = purchaseHeaderY + 20;
+      doc.text('No.', margin, tableY);
+      doc.text('Deskripsi', margin + 40, tableY);
+      doc.text('Jml', w - 200, tableY);
+      doc.text('Harga', w - 140, tableY);
+      doc.text('Total', w - 80, tableY);
+
+      // Draw itemized rows
+      let pdfTotal = 0;
+      const list = (items && items.length > 0) ? items : [{ name: displayType, qty: 1, price: amount }];
+      doc.setFont('helvetica', 'normal');
+      let y = tableY + 20;
+      for (let i = 0; i < list.length; i++) {
+        const it = list[i];
+        const subtotal = (it.qty || 1) * (it.price || 0);
+        pdfTotal += subtotal;
+        doc.text(String(i + 1), margin, y);
+        doc.text(String(it.name || '-'), margin + 40, y);
+        doc.text(String(it.qty || 1), w - 200, y);
+        const priceStr = new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(it.price || 0);
+        const subStr = new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(subtotal);
+        doc.text(priceStr, w - 140, y);
+        doc.text(subStr, w - 80, y);
+        y += 20;
+      }
+      line(y);
+      doc.setFont('helvetica', 'bold');
+      const totalStr = new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(pdfTotal || amount);
+      const totalText = `JUMLAH PEMBAYARAN: ${totalStr}`;
+      doc.text(totalText, w - 80 - doc.getTextWidth(totalText), y + 20);
+      
+
+      // Place QR code below totals without overlapping
+      let qrY = y + 40;
+      const pageH = doc.internal.pageSize.getHeight();
+      if (qrY + 160 > pageH - 40) { 
+        doc.addPage();
+        qrY = 60;
+      }
+      try { doc.addImage(qrCodeDataUrl, 'PNG', w - 200, qrY, 140, 140); } catch {}
+      doc.setFont('helvetica', 'normal'); doc.setFontSize(9);
+      doc.text('Tunjukkan QR Code ini saat kedatangan.', w - 200, qrY + 160);
+
+      const arr = doc.output('arraybuffer') as ArrayBuffer;
+      pdfBuffer = Buffer.from(arr);
+    } catch {
+      pdfBuffer = null;
+    }
     
+    // Build itemized HTML
+    const currency = (n: number) => new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(n);
+    const list = (items && items.length > 0) ? items : [{ name: displayType, qty: 1, price: amount }];
+    const rows = list.map((it) => `
+      <tr>
+        <td style="padding:8px 10px; border-bottom:1px solid #eee;">${it.name}</td>
+        <td style="padding:8px 10px; border-bottom:1px solid #eee; text-align:center;">${it.qty || 1}</td>
+        <td style="padding:8px 10px; border-bottom:1px solid #eee; text-align:right;">${currency(it.price || 0)}</td>
+        <td style="padding:8px 10px; border-bottom:1px solid #eee; text-align:right;">${currency((it.qty || 1) * (it.price || 0))}</td>
+      </tr>
+    `).join('');
+    const htmlTotal = list.reduce((sum, it) => sum + (it.qty || 1) * (it.price || 0), 0);
+
+    const extraMetaHtml = (visitDateLine || domicileLine) ? `
+      <div style="background-color: white; padding: 15px; border-radius: 8px; margin: 16px 0; border: 1px solid #ddd;">
+        <h3 style="margin:0 0 10px 0; color:#1b5e20;">Data KTP</h3>
+        ${visitDateLine ? `<p style="margin:0 0 6px 0; font-size:14px;"><strong>Tanggal Kunjungan:</strong> ${visitDateLine}</p>` : ''}
+        ${domicileLine ? `<p style="margin:0; font-size:14px;"><strong>Domisili (KTP):</strong> ${domicileLine}</p>` : ''}
+      </div>
+    ` : '';
+
     const mailOptions = {
       from: process.env.FROM_EMAIL,
       to,
-      subject: `Pembayaran Berhasil - The Lodge Connect`,
+      subject: `E‑Voucher The Lodge Maribaya`,
       html: `
         <div style="font-family: Arial, sans-serif; padding: 20px; color: #333; max-width: 600px; margin: 0 auto; border: 1px solid #eee; border-radius: 10px;">
           <div style="text-align: center; margin-bottom: 20px;">
-            <h2 style="color: #2e7d32; margin: 0;">The Lodge Connect</h2>
+            <img src="${APP_URL}/logotlm.png" alt="The Lodge Maribaya" style="height: 48px; margin-bottom: 8px;" />
+            <h2 style="color: #1b5e20; margin: 0;">E‑Voucher The Lodge Maribaya</h2>
           </div>
           <div style="background-color: #f9f9f9; padding: 20px; border-radius: 8px; text-align: center;">
             <p style="margin-top: 0; font-size: 16px;">Halo <strong>${userName}</strong>,</p>
             <p>Pembayaran Anda telah berhasil dikonfirmasi!</p>
             
             <div style="background-color: white; padding: 15px; border-radius: 8px; margin: 20px 0; border: 1px dashed #2e7d32;">
-              <h3 style="color: #1b5e20; margin: 0 0 5px 0;">${type}</h3>
+              <h3 style="color: #1b5e20; margin: 0 0 5px 0;">${displayType}</h3>
               <p style="margin: 0 0 10px 0; font-size: 14px; color: #666;">Booking ID: ${bookingId}</p>
               
               <div style="margin-top: 20px;">
@@ -256,6 +404,31 @@ export async function sendBookingSuccessEmail(to: string, userName: string, book
             
             <p style="font-size: 14px;">Total Dibayar: <strong>${new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(amount)}</strong></p>
           </div>
+
+          ${extraMetaHtml}
+          
+          <div style="background-color: white; padding: 15px; border-radius: 8px; margin: 16px 0; border: 1px solid #ddd;">
+            <h3 style="margin:0 0 10px 0; color:#1b5e20;">Detail Pembelian</h3>
+            <table style="width:100%; border-collapse: collapse; font-size: 14px;">
+              <thead>
+                <tr style="background:#f9f9f9;">
+                  <th style="text-align:left; padding:8px 10px; border-bottom:1px solid #eee;">Nama Tiket</th>
+                  <th style="text-align:center; padding:8px 10px; border-bottom:1px solid #eee;">Qty</th>
+                  <th style="text-align:right; padding:8px 10px; border-bottom:1px solid #eee;">Harga</th>
+                  <th style="text-align:right; padding:8px 10px; border-bottom:1px solid #eee;">Subtotal</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${rows}
+              </tbody>
+              <tfoot>
+                <tr>
+                  <td colspan="3" style="padding:10px; text-align:right; font-weight:bold;">Total</td>
+                  <td style="padding:10px; text-align:right; font-weight:bold;">${currency(htmlTotal || amount)}</td>
+                </tr>
+              </tfoot>
+            </table>
+          </div>
           <p style="margin-top: 20px; font-size: 13px; color: #888; text-align: center;">
             Simpan email ini sebagai bukti pembayaran Anda.
           </p>
@@ -264,9 +437,15 @@ export async function sendBookingSuccessEmail(to: string, userName: string, book
       attachments: [
         {
           filename: 'qrcode.png',
-          path: qrCodeDataUrl,
+          content: qrCodeDataUrl.split('base64,')[1],
+          encoding: 'base64',
           cid: 'qrcode'
-        }
+        },
+        ...(pdfBuffer ? [{
+          filename: `Invoice-TheLodgeMaribaya-${bookingId}.pdf`,
+          content: pdfBuffer,
+          contentType: 'application/pdf'
+        }] : [])
       ]
     };
 
@@ -299,7 +478,10 @@ export async function sendBookingNotificationToReception(
       subject: `New Booking Alert - ${customerName} - ${bookingId}`,
       html: `
         <div style="font-family: Arial, sans-serif; padding: 20px; color: #333; max-width: 600px; margin: 0 auto; border: 1px solid #eee; border-radius: 10px;">
-          <h2 style="color: #2e7d32;">New Booking Notification</h2>
+          <div style="text-align: center; margin-bottom: 20px;">
+            <img src="${APP_URL}/logotlm.png" alt="The Lodge Maribaya" style="height: 40px; margin-bottom: 8px;" />
+            <h2 style="color: #1b5e20; margin: 0;">New Booking Notification</h2>
+          </div>
           <p>You have received a new booking.</p>
           
           <div style="background-color: #f9f9f9; padding: 15px; border-radius: 8px;">

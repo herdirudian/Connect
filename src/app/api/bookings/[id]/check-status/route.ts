@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { verifyToken } from '@/lib/auth';
 import { cookies } from 'next/headers';
-import { Invoice } from '@/lib/xendit';
+import { Invoice, PaymentRequest as XenditPaymentRequest } from '@/lib/xendit';
 import { sendBookingSuccessEmail, sendBookingNotificationToReception } from '@/lib/email';
 import { createNotification } from '@/lib/notifications';
 
@@ -32,23 +32,57 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
        return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
-    if (booking.paymentStatus === 'PAID') {
-        return NextResponse.json({ status: 'PAID' });
-    }
+    let isPaid = false;
+    let isExpired = false;
 
-    // Check Xendit Invoice Status
-    let invoice;
-    try {
-        if (!booking.paymentId) {
+    if (booking.paymentStatus === 'PAID') {
+        // Self-healing: Check if transaction exists (in case points were missed)
+        const existingTx = await prisma.transaction.findFirst({
+            where: { source: `BOOKING:${booking.id}` }
+        });
+
+        if (existingTx) {
+            return NextResponse.json({ status: 'PAID' });
+        }
+        // If no transaction exists but booking is PAID, proceed to calculate points
+        isPaid = true;
+    } else {
+        // Check Xendit Status
+        try {
+            if (!booking.paymentId) {
              return NextResponse.json({ status: booking.paymentStatus });
         }
-        invoice = await Invoice.getInvoiceById({ invoiceId: booking.paymentId });
+
+        // Check if Payment Request
+        let isPaymentRequest = false;
+        try {
+            const details = JSON.parse(booking.details);
+            if (details.paymentInfo && details.paymentInfo.isPaymentRequest) {
+                isPaymentRequest = true;
+            }
+        } catch (e) {}
+
+        if (isPaymentRequest) {
+             const pr = await XenditPaymentRequest.getPaymentRequestByID({ paymentRequestId: booking.paymentId });
+             if (pr) {
+                 if (pr.status === 'SUCCEEDED') isPaid = true;
+                 else if (pr.status === 'EXPIRED' || pr.status === 'FAILED') isExpired = true;
+             }
+        } else {
+             // Fallback to Invoice
+             const invoice = await Invoice.getInvoiceById({ invoiceId: booking.paymentId });
+             if (invoice) {
+                 if (invoice.status === 'PAID') isPaid = true;
+                 else if (invoice.status === 'EXPIRED') isExpired = true;
+             }
+        }
     } catch (e) {
         console.error("Xendit Check Error", e);
         return NextResponse.json({ error: 'Failed to check status' }, { status: 500 });
     }
+    }
 
-    if (invoice && invoice.status === 'PAID') {
+    if (isPaid) {
         // Update DB
         const updated = await prisma.booking.update({
             where: { id: booking.id },
@@ -64,14 +98,75 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
         });
 
         if (!existingTx) {
+            // Calculate Points Logic
+            let earnedPoints = Math.floor(booking.amount); // Default behavior
+
+            if (booking.type === 'WAHANA') {
+                try {
+                    const details = JSON.parse(booking.details);
+                    if (details.items && Array.isArray(details.items)) {
+                        const itemIds = details.items.map((i: any) => i.id);
+                        const attractions = await prisma.attraction.findMany({
+                            where: { id: { in: itemIds } },
+                            select: { id: true, points: true }
+                        });
+                        
+                        const pointsMap = new Map(attractions.map(a => [a.id, a.points]));
+                        
+                        let totalPoints = 0;
+                        for (const item of details.items) {
+                            const pts = pointsMap.get(item.id) || 0;
+                            const qty = item.qty || 1;
+                            totalPoints += (pts * qty);
+                        }
+                        
+                        // Use the calculated points from Attraction settings
+                        earnedPoints = totalPoints;
+                    }
+                } catch (e) {
+                    console.error('Error calculating attraction points:', e);
+                }
+            } else if (booking.type === 'GLAMPING') {
+                 try {
+                    const details = JSON.parse(booking.details);
+                    if (details.items && Array.isArray(details.items)) {
+                        const itemIds = details.items.map((i: any) => i.id);
+                        const accommodations = await prisma.accommodation.findMany({
+                            where: { id: { in: itemIds } },
+                            select: { id: true, points: true }
+                        });
+                        
+                        const pointsMap = new Map(accommodations.map(a => [a.id, a.points]));
+                        
+                        let totalPoints = 0;
+                        for (const item of details.items) {
+                            const pts = pointsMap.get(item.id) || 0;
+                            const qty = item.qty || 1;
+                            totalPoints += (pts * qty);
+                        }
+                        
+                        // Use the calculated points from Accommodation settings
+                        earnedPoints = totalPoints;
+                    }
+                } catch (e) {
+                    console.error('Error calculating accommodation points:', e);
+                }
+            }
+
             await prisma.transaction.create({
                 data: {
                     userId: booking.userId,
-                    amount: booking.amount,
+                    amount: earnedPoints,
                     type: 'EARN',
                     description: `Payment for booking ${booking.id}`,
                     source: `BOOKING:${booking.id}`,
                 }
+            });
+
+            // Update User Points
+            await prisma.user.update({
+                where: { id: booking.userId },
+                data: { points: { increment: earnedPoints } }
             });
 
             // Determine email recipient
@@ -85,13 +180,25 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
                 // ignore parsing error
             }
 
-             // Send Success Email with QR Code
+            // Send Success Email with QR Code
              await sendBookingSuccessEmail(
-                booking.user.email,
+                targetEmail,
                 booking.user.name,
                 booking.id,
                 booking.type,
-                booking.amount
+                booking.amount,
+                (() => {
+                  try {
+                    const d = JSON.parse(booking.details);
+                    return Array.isArray(d.items) ? d.items : undefined;
+                  } catch { return undefined; }
+                })(),
+                (() => {
+                  try {
+                    const d = JSON.parse(booking.details);
+                    return d?.ktpPromo ? { ktpPromo: d.ktpPromo } : undefined;
+                  } catch { return undefined; }
+                })()
             );
 
             // Send Notification to Reception (if GLAMPING)
@@ -136,7 +243,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
         }
 
         return NextResponse.json({ status: 'PAID' });
-    } else if (invoice && invoice.status === 'EXPIRED') {
+    } else if (isExpired) {
          await prisma.booking.update({
             where: { id: booking.id },
             data: {

@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useSearchParams, useRouter } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Loader2, ExternalLink, RefreshCw, Star } from 'lucide-react';
@@ -27,17 +28,33 @@ export default function BookingsPage() {
   const [reviewDialog, setReviewDialog] = useState<{ 
     open: boolean; 
     bookingId?: string; 
-    accommodationId?: string 
+    accommodationId?: string;
+    attractionId?: string;
   }>({ open: false });
   const { toast } = useToast();
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const statusParam = searchParams.get('status');
 
   useEffect(() => {
     fetchBookings();
   }, []);
 
+  useEffect(() => {
+    if (statusParam === 'success' && bookings.length > 0) {
+      const pendingBookings = bookings.filter(b => b.paymentStatus === 'PENDING');
+      if (pendingBookings.length > 0) {
+        // Check the latest pending booking
+        checkStatus(pendingBookings[0].id);
+        // Clear the query param
+        router.replace('/dashboard/bookings');
+      }
+    }
+  }, [statusParam, bookings]);
+
   async function fetchBookings() {
     try {
-      const res = await fetch('/api/bookings');
+      const res = await fetch('/api/bookings', { cache: 'no-store' });
       const data = await res.json();
       setBookings(data);
     } catch (error) {
@@ -196,12 +213,22 @@ export default function BookingsPage() {
                                size="sm"
                                className="border-brand text-brand hover:bg-brand-50"
                                onClick={() => {
-                                 // Try to find accommodation ID from details
+                                 // Try to find target ID from details
                                  let accId = undefined;
+                                 let attrId = undefined;
+                                 
                                  if (details.items && details.items.length > 0) {
-                                   accId = details.items[0].id;
+                                   const type = booking.type.toUpperCase();
+                                   if (type === 'GLAMPING' || type === 'ACCOMMODATION') {
+                                      accId = details.items[0].id;
+                                   } else if (type === 'WAHANA' || type === 'TICKET' || type === 'EVENT') {
+                                      attrId = details.items[0].id;
+                                   } else {
+                                      // Default fallback
+                                      attrId = details.items[0].id;
+                                   }
                                  }
-                                 setReviewDialog({ open: true, bookingId: booking.id, accommodationId: accId });
+                                 setReviewDialog({ open: true, bookingId: booking.id, accommodationId: accId, attractionId: attrId });
                                }}
                              >
                                <Star className="h-4 w-4 mr-2" />
@@ -224,6 +251,7 @@ export default function BookingsPage() {
         onOpenChange={(open) => setReviewDialog(prev => ({ ...prev, open }))}
         bookingId={reviewDialog.bookingId}
         accommodationId={reviewDialog.accommodationId}
+        attractionId={reviewDialog.attractionId}
         onSuccess={() => {
           setReviewDialog({ open: false });
           fetchBookings();

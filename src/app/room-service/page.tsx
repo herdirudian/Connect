@@ -1,0 +1,849 @@
+'use client';
+
+import { useEffect, useMemo, useState } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Loader2, Utensils } from 'lucide-react';
+import Image from 'next/image';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { PAYMENT_METHODS, calculateFee } from '@/lib/fees';
+
+type Restaurant = {
+  id: string;
+  name: string;
+  status: string;
+  allowOrders?: boolean;
+};
+
+type MenuItem = {
+  id: string;
+  name: string;
+  description?: string | null;
+  price: number;
+  category: string;
+  imageUrl?: string;
+  soldOut?: boolean;
+  stock?: number | null;
+  minOrderQty?: number;
+};
+
+export default function RoomServicePage() {
+  const [restaurants, setRestaurants] = useState<Restaurant[]>([]);
+  const [selectedRestaurant, setSelectedRestaurant] = useState<Restaurant | null>(null);
+  const [menu, setMenu] = useState<MenuItem[]>([]);
+  const [categories, setCategories] = useState<string[]>([]);
+  const [selectedCategory, setSelectedCategory] = useState<string>('ALL');
+  const [searchQuery, setSearchQuery] = useState<string>('');
+  const [loading, setLoading] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
+  const [hours, setHours] = useState<{ open: string; close: string } | null>(null);
+  const [nowTick, setNowTick] = useState(0);
+
+  const [roomNumber, setRoomNumber] = useState('');
+  const [guestName, setGuestName] = useState('');
+  const [guestPhone, setGuestPhone] = useState('');
+  const [deliveryMethod, setDeliveryMethod] = useState<'ROOM' | 'CAFE'>('ROOM');
+
+  const [quantities, setQuantities] = useState<Record<string, number>>({});
+  const [itemNotes, setItemNotes] = useState<Record<string, string>>({});
+  const [paymentUrl, setPaymentUrl] = useState<string | null>(null);
+  const [roomSlug, setRoomSlug] = useState<string | null>(null);
+  const [checkoutOpen, setCheckoutOpen] = useState(false);
+  const [checkoutQuantities, setCheckoutQuantities] = useState<Record<string, number>>({});
+  const [selectedMethod, setSelectedMethod] = useState<string>('');
+  const [hkItems, setHkItems] = useState<Array<{ id: string; name: string; category: string; price: number }>>([]);
+  const [hkQuantities, setHkQuantities] = useState<Record<string, number>>({});
+  const [hkNotes, setHkNotes] = useState<Record<string, string>>({});
+
+  useEffect(() => {
+    fetchRestaurants();
+  }, []);
+
+  useEffect(() => {
+    try {
+      const params = new URLSearchParams(typeof window !== 'undefined' ? window.location.search : '');
+      const slug = params.get('room');
+      if (slug) {
+        setRoomSlug(slug);
+        fetchRoom(slug);
+      }
+    } catch {}
+  }, []);
+
+  useEffect(() => {
+    fetchHours();
+  }, []);
+
+  useEffect(() => {
+    const id = setInterval(() => setNowTick((v) => v + 1), 60_000);
+    return () => clearInterval(id);
+  }, []);
+
+  useEffect(() => {
+    fetchHousekeeping();
+  }, []);
+
+  async function fetchHours() {
+    try {
+      const res = await fetch('/api/room-service/hours');
+      const data = await res.json();
+      if (data?.open && data?.close) setHours({ open: data.open, close: data.close });
+    } catch {}
+  }
+  async function fetchRoom(slug: string) {
+    try {
+      const res = await fetch(`/api/room-service/rooms/${encodeURIComponent(slug)}`);
+      if (res.ok) {
+        const data = await res.json();
+        setRoomNumber(data.number || '');
+      }
+    } catch (e) {
+      console.error(e);
+    }
+  }
+  useEffect(() => {
+    if (selectedRestaurant) {
+      fetchMenu(selectedRestaurant.id);
+    }
+  }, [selectedRestaurant]);
+
+  async function fetchRestaurants() {
+    try {
+      const res = await fetch('/api/restaurants');
+      const data = await res.json();
+      const list: Restaurant[] = Array.isArray(data) ? data : [];
+      const active = list.filter((r) => r.status === 'Open');
+      setRestaurants(active);
+      if (active.length > 0) setSelectedRestaurant(active[0]);
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function fetchMenu(id: string) {
+    try {
+      const res = await fetch(`/api/restaurants/${id}`);
+      const data = await res.json();
+      const items: MenuItem[] = data?.menuItems || [];
+      setMenu(items);
+      const uniq = Array.from(
+        new Set(
+          items.map(i => (typeof i.category === 'string' ? i.category : '')).filter(Boolean)
+        )
+      ) as string[];
+      setCategories(['ALL', ...uniq]);
+      setSelectedCategory('ALL');
+      setQuantities({});
+      setItemNotes({});
+    } catch (e) {
+      console.error(e);
+    }
+  }
+
+  async function fetchHousekeeping() {
+    try {
+      const res = await fetch('/api/housekeeping');
+      const data = await res.json();
+      const items = Array.isArray(data) ? data : [];
+      setHkItems(items);
+      setHkQuantities({});
+      setHkNotes({});
+    } catch (e) {}
+  }
+
+  const total = useMemo(() => {
+    const foodTotal = menu.reduce((sum, item) => {
+      const qty = quantities[item.id] || 0;
+      return sum + item.price * qty;
+    }, 0);
+    const hkTotal = hkItems.reduce((sum, item) => {
+      const qty = hkQuantities[item.id] || 0;
+      return sum + item.price * qty;
+    }, 0);
+    return foodTotal + hkTotal;
+  }, [menu, quantities, hkItems, hkQuantities]);
+
+  function validateMinOrderPerItem(src: Record<string, number>) {
+    for (const [menuItemId, qty] of Object.entries(src)) {
+      if (!qty || qty <= 0) continue;
+      const meta = menu.find((m) => m.id === menuItemId);
+      const minQty = Math.max(1, Number(meta?.minOrderQty) || 1);
+      if (qty < minQty) {
+        const name = meta?.name || 'Item';
+        return `${name}: minimal order ${minQty}`;
+      }
+    }
+    return null;
+  }
+
+  function setQty(id: string, qty: number) {
+    const item = menu.find((m) => m.id === id);
+    const maxByStock = typeof item?.stock === 'number' ? item.stock : 99;
+    setQuantities(prev => ({ ...prev, [id]: Math.max(0, Math.min(maxByStock, qty)) }));
+  }
+  function setNote(id: string, note: string) {
+    setItemNotes(prev => ({ ...prev, [id]: note.slice(0, 200) }));
+  }
+  function setHkQty(id: string, qty: number) {
+    setHkQuantities(prev => ({ ...prev, [id]: Math.max(0, qty) }));
+  }
+  function setHkNote(id: string, note: string) {
+    setHkNotes(prev => ({ ...prev, [id]: note.slice(0, 200) }));
+  }
+
+  const normalizedQuery = searchQuery.trim().toLowerCase();
+
+  const filteredMenu = useMemo(() => {
+    const base = selectedCategory === 'ALL' ? menu : menu.filter((item) => item.category === selectedCategory);
+    if (!normalizedQuery) return base;
+    return base.filter((item) => {
+      const name = String(item.name || '').toLowerCase();
+      const category = String(item.category || '').toLowerCase();
+      return name.includes(normalizedQuery) || category.includes(normalizedQuery);
+    });
+  }, [menu, selectedCategory, normalizedQuery]);
+
+  const filteredHkItems = useMemo(() => {
+    if (!normalizedQuery) return hkItems;
+    return hkItems.filter((item) => {
+      const name = String(item.name || '').toLowerCase();
+      const category = String(item.category || '').toLowerCase();
+      return name.includes(normalizedQuery) || category.includes(normalizedQuery);
+    });
+  }, [hkItems, normalizedQuery]);
+
+  const isOpenNow = useMemo(() => {
+    if (!hours) return true;
+    const [oh, om] = hours.open.split(':').map(Number);
+    const [ch, cm] = hours.close.split(':').map(Number);
+    // Use Asia/Jakarta timezone to avoid client timezone mismatch
+    const nowJakarta = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Jakarta' }));
+    const nowMinutes = nowJakarta.getHours() * 60 + nowJakarta.getMinutes();
+    const openMinutes = oh * 60 + om;
+    const closeMinutes = ch * 60 + cm;
+    return nowMinutes >= openMinutes && nowMinutes < closeMinutes;
+  }, [hours, nowTick]);
+
+  const recommendations = useMemo(() => {
+    // Filter items not in cart and available
+    const available = menu.filter(m => 
+      !(checkoutQuantities[m.id] > 0) && 
+      !m.soldOut && 
+      (typeof m.stock !== 'number' || m.stock > 0)
+    );
+    // Shuffle and pick 3
+    return available.sort(() => 0.5 - Math.random()).slice(0, 3);
+  }, [menu, checkoutQuantities, checkoutOpen]); // Re-calculate when checkout opens/changes
+
+  function openCheckout() {
+    if (!selectedRestaurant) return;
+    if (!guestName || !roomNumber || !guestPhone) {
+      alert('Nama tamu, nomor kamar, dan nomor HP wajib diisi');
+      return;
+    }
+    const hasAnyFood = Object.values(quantities).some(q => q > 0);
+    const hasAnyHK = Object.values(hkQuantities).some(q => q > 0);
+    const hasAny = hasAnyFood || hasAnyHK;
+    if (!hasAny) {
+      alert('Silakan pilih menu terlebih dahulu');
+      return;
+    }
+    const minError = validateMinOrderPerItem(quantities);
+    if (minError) {
+      alert(`Minimal order item belum terpenuhi: ${minError}`);
+      return;
+    }
+    setCheckoutQuantities(quantities);
+    setCheckoutOpen(true);
+  }
+
+  async function submitOrder(methodOverride?: string) {
+    if (!selectedRestaurant) return;
+    if (!guestName || !roomNumber || !guestPhone) {
+      alert('Nama tamu, nomor kamar, dan nomor HP wajib diisi');
+      return;
+    }
+    if (!(methodOverride || selectedMethod)) {
+      alert('Pilih metode pembayaran terlebih dahulu');
+      return;
+    }
+    const effectiveFood = checkoutOpen ? checkoutQuantities : quantities;
+    const foodItems = Object.entries(effectiveFood)
+      .filter(([, qty]) => qty > 0)
+      .map(([menuItemId, quantity]) => ({ menuItemId, quantity, requestNote: itemNotes[menuItemId] || undefined }));
+    const hkItemsPayload = Object.entries(hkQuantities)
+      .filter(([, qty]) => qty > 0)
+      .map(([itemId, quantity]) => ({ itemId, quantity, requestNote: hkNotes[itemId] || undefined }));
+    if (foodItems.length === 0 && hkItemsPayload.length === 0) {
+      alert('Silakan pilih item terlebih dahulu');
+      return;
+    }
+    const minError = validateMinOrderPerItem(effectiveFood);
+    if (minError) {
+      alert(`Minimal order item belum terpenuhi: ${minError}`);
+      return;
+    }
+    setSubmitting(true);
+    setPaymentUrl(null);
+    try {
+      const res = await fetch('/api/room-service/combined/orders', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          restaurantId: selectedRestaurant.id,
+          foodItems,
+          hkItems: hkItemsPayload,
+          roomNumber,
+          roomSlug: roomSlug || undefined,
+          guestName,
+          guestPhone,
+          deliveryNotes: deliveryMethod === 'ROOM' ? 'DELIVER_TO_ROOM' : 'DINE_AT_CAFE',
+          paymentMethod: methodOverride || selectedMethod
+        }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setCheckoutOpen(false);
+        if (data.paymentUrl) {
+          window.location.href = data.paymentUrl;
+        }
+      } else {
+        alert(data.error || 'Gagal membuat pesanan');
+      }
+    } catch (e) {
+      console.error(e);
+      alert('Terjadi kesalahan saat memproses pesanan');
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  async function submitHousekeeping() {
+    if (!guestName || !roomNumber || !guestPhone) {
+      alert('Nama tamu, nomor kamar, dan nomor HP wajib diisi');
+      return;
+    }
+    const items = Object.entries(hkQuantities)
+      .filter(([, qty]) => qty > 0)
+      .map(([itemId, quantity]) => ({ itemId, quantity, requestNote: hkNotes[itemId] || undefined }));
+    if (items.length === 0) {
+      alert('Silakan pilih item housekeeping terlebih dahulu');
+      return;
+    }
+    setSubmitting(true);
+    setPaymentUrl(null);
+    try {
+      const res = await fetch('/api/room-service/housekeeping/orders', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          items,
+          roomNumber,
+          roomSlug: roomSlug || undefined,
+          guestName,
+          guestPhone,
+          deliveryNotes: deliveryMethod === 'ROOM' ? 'DELIVER_TO_ROOM' : 'DINE_AT_CAFE',
+          paymentMethod: selectedMethod
+        }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        if (data.paymentUrl) {
+          window.location.href = data.paymentUrl;
+        }
+      } else {
+        alert(data.error || 'Gagal membuat pesanan housekeeping');
+      }
+    } catch (e) {
+      alert('Terjadi kesalahan saat memproses pesanan housekeeping');
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  return (
+    <div className="max-w-5xl mx-auto p-6 space-y-8 pb-24">
+      <div className="space-y-3">
+        <div className="inline-flex items-center gap-2 px-4 py-2 bg-brand-50 rounded-full border border-brand-100">
+          <span className="w-2 h-2 rounded-full bg-brand animate-pulse"></span>
+          <span className="text-[11px] font-bold tracking-widest uppercase text-brand-dark">Room Service</span>
+        </div>
+        <h1 className="text-3xl md:text-4xl font-black uppercase tracking-tight leading-none text-brand-dark">
+          Order from your room
+        </h1>
+        <p className="text-gray-500 max-w-xl text-sm font-medium">
+          Pesan makanan dan minuman langsung dari kamar dengan mudah dan praktis.
+        </p>
+        {hours && (
+          <div
+            className={`inline-flex flex-wrap items-center gap-2 rounded-xl border px-3 py-2 text-sm font-semibold ${
+              isOpenNow ? 'border-green-200 bg-green-50 text-green-800' : 'border-red-200 bg-red-50 text-red-800'
+            }`}
+          >
+            <span className={`h-2 w-2 rounded-full ${isOpenNow ? 'bg-green-600' : 'bg-red-600'}`} />
+            <span>{isOpenNow ? 'Layanan Room Service Sedang Buka' : 'Layanan Room Service Sedang Tutup'}</span>
+            <span className="text-gray-500">•</span>
+            <span className={isOpenNow ? 'text-green-800' : 'text-red-800'}>Jam Operasional {hours.open}-{hours.close}</span>
+          </div>
+        )}
+      </div>
+
+      {loading ? (
+        <div className="flex justify-center py-12">
+          <Loader2 className="animate-spin h-8 w-8 text-brand" />
+        </div>
+      ) : (
+        <>
+          <Card className="border border-gray-100 shadow-sm bg-white rounded-2xl">
+            <CardHeader>
+              <CardTitle className="text-xl font-black text-brand-dark uppercase tracking-tight">Pilih Restoran</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid gap-3 sm:grid-cols-2">
+                {!isOpenNow ? (
+                  <div className="text-sm text-gray-600 sm:col-span-2">
+                    Room Service sedang tutup. Pilihan restoran akan muncul otomatis saat jam operasional dimulai.
+                  </div>
+                ) : (
+                  <>
+                    {restaurants.map((r) => (
+                      <button
+                        key={r.id}
+                        className={`p-4 rounded-xl text-left transition border-2 ${
+                          selectedRestaurant?.id === r.id ? 'border-brand bg-brand-50' : 'border-gray-200 hover:bg-gray-50'
+                        }`}
+                        onClick={() => setSelectedRestaurant(r)}
+                        disabled={r.status !== 'Open' || r.allowOrders === false}
+                      >
+                        <div className="flex items-center gap-3">
+                          <Utensils size={18} />
+                          <div className="font-bold text-gray-900">{r.name}</div>
+                        </div>
+                        <div className="text-[11px] font-bold uppercase tracking-wider mt-2">
+                          <span className={`${r.status === 'Open' ? 'text-green-600' : 'text-red-600'}`}>
+                            {r.status === 'Open' ? 'Buka' : 'Tutup'}
+                          </span>
+                          <span className="text-gray-500 ml-1">• {r.allowOrders === false ? 'Pemesanan ditutup' : 'Pemesanan tersedia'}</span>
+                        </div>
+                      </button>
+                    ))}
+                    {restaurants.length === 0 && <div className="text-gray-500 sm:col-span-2">Tidak ada restoran yang buka</div>}
+                  </>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="border border-gray-100 shadow-sm bg-white rounded-2xl">
+            <CardHeader>
+              <CardTitle className="text-xl font-black text-brand-dark uppercase tracking-tight">Data Kamar & Tamu</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div className="space-y-2">
+                  <Label>Nomor Kamar</Label>
+                  <Input value={roomNumber} onChange={(e) => setRoomNumber(e.target.value)} placeholder="Misal: A12" disabled={!!roomSlug} />
+                  {roomSlug && <div className="text-[11px] text-gray-500">Nomor kamar otomatis dari QR, tidak dapat diubah.</div>}
+                </div>
+                <div className="space-y-2">
+                  <Label>Nama Tamu</Label>
+                  <Input value={guestName} onChange={(e) => setGuestName(e.target.value)} placeholder="Nama lengkap" />
+                </div>
+                <div className="space-y-2">
+                  <Label>No. Handphone</Label>
+                  <Input value={guestPhone} onChange={(e) => setGuestPhone(e.target.value)} placeholder="08xxxxxxxxxx" />
+                </div>
+                <div className="space-y-2 sm:col-span-2">
+                  <Label>Metode Pengantaran</Label>
+                  <div className="flex gap-3">
+                    <button
+                      type="button"
+                      className={`px-3 py-2 rounded-full text-xs font-bold uppercase tracking-wider border transition ${deliveryMethod === 'ROOM' ? 'bg-brand-50 text-brand-dark border-brand' : 'bg-white text-gray-700 border-gray-200 hover:bg-gray-50'}`}
+                      onClick={() => setDeliveryMethod('ROOM')}
+                    >
+                      Diantar ke Kamar
+                    </button>
+                    <button
+                      type="button"
+                      className={`px-3 py-2 rounded-full text-xs font-bold uppercase tracking-wider border transition ${deliveryMethod === 'CAFE' ? 'bg-brand-50 text-brand-dark border-brand' : 'bg-white text-gray-700 border-gray-200 hover:bg-gray-50'}`}
+                      onClick={() => setDeliveryMethod('CAFE')}
+                    >
+                      Makan di Cafe
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="border border-gray-100 shadow-sm bg-white rounded-2xl">
+            <CardHeader>
+              <CardTitle className="text-xl font-black text-brand-dark uppercase tracking-tight">Cari Item</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="flex flex-col sm:flex-row gap-3">
+                <Input
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="Cari makanan/minuman/housekeeping..."
+                />
+                <Button
+                  variant="outline"
+                  className="w-full sm:w-auto"
+                  onClick={() => setSearchQuery('')}
+                  disabled={!searchQuery.trim()}
+                >
+                  Reset
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+
+        <Card className="border border-gray-100 shadow-sm bg-white rounded-2xl">
+          <CardHeader>
+            <CardTitle className="text-xl font-black text-brand-dark uppercase tracking-tight">Housekeeping</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {hkItems.length === 0 ? (
+              <div className="text-gray-500">Item housekeeping belum tersedia</div>
+            ) : filteredHkItems.length === 0 ? (
+              <div className="text-gray-500">Item housekeeping tidak ditemukan.</div>
+            ) : (
+              <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+                {filteredHkItems.map((item) => (
+                  <Card key={item.id} className="flex flex-col hover:shadow-md transition-shadow border-2 rounded-2xl overflow-hidden">
+                    <CardContent className="p-4">
+                      <div className="flex justify-between items-start">
+                        <div>
+                          <div className="font-bold text-gray-900">{item.name}</div>
+                          <div className="text-xs font-bold text-gray-500 uppercase tracking-wider">{item.category}</div>
+                        </div>
+                        <div className="font-bold">Rp {item.price.toLocaleString()}</div>
+                      </div>
+                      <div className="mt-3 flex items-center gap-2">
+                        <Button variant="outline" size="sm" onClick={() => setHkQty(item.id, (hkQuantities[item.id] || 0) - 1)}>-</Button>
+                        <Input
+                          className="w-16 text-center"
+                          type="number"
+                          min={0}
+                          value={hkQuantities[item.id] || 0}
+                          onChange={(e) => setHkQty(item.id, parseInt(e.target.value || '0', 10))}
+                        />
+                        <Button size="sm" onClick={() => setHkQty(item.id, (hkQuantities[item.id] || 0) + 1)}>+</Button>
+                      </div>
+                      <div className="mt-3">
+                        <Label className="text-xs font-bold text-gray-600 uppercase tracking-wider">Catatan (opsional)</Label>
+                        <Input
+                          value={hkNotes[item.id] || ''}
+                          onChange={(e) => setHkNote(item.id, e.target.value)}
+                          placeholder="Contoh: minta handuk ekstra"
+                        />
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            )}
+            
+          </CardContent>
+        </Card>
+
+          <Card className="border border-gray-100 shadow-sm bg-white rounded-2xl">
+            <CardHeader>
+              <CardTitle className="text-xl font-black text-brand-dark uppercase tracking-tight">Menu</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {categories.length > 0 && (
+                <div className="mb-4 flex flex-wrap gap-2 items-center">
+                  <span className="text-xs font-bold text-gray-500 uppercase tracking-wider">Filter Kategori</span>
+                  {categories.map((cat) => (
+                    <button
+                      key={cat}
+                      className={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider border transition ${
+                        selectedCategory === cat ? 'bg-brand-50 text-brand-dark border-brand' : 'bg-white text-gray-700 border-gray-200 hover:bg-gray-50'
+                      }`}
+                      onClick={() => setSelectedCategory(cat)}
+                    >
+                      {cat === 'ALL' ? 'All' : cat}
+                    </button>
+                  ))}
+                </div>
+              )}
+              {menu.length === 0 ? (
+                <div className="text-gray-500">Menu belum tersedia</div>
+              ) : filteredMenu.length === 0 ? (
+                <div className="text-gray-500">Item menu tidak ditemukan.</div>
+              ) : (
+                <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+                  {filteredMenu.map((item) => (
+                    <Card key={item.id} className="flex flex-col hover:shadow-md transition-shadow border-2 rounded-2xl overflow-hidden">
+                      <div className="relative h-36 bg-gray-50 overflow-hidden">
+                        {item.imageUrl ? (
+                          <Image src={item.imageUrl} alt={item.name} fill className="object-cover" />
+                        ) : (
+                          <div className="flex items-center justify-center h-full text-gray-300">
+                            <Utensils size={28} />
+                          </div>
+                        )}
+                      </div>
+                      <CardContent className="p-4">
+                        <div className="flex justify-between items-start">
+                          <div>
+                            <div className="font-bold text-gray-900">{item.name}</div>
+                            <div className="text-xs font-bold text-gray-500 uppercase tracking-wider">{item.category}</div>
+                            {!!item.description && (
+                              <div className="mt-1 text-xs text-gray-500 line-clamp-2">
+                                {item.description}
+                              </div>
+                            )}
+                          </div>
+                          <div className="font-bold">Rp {item.price.toLocaleString()}</div>
+                        </div>
+                        <div className="mt-2">
+                          {(item.soldOut || (typeof item.stock === 'number' && item.stock <= 0)) ? (
+                            <span className="text-xs px-2 py-1 rounded-full font-medium bg-red-100 text-red-700">Sold Out</span>
+                          ) : (
+                            <span className="text-xs px-2 py-1 rounded-full font-medium bg-green-100 text-green-700">Available</span>
+                          )}
+                        </div>
+                        <div className="mt-3 flex items-center gap-2">
+                          <Button variant="outline" size="sm" onClick={() => setQty(item.id, (quantities[item.id] || 0) - 1)} disabled={item.soldOut || (typeof item.stock === 'number' && item.stock <= 0)}>-</Button>
+                          <Input
+                            className="w-16 text-center"
+                            type="number"
+                            min={0}
+                            max={typeof item.stock === 'number' ? item.stock : 99}
+                            value={quantities[item.id] || 0}
+                            onChange={(e) => setQty(item.id, parseInt(e.target.value || '0', 10))}
+                            disabled={item.soldOut || (typeof item.stock === 'number' && item.stock <= 0)}
+                          />
+                          <Button size="sm" onClick={() => setQty(item.id, (quantities[item.id] || 0) + 1)} disabled={(typeof item.stock === 'number' && (quantities[item.id] || 0) >= item.stock) || item.soldOut || (typeof item.stock === 'number' && item.stock <= 0)}>+</Button>
+                        </div>
+                        <div className="mt-2 text-xs text-gray-500">
+                          {item.soldOut ? 'Sold' : (typeof item.stock === 'number' ? `Stok: ${item.stock}` : 'Selalu ready')}
+                        </div>
+                        <div className="mt-3">
+                          <Label className="text-xs font-bold text-gray-600 uppercase tracking-wider">Catatan (opsional)</Label>
+                          <Input
+                            value={itemNotes[item.id] || ''}
+                            onChange={(e) => setNote(item.id, e.target.value)}
+                            placeholder="Contoh: tidak pedas / tanpa saus"
+                          />
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              )}
+              <div className="mt-6"></div>
+
+              {!isOpenNow && hours && (
+                <div className="mt-3 text-sm text-red-600">
+                  Pemesanan room service hanya tersedia pukul {hours.open}-{hours.close}.
+                </div>
+              )}
+
+              {paymentUrl && (
+                <div className="mt-4 p-4 border-2 rounded-2xl bg-green-50 text-green-700">
+                  Pembayaran dibuat. Silakan buka link berikut untuk menyelesaikan pembayaran:
+                  <div className="mt-2">
+                    <a href={paymentUrl} target="_blank" rel="noopener noreferrer" className="underline font-semibold">
+                      Buka Link Pembayaran
+                    </a>
+                  </div>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </>
+      )}
+      {/* Floating bottom bar */}
+      <div className="fixed bottom-0 left-0 right-0 z-40 border-t border-gray-200 bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/80">
+        <div className="max-w-5xl mx-auto px-6 py-3 flex items-center justify-between">
+          <div>
+            <div className="text-base md:text-lg font-black text-brand-dark uppercase tracking-tight">
+              Total: Rp {total.toLocaleString()}
+            </div>
+          </div>
+          <Button
+            className="bg-brand text-white hover:bg-brand-dark"
+            onClick={openCheckout}
+            disabled={submitting || total <= 0 || !selectedRestaurant || !isOpenNow}
+          >
+            {submitting ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Membuat Pesanan...</> : 'Bayar & Buat Pesanan'}
+          </Button>
+        </div>
+      </div>
+      <Dialog open={checkoutOpen} onOpenChange={setCheckoutOpen}>
+        <DialogContent className="w-[95vw] max-w-2xl max-h-[85vh] overflow-y-auto overflow-x-hidden p-4 sm:p-6">
+          <DialogHeader>
+            <DialogTitle>Konfirmasi Pesanan</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              {menu.filter(m => (checkoutQuantities[m.id] || 0) > 0).map((m) => (
+                <div key={m.id} className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+                  <div className="min-w-0 w-full sm:flex-1 sm:mr-3">
+                    <div className="font-medium">{m.name}</div>
+                    <div className="text-xs text-gray-500">Rp {m.price.toLocaleString()}</div>
+                    {!!m.description && (
+                      <div className="mt-1 text-xs text-gray-500 line-clamp-2">
+                        {m.description}
+                      </div>
+                    )}
+                    <Input
+                      className="mt-1 h-7 text-[11px] px-2 w-full"
+                      placeholder="Tambah catatan..."
+                      value={itemNotes[m.id] || ''}
+                      onChange={(e) => setNote(m.id, e.target.value)}
+                    />
+                  </div>
+                  <div className="flex items-center gap-2 justify-end w-full sm:w-auto sm:flex-shrink-0">
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      className="h-8 w-8"
+                      onClick={() => setCheckoutQuantities(prev => ({ ...prev, [m.id]: Math.max(0, (prev[m.id] || 0) - 1) }))}
+                    >
+                      -
+                    </Button>
+                    <Input
+                      className="w-14 h-8 text-center px-2"
+                      type="number"
+                      min={0}
+                      value={checkoutQuantities[m.id] || 0}
+                      onChange={(e) => setCheckoutQuantities(prev => ({ ...prev, [m.id]: Math.max(0, parseInt(e.target.value || '0', 10)) }))}
+                    />
+                    <Button
+                      size="icon"
+                      className="h-8 w-8"
+                      onClick={() => setCheckoutQuantities(prev => ({ ...prev, [m.id]: (prev[m.id] || 0) + 1 }))}
+                    >
+                      +
+                    </Button>
+                  </div>
+                </div>
+              ))}
+              {hkItems.filter(h => (hkQuantities[h.id] || 0) > 0).map((h) => (
+                <div key={h.id} className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+                  <div className="min-w-0 w-full sm:flex-1 sm:mr-3">
+                    <div className="font-medium">{h.name}</div>
+                    <div className="text-xs text-gray-500">Rp {h.price.toLocaleString()}</div>
+                    <Input
+                      className="mt-1 h-7 text-[11px] px-2 w-full"
+                      placeholder="Tambah catatan..."
+                      value={hkNotes[h.id] || ''}
+                      onChange={(e) => setHkNote(h.id, e.target.value)}
+                    />
+                  </div>
+                  <div className="flex items-center gap-2 justify-end w-full sm:w-auto sm:flex-shrink-0">
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      className="h-8 w-8"
+                      onClick={() => setHkQty(h.id, Math.max(0, (hkQuantities[h.id] || 0) - 1))}
+                    >
+                      -
+                    </Button>
+                    <Input
+                      className="w-14 h-8 text-center px-2"
+                      type="number"
+                      min={0}
+                      value={hkQuantities[h.id] || 0}
+                      onChange={(e) => setHkQty(h.id, Math.max(0, parseInt(e.target.value || '0', 10)))}
+                    />
+                    <Button
+                      size="icon"
+                      className="h-8 w-8"
+                      onClick={() => setHkQty(h.id, (hkQuantities[h.id] || 0) + 1)}
+                    >
+                      +
+                    </Button>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {recommendations.length > 0 && (
+              <div className="space-y-2 pt-2 border-t border-dashed border-gray-200">
+                <div className="text-xs font-bold uppercase tracking-wider text-brand-dark">Rekomendasi Tambahan</div>
+                <div className="grid grid-cols-2 gap-3 sm:flex sm:gap-3 sm:overflow-x-auto sm:pb-2 scrollbar-hide">
+                  {recommendations.map(item => (
+                    <div key={item.id} className="w-full sm:flex-shrink-0 sm:w-36 p-2 border rounded-lg bg-gray-50 flex flex-col justify-between">
+                      <div>
+                        <div className="font-bold text-sm truncate" title={item.name}>{item.name}</div>
+                        <div className="text-xs text-gray-500">Rp {item.price.toLocaleString()}</div>
+                      </div>
+                      <Button 
+                        size="sm" 
+                        variant="outline" 
+                        className="mt-2 w-full text-xs h-7 border-brand text-brand hover:bg-brand hover:text-white"
+                        onClick={() => setCheckoutQuantities(prev => ({ ...prev, [item.id]: 1 }))}
+                      >
+                        + Tambah
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            <div className="space-y-2">
+              <Label>Metode Pembayaran</Label>
+              <div className="space-y-4">
+                {['Virtual Accounts','Cards','Retail','E-Wallets','QR Code'].map((grp) => (
+                  <div key={grp} className="space-y-2">
+                    <div className="text-xs font-bold uppercase tracking-wider text-gray-600">{grp}</div>
+                    <div className="flex flex-wrap gap-2">
+                      {PAYMENT_METHODS.filter(pm => pm.group === grp).map(pm => (
+                        <button
+                          key={pm.id}
+                          type="button"
+                          onClick={() => setSelectedMethod(pm.id)}
+                          className={`px-3 py-2 rounded-md border text-sm transition ${
+                            selectedMethod === pm.id ? 'border-brand bg-brand-50 text-brand-dark' : 'border-gray-200 hover:bg-gray-50'
+                          }`}
+                        >
+                          {pm.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div className="space-y-1 text-sm">
+              {(() => {
+                const subtotalFood = menu.reduce((sum, m) => sum + (checkoutQuantities[m.id] || 0) * m.price, 0);
+                const subtotalHK = hkItems.reduce((sum, h) => sum + (hkQuantities[h.id] || 0) * h.price, 0);
+                const subtotal = subtotalFood + subtotalHK;
+                const fee = selectedMethod ? calculateFee(subtotal, selectedMethod) : 0;
+                const grand = subtotal + fee;
+                return (
+                  <>
+                    <div className="flex justify-between"><span>Subtotal</span><span>Rp {subtotal.toLocaleString()}</span></div>
+                    <div className="flex justify-between"><span>Admin Fee</span><span>Rp {fee.toLocaleString()}</span></div>
+                    <div className="flex justify-between font-bold"><span>Total Pembayaran</span><span>Rp {grand.toLocaleString()}</span></div>
+                  </>
+                );
+              })()}
+            </div>
+          </div>
+          <DialogFooter>
+            <Button
+                className="bg-brand text-white hover:bg-brand-dark w-full sm:w-auto"
+              disabled={submitting || !selectedMethod}
+              onClick={() => submitOrder()}
+            >
+              Lanjutkan ke Pembayaran
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+}

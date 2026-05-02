@@ -15,6 +15,7 @@ interface ReviewDialogProps {
   foodOrderId?: string;
   accommodationId?: string;
   restaurantId?: string;
+  attractionId?: string;
   onSuccess?: () => void;
   title?: string;
 }
@@ -26,6 +27,7 @@ export function ReviewDialog({
   foodOrderId, 
   accommodationId, 
   restaurantId,
+  attractionId,
   onSuccess,
   title = "Write a Review"
 }: ReviewDialogProps) {
@@ -51,7 +53,8 @@ export function ReviewDialog({
           bookingId,
           foodOrderId,
           accommodationId,
-          restaurantId
+          restaurantId,
+          attractionId
         })
       });
 

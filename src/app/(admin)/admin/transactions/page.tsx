@@ -26,9 +26,11 @@ export default async function TransactionsPage() {
           <h2 className="text-2xl font-bold text-gray-800">Riwayat Transaksi Global</h2>
           <p className="text-gray-500">Pantau pergerakan poin dan aktivitas member.</p>
         </div>
-        <div className="flex gap-2">
-          <ExportButton endpoint="/api/admin/transactions/export" filename="transactions-report.csv" />
-          <Button>
+        <div className="flex flex-col sm:flex-row gap-2 w-full md:w-auto">
+          <div className="w-full sm:w-auto">
+            <ExportButton endpoint="/api/admin/transactions/export" filename="transactions-report.csv" className="w-full sm:w-auto" />
+          </div>
+          <Button className="w-full sm:w-auto">
             <Search className="mr-2 h-4 w-4" /> Filter Transaksi
           </Button>
         </div>

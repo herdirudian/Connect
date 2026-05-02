@@ -20,9 +20,10 @@ interface ExportButtonProps {
   endpoint: string;
   label?: string;
   filename?: string;
+  className?: string;
 }
 
-export default function ExportButton({ endpoint, label = 'Export CSV', filename = 'report.csv' }: ExportButtonProps) {
+export default function ExportButton({ endpoint, label = 'Export CSV', filename = 'report.csv', className }: ExportButtonProps) {
   const [loading, setLoading] = useState(false);
   const [open, setOpen] = useState(false);
   const [startDate, setStartDate] = useState('');
@@ -69,7 +70,7 @@ export default function ExportButton({ endpoint, label = 'Export CSV', filename 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button variant="outline">
+        <Button variant="outline" className={className}>
           <Download className="mr-2 h-4 w-4" />
           {label}
         </Button>

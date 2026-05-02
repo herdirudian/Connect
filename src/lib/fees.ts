@@ -11,36 +11,29 @@ export interface PaymentMethodConfig {
 }
 
 export const PAYMENT_METHODS: PaymentMethodConfig[] = [
-  // Virtual Accounts
-  { id: 'VA', label: 'Virtual Accounts (All Banks)', type: 'fixed', value: 4000, xenditCodes: ['BCA', 'BNI', 'BRI', 'MANDIRI', 'PERMATA', 'CIMB', 'BSI'], group: 'Virtual Accounts' },
+  // Virtual Accounts (Bank Transfer)
+  { id: 'BRI_VA', label: 'Bank BRI', type: 'fixed', value: 4000, xenditCodes: ['BRI'], group: 'Virtual Accounts' },
+  { id: 'BSI_VA', label: 'Bank BSI', type: 'fixed', value: 4000, xenditCodes: ['BSI'], group: 'Virtual Accounts' },
+  { id: 'SAMPOERNA_VA', label: 'Bank Sampoerna', type: 'fixed', value: 4000, xenditCodes: ['OTHER_BANKS'], group: 'Virtual Accounts' },
+  { id: 'MANDIRI_VA', label: 'Bank Mandiri', type: 'fixed', value: 4000, xenditCodes: ['MANDIRI'], group: 'Virtual Accounts' },
+  { id: 'CIMB_VA', label: 'Bank CIMB Niaga', type: 'fixed', value: 4000, xenditCodes: ['CIMB'], group: 'Virtual Accounts' },
+  { id: 'PERMATA_VA', label: 'Permata Bank', type: 'fixed', value: 4000, xenditCodes: ['PERMATA'], group: 'Virtual Accounts' },
+  { id: 'BNI_VA', label: 'Bank BNI', type: 'fixed', value: 4000, xenditCodes: ['BNI'], group: 'Virtual Accounts' },
+  { id: 'BJB_VA', label: 'Bank BJB', type: 'fixed', value: 4000, xenditCodes: ['OTHER_BANKS'], group: 'Virtual Accounts' },
+  { id: 'OTHER_VA', label: 'Other Banks', type: 'fixed', value: 4000, xenditCodes: ['OTHER_BANKS'], group: 'Virtual Accounts' },
   
   // Credit Card
   { id: 'CC', label: 'Credit Card (Visa/Master)', type: 'mixed', value: 0.029, fixed: 2000, xenditCodes: ['CREDIT_CARD'], group: 'Cards' },
   
   // E-Wallets
   { id: 'ASTRAPAY', label: 'AstraPay', type: 'percent', value: 0.015, xenditCodes: ['ASTRAPAY'], group: 'E-Wallets' },
-  { id: 'JENIUSPAY', label: 'JeniusPay', type: 'percent', value: 0.02, xenditCodes: ['JENIUSPAY'], group: 'E-Wallets' },
-  { id: 'OVO', label: 'OVO', type: 'percent', value: 0.0318, xenditCodes: ['OVO'], group: 'E-Wallets' },
-  { id: 'SHOPEEPAY', label: 'ShopeePay', type: 'percent', value: 0.04, xenditCodes: ['SHOPEEPAY'], group: 'E-Wallets' },
-  { id: 'LINKAJA', label: 'LinkAja', type: 'percent', value: 0.0315, xenditCodes: ['LINKAJA'], group: 'E-Wallets' },
-  { id: 'DANA', label: 'DANA', type: 'percent', value: 0.03, xenditCodes: ['DANA'], group: 'E-Wallets' },
+  { id: 'SHOPEEPAY', label: 'Shopee Pay', type: 'percent', value: 0.04, xenditCodes: ['SHOPEEPAY'], group: 'E-Wallets' },
   
   // QR Code
   { id: 'QRIS', label: 'QRIS', type: 'percent', value: 0.007, xenditCodes: ['QRIS'], group: 'QR Code' },
   
-  // Direct Debit
-  { id: 'DD_BRI', label: 'BRI Direct Debit', type: 'percent', value: 0.019, xenditCodes: ['DD_BRI'], group: 'Direct Debit' },
-  
   // Retail
-  { id: 'ALFAMART', label: 'Alfamart Group', type: 'fixed', value: 5000, xenditCodes: ['ALFAMART'], group: 'Retail' },
   { id: 'INDOMARET', label: 'Indomaret', type: 'fixed', value: 5500, xenditCodes: ['INDOMARET'], group: 'Retail' },
-  
-  // PayLater
-  { id: 'AKULAKU', label: 'Akulaku', type: 'percent', value: 0.017, xenditCodes: ['AKULAKU'], group: 'PayLater' },
-  { id: 'ATOME', label: 'Atome', type: 'percent', value: 0.05, xenditCodes: ['ATOME'], group: 'PayLater' },
-  { id: 'INDODANA', label: 'Indodana', type: 'percent', value: 0.023, xenditCodes: ['INDODANA'], group: 'PayLater' },
-  { id: 'KREDIVO', label: 'Kredivo', type: 'percent', value: 0.023, xenditCodes: ['KREDIVO'], group: 'PayLater' },
-  { id: 'UANGME', label: 'UangMe', type: 'percent', value: 0.018, xenditCodes: ['UANGME'], group: 'PayLater' },
 ];
 
 export function calculateFee(amount: number, methodId: string): number {

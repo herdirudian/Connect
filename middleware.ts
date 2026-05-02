@@ -55,14 +55,15 @@ export async function middleware(req: NextRequest) {
     }
   }
 
-  // 2. Admin Authentication
+  // 2. Admin/Staff Authentication
   if (pathname.startsWith('/admin')) {
     const cookie = req.headers.get('cookie') || '';
     const match = cookie.match(/(?:^|;\s*)token=([^;]+)/);
     const token = match ? decodeURIComponent(match[1]) : '';
     const role = token ? decodeJwtRole(token) : null;
 
-    if (!token || role !== 'ADMIN') {
+    const allowedRoles = new Set(['ADMIN', 'STAFF', 'VERIFICATOR']);
+    if (!token || !role || !allowedRoles.has(role)) {
       const url = new URL('/login', req.url);
       return NextResponse.redirect(url);
     }

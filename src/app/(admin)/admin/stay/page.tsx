@@ -13,6 +13,7 @@ interface Accommodation {
   capacity: string;
   price: number;
   originalPrice?: number;
+  points?: number;
   stock: number;
   description: string;
   rating: number;
@@ -33,6 +34,7 @@ export default function AdminStayPage() {
     capacity: '',
     price: '',
     originalPrice: '',
+    points: '0',
     stock: '1', // Default to 1 to ensure bookable
     description: '',
     rating: '',
@@ -147,7 +149,7 @@ export default function AdminStayPage() {
 
       if (res.ok) {
         setIsAdding(false);
-        setFormData({ name: '', capacity: '', price: '', originalPrice: '', stock: '1', description: '', rating: '', benefits: '', imageUrl: '', images: [], active: true, receptionEmail: '' });
+        setFormData({ name: '', capacity: '', price: '', originalPrice: '', points: '0', stock: '1', description: '', rating: '', benefits: '', imageUrl: '', images: [], active: true, receptionEmail: '' });
         fetchAccommodations();
       }
     } catch (error) {
@@ -176,7 +178,7 @@ export default function AdminStayPage() {
       });
       if (res.ok) {
         setEditingId(null);
-        setFormData({ name: '', capacity: '', price: '', originalPrice: '', stock: '', description: '', rating: '', benefits: '', imageUrl: '', images: [], active: true, receptionEmail: '' });
+        setFormData({ name: '', capacity: '', price: '', originalPrice: '', points: '0', stock: '', description: '', rating: '', benefits: '', imageUrl: '', images: [], active: true, receptionEmail: '' });
         fetchAccommodations();
       }
     } catch (error) {
@@ -196,6 +198,7 @@ export default function AdminStayPage() {
       capacity: item.capacity,
       price: item.price.toString(),
       originalPrice: item.originalPrice ? item.originalPrice.toString() : '',
+      points: item.points ? item.points.toString() : '0',
       stock: (item.stock || 0).toString(),
       description: item.description,
       rating: item.rating.toString(),
@@ -212,7 +215,7 @@ export default function AdminStayPage() {
 
   return (
     <div className="space-y-8">
-      <div className="flex justify-between items-center">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
           <h2 className="text-3xl font-bold tracking-tight text-gray-900">Manage Accommodations</h2>
           <p className="text-muted-foreground">Add or edit accommodation listings.</p>
@@ -220,8 +223,8 @@ export default function AdminStayPage() {
         <Button onClick={() => {
             setIsAdding(!isAdding);
             setEditingId(null);
-            setFormData({ name: '', capacity: '', price: '', originalPrice: '', stock: '1', description: '', rating: '', benefits: '', imageUrl: '', images: [], active: true, receptionEmail: '' });
-        }}>
+            setFormData({ name: '', capacity: '', price: '', originalPrice: '', points: '0', stock: '1', description: '', rating: '', benefits: '', imageUrl: '', images: [], active: true, receptionEmail: '' });
+        }} className="w-full md:w-auto">
           {isAdding ? <><XCircle className="mr-2 h-4 w-4" /> Cancel</> : <><Plus className="mr-2 h-4 w-4" /> Add Accommodation</>}
         </Button>
       </div>
@@ -262,6 +265,15 @@ export default function AdminStayPage() {
                 value={formData.originalPrice}
                 onChange={(e) => setFormData({...formData, originalPrice: e.target.value})}
                 placeholder="Fill to show discount"
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Points Earned</label>
+              <Input 
+                type="number"
+                value={formData.points}
+                onChange={(e) => setFormData({...formData, points: e.target.value})}
+                placeholder="e.g. 100"
               />
             </div>
             <div className="space-y-2">
@@ -370,7 +382,7 @@ export default function AdminStayPage() {
         </Card>
       )}
 
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+      <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
         {accommodations.map((item) => (
           <Card key={item.id} className={`overflow-hidden ${!item.active ? 'opacity-60 bg-gray-50' : ''}`}>
             <CardHeader className="flex flex-row items-start justify-between space-y-0 pb-2">
@@ -391,6 +403,9 @@ export default function AdminStayPage() {
                 <p>Capacity: {item.capacity} people</p>
                 <p>Stock: {item.stock || 0} unit</p>
                 <p>Price: IDR {item.price.toLocaleString()}</p>
+                {item.points ? (
+                  <p className="text-amber-600 font-medium">+ {item.points} Points</p>
+                ) : null}
                 <p>Rating: {item.rating}/5</p>
               </div>
               <div className="flex justify-end gap-2">

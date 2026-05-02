@@ -12,48 +12,19 @@ export async function GET(req: Request) {
 
     if (!code) return NextResponse.json({ error: 'Code required' }, { status: 400 });
 
-    const searchId = code.trim();
+    let searchId = code.trim();
 
-    if (searchId.startsWith('PROMO:')) {
-      const parts = searchId.split(':');
-      if (parts.length === 3) {
-        const promoId = parts[1];
-        const userId = parts[2];
-
-        const claim = await prisma.partnerPromoClaim.findFirst({
-          where: { promoId, userId },
-          include: { user: true, promo: true }
-        });
-
-        if (claim) {
-          const tx = await prisma.transaction.findFirst({
-             where: { userId: claim.userId, source: `PROMO_REDEEM:${claim.id}` }
-          });
-          const status = tx ? 'USED' : 'ACTIVE';
-          
-          return NextResponse.json({
-            voucher: {
-              id: claim.id,
-              userId: claim.userId,
-              rewardId: claim.promoId,
-              status,
-              createdAt: claim.createdAt,
-              usedAt: tx?.createdAt || null,
-              user: claim.user,
-              reward: {
-                id: claim.promo.id,
-                name: claim.promo.title,
-                description: claim.promo.description,
-                cost: 0,
-                type: 'PROMO',
-                imageUrl: claim.promo.imageUrl,
-                active: claim.promo.active
-              },
-              isPromo: true
+    // URL handling
+    if (searchId.startsWith('http')) {
+        try {
+            const url = new URL(searchId);
+            const codeParam = url.searchParams.get('code');
+            if (codeParam) {
+                searchId = codeParam.trim();
             }
-          });
+        } catch (e) {
+            // invalid url, ignore
         }
-      }
     }
 
     const cookieStore = await cookies();
@@ -62,6 +33,62 @@ export async function GET(req: Request) {
     // Ideally check for ADMIN role here
     if (!decoded) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
+    // 1. Check PartnerPromoClaim (By UniqueCode, ID, or PROMO:ID)
+    let promoClaim = await prisma.partnerPromoClaim.findFirst({
+      where: {
+        OR: [
+          { uniqueCode: searchId },
+          { id: searchId },
+          { id: searchId.replace(/^PROMO:/, '') }
+        ]
+      },
+      include: { user: true, promo: true }
+    });
+
+    // 2. Legacy Check: PROMO:promoId:userId
+    if (!promoClaim && searchId.startsWith('PROMO:') && searchId.split(':').length === 3) {
+      const parts = searchId.split(':');
+      const promoId = parts[1];
+      const userId = parts[2];
+
+      promoClaim = await prisma.partnerPromoClaim.findFirst({
+        where: { promoId, userId },
+        include: { user: true, promo: true }
+      });
+    }
+
+    if (promoClaim) {
+      const tx = await prisma.transaction.findFirst({
+         where: { userId: promoClaim.userId, source: `PROMO_REDEEM:${promoClaim.id}` }
+      });
+      // Also check internal status
+      const isUsed = tx || promoClaim.status === 'USED';
+      const status = isUsed ? 'USED' : 'ACTIVE';
+      
+      return NextResponse.json({
+        voucher: {
+          id: promoClaim.id,
+          userId: promoClaim.userId,
+          rewardId: promoClaim.promoId,
+          status,
+          createdAt: promoClaim.createdAt,
+          usedAt: promoClaim.usedAt || tx?.createdAt || null,
+          user: promoClaim.user,
+          reward: {
+            id: promoClaim.promo.id,
+            name: promoClaim.promo.title,
+            description: promoClaim.promo.description,
+            cost: 0,
+            type: 'PROMO',
+            imageUrl: promoClaim.promo.imageUrl,
+            active: promoClaim.promo.active
+          },
+          isPromo: true
+        }
+      });
+    }
+
+    // 3. Check UserReward (Regular Vouchers)
     const voucher = await prisma.userReward.findFirst({
       where: { 
         OR: [
@@ -78,6 +105,7 @@ export async function GET(req: Request) {
 
     return NextResponse.json({ voucher });
   } catch (error) {
+    console.error('Verify Reward Error:', error);
     return NextResponse.json({ error: 'Internal error' }, { status: 500 });
   }
 }
@@ -91,64 +119,100 @@ export async function POST(req: Request) {
 
     const body = await req.json();
     const { code } = body;
-    const searchId = code.trim();
+    let searchId = code.trim();
 
-    if (searchId.startsWith('PROMO:')) {
+    // URL handling
+    if (searchId.startsWith('http')) {
+        try {
+            const url = new URL(searchId);
+            const codeParam = url.searchParams.get('code');
+            if (codeParam) {
+                searchId = codeParam.trim();
+            }
+        } catch (e) {
+            // invalid url, ignore
+        }
+    }
+
+    // 1. Check PartnerPromoClaim (By UniqueCode, ID, or PROMO:ID)
+    let promoClaim = await prisma.partnerPromoClaim.findFirst({
+      where: {
+        OR: [
+          { uniqueCode: searchId },
+          { id: searchId },
+          { id: searchId.replace(/^PROMO:/, '') }
+        ]
+      },
+      include: { user: true, promo: true }
+    });
+
+    // 2. Legacy Check: PROMO:promoId:userId
+    if (!promoClaim && searchId.startsWith('PROMO:') && searchId.split(':').length === 3) {
       const parts = searchId.split(':');
-      if (parts.length === 3) {
-        const promoId = parts[1];
-        const userId = parts[2];
+      const promoId = parts[1];
+      const userId = parts[2];
 
-        const claim = await prisma.partnerPromoClaim.findFirst({
-          where: { promoId, userId },
-          include: { user: true, promo: true }
+      promoClaim = await prisma.partnerPromoClaim.findFirst({
+        where: { promoId, userId },
+        include: { user: true, promo: true }
+      });
+    }
+
+    if (promoClaim) {
+        // Check if already redeemed
+        const tx = await prisma.transaction.findFirst({
+             where: { userId: promoClaim.userId, source: `PROMO_REDEEM:${promoClaim.id}` }
         });
-
-        if (claim) {
-          const tx = await prisma.transaction.findFirst({
-             where: { userId: claim.userId, source: `PROMO_REDEEM:${claim.id}` }
-          });
           
-          if (tx) {
+        if (tx || promoClaim.status === 'USED') {
              return NextResponse.json({ error: 'Promo already redeemed' }, { status: 400 });
-          }
+        }
 
-          const newTx = await prisma.transaction.create({
+        // Create Transaction Record
+        const newTx = await prisma.transaction.create({
             data: {
-              userId: claim.userId,
+              userId: promoClaim.userId,
               amount: 0,
               type: 'REDEEM',
-              description: `Partner promo redeemed: ${claim.promo.title}`,
-              source: `PROMO_REDEEM:${claim.id}`,
+              description: `Partner promo redeemed: ${promoClaim.promo.title}`,
+              source: `PROMO_REDEEM:${promoClaim.id}`,
             },
-          });
+        });
 
-          return NextResponse.json({
+        // Update Promo Claim Status
+        await prisma.partnerPromoClaim.update({
+            where: { id: promoClaim.id },
+            data: {
+                status: 'USED',
+                usedAt: new Date()
+            }
+        });
+
+        return NextResponse.json({
             success: true,
             voucher: {
-              id: claim.id,
-              userId: claim.userId,
-              rewardId: claim.promoId,
+              id: promoClaim.id,
+              userId: promoClaim.userId,
+              rewardId: promoClaim.promoId,
               status: 'USED',
-              createdAt: claim.createdAt,
+              createdAt: promoClaim.createdAt,
               usedAt: newTx.createdAt,
-              user: claim.user,
+              user: promoClaim.user,
               reward: {
-                id: claim.promo.id,
-                name: claim.promo.title,
-                description: claim.promo.description,
+                id: promoClaim.promo.id,
+                name: promoClaim.promo.title,
+                description: promoClaim.promo.description,
                 cost: 0,
                 type: 'PROMO',
-                imageUrl: claim.promo.imageUrl,
-                active: claim.promo.active
+                imageUrl: promoClaim.promo.imageUrl,
+                active: promoClaim.promo.active
               },
               isPromo: true
             }
-          });
-        }
-      }
+        });
     }
 
+    // 3. Check UserReward (Regular Vouchers)
     const voucher = await prisma.userReward.findFirst({
       where: { 
         OR: [
@@ -164,7 +228,7 @@ export async function POST(req: Request) {
     if (voucher.status === 'USED') return NextResponse.json({ error: 'Voucher already used' }, { status: 400 });
 
     const updated = await prisma.userReward.update({
-      where: { id: voucher.id }, // Use the found voucher ID (full UUID)
+      where: { id: voucher.id }, 
       data: {
         status: 'USED',
         usedAt: new Date()
@@ -174,6 +238,7 @@ export async function POST(req: Request) {
 
     return NextResponse.json({ success: true, voucher: updated });
   } catch (error) {
+    console.error('Redeem Error:', error);
     return NextResponse.json({ error: 'Failed to redeem' }, { status: 500 });
   }
 }

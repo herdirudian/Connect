@@ -1,15 +1,13 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { verifyToken, hashPassword, generateReferralCode } from '@/lib/auth';
-import { cookies } from 'next/headers';
+import { hashPassword, generateReferralCode } from '@/lib/auth';
+import { getAuthUser } from '@/lib/serverAuth';
+import { PERMISSIONS } from '@/lib/permissions';
 
 export async function POST(req: Request) {
   try {
-    const cookieStore = await cookies();
-    const token = cookieStore.get('token')?.value || '';
-    const decoded = verifyToken(token) as any;
-
-    if (!decoded || decoded.role !== 'ADMIN') {
+    const auth = await getAuthUser();
+    if (!auth || (auth.role !== 'ADMIN' && !auth.permissions.includes(PERMISSIONS.MANAGE_ROLES))) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
@@ -89,11 +87,8 @@ export async function POST(req: Request) {
 
 export async function GET(req: Request) {
     try {
-        const cookieStore = await cookies();
-        const token = cookieStore.get('token')?.value || '';
-        const decoded = verifyToken(token) as any;
-    
-        if (!decoded || decoded.role !== 'ADMIN') {
+        const auth = await getAuthUser();
+        if (!auth || (auth.role !== 'ADMIN' && !auth.permissions.includes(PERMISSIONS.MANAGE_ROLES))) {
           return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
         }
     

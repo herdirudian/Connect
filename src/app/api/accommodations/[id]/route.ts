@@ -22,7 +22,7 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
     if (!decoded || (decoded as any).role !== 'ADMIN') return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
     const body = await req.json();
-    const { name, capacity, price, originalPrice, stock, description, rating, benefits, imageUrl, images, active, receptionEmail } = body;
+    const { name, capacity, price, originalPrice, points, stock, description, rating, benefits, imageUrl, images, active, receptionEmail } = body;
     const { id } = await params;
 
     const updated = await prisma.accommodation.update({
@@ -32,6 +32,7 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
         capacity: capacity !== undefined ? capacity : undefined,
         price: price !== undefined ? (parseFloat(price) || 0) : undefined,
         originalPrice: originalPrice !== undefined ? (originalPrice ? parseFloat(originalPrice) : null) : undefined,
+        points: points !== undefined ? (parseInt(points) || 0) : undefined,
         stock: stock !== undefined ? (parseInt(stock) || 0) : undefined,
         description,
         rating: rating !== undefined ? (parseFloat(rating) || 0) : undefined,

@@ -25,7 +25,8 @@ export async function POST(req: Request) {
     }
 
     const body = await req.json();
-    const { name, type, description, status, imageUrl, menuUrl, active, allowReservations, allowOrders } = body;
+    const { name, type, description, status, imageUrl, menuUrl, active, allowReservations, allowOrders, minOrderAmount } = body;
+    const minOrder = Number.isFinite(Number(minOrderAmount)) ? Number(minOrderAmount) : 0;
 
     let restaurant;
     try {
@@ -40,6 +41,7 @@ export async function POST(req: Request) {
           active: active ?? true,
           allowReservations: allowReservations ?? true,
           allowOrders: allowOrders ?? true,
+          minOrderAmount: minOrder,
         },
       });
     } catch (createError) {

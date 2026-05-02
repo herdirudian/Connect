@@ -29,6 +29,11 @@ enum TransactionType {
   REDEEM
 }
 
+enum OrderChannel {
+  MEMBER
+  ROOM_SERVICE
+}
+
 enum TicketStatus {
   ACTIVE
   USED
@@ -118,6 +123,10 @@ model Review {
   accommodationId String?
   accommodation   Accommodation? @relation(fields: [accommodationId], references: [id])
   
+  // Target: Attraction
+  attractionId    String?
+  attraction      Attraction?    @relation(fields: [attractionId], references: [id])
+
   // Target: Restaurant
   restaurantId    String?
   restaurant      Restaurant?    @relation(fields: [restaurantId], references: [id])
@@ -153,6 +162,9 @@ model Transaction {
   description String
   source      String?         // e.g., "TICKET_PURCHASE", "F&B", "REFERRAL"
   createdAt   DateTime        @default(now())
+  
+  @@index([userId])
+  @@index([createdAt])
 }
 
 model Ticket {
@@ -179,7 +191,7 @@ model Booking {
   userId      String
   user        User     @relation(fields: [userId], references: [id])
   type        String   // "GLAMPING", "EVENT", "WAHANA"
-  details     String   // JSON string for specific details
+  details     String   @db.Text // JSON string for specific details
   date        DateTime
   status      String   // "PENDING", "CONFIRMED", "CANCELLED"
   
@@ -195,6 +207,25 @@ model Booking {
 
   @@index([status])
   @@index([paymentStatus])
+  @@index([createdAt])
+}
+
+model PromoCode {
+  id           String   @id @default(uuid())
+  code         String   @unique
+  description  String?
+  discountType String   // "PERCENT" or "FIXED"
+  value        Float
+  maxDiscount  Float?
+  minAmount    Float?
+  applicableTo String   @default("ALL") // "ALL", "WAHANA", "GLAMPING"
+  active       Boolean  @default(true)
+  validFrom    DateTime?
+  validUntil   DateTime?
+  usageLimit   Int?
+  usedCount    Int      @default(0)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 }
 
 model Attraction {
@@ -202,12 +233,16 @@ model Attraction {
   name        String
   description String
   price       Float
+  points      Int      @default(0)
+  rating      Float    @default(0)
   imageUrl    String?
   benefits    String?  @db.Text // JSON string list of benefits
   active      Boolean  @default(true)
   originalPrice Float? // Price before discount (for display only)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+  reviews     Review[]
+  priceSchedules AttractionPriceSchedule[]
 }
 
 model Restaurant {
@@ -223,6 +258,7 @@ model Restaurant {
   
   allowReservations Boolean @default(true)
   allowOrders       Boolean @default(true)
+  minOrderAmount    Float   @default(0)
   
   menuItems     MenuItem[]
   reservations  RestaurantReservation[]
@@ -244,6 +280,9 @@ model MenuItem {
   imageUrl      String?
   originalPrice Float?      // Price before discount (for display only)
   available     Boolean     @default(true)
+  soldOut       Boolean     @default(false)
+  stock         Int?
+  minOrderQty   Int         @default(1)
   
   orderItems    FoodOrderItem[]
   createdAt     DateTime    @default(now())
@@ -267,23 +306,33 @@ model RestaurantReservation {
 }
 
 model FoodOrder {
-  id            String      @id @default(uuid())
-  userId        String
-  user          User        @relation(fields: [userId], references: [id])
-  restaurantId  String
-  restaurant    Restaurant  @relation(fields: [restaurantId], references: [id])
-  status        String      // "PENDING", "PREPARING", "READY", "COMPLETED", "CANCELLED"
-  totalAmount   Float
+  id             String       @id @default(uuid())
+  userId         String?
+  user           User?        @relation(fields: [userId], references: [id])
+  restaurantId   String
+  restaurant     Restaurant   @relation(fields: [restaurantId], references: [id])
+  status         String       // "PENDING", "PREPARING", "READY", "COMPLETED", "CANCELLED"
+  totalAmount    Float
+
+  // Channel & guest info (for Room Service public orders)
+  channel        OrderChannel @default(MEMBER)
+  guestName      String?
+  roomNumber     String?
+  guestPhone     String?
+  deliveryNotes  String?
   
   // Payment integration
-  paymentId     String?     @unique
-  paymentUrl    String?
-  paymentStatus String      @default("PENDING")
+  paymentId      String?      @unique
+  paymentUrl     String?
+  paymentStatus  String       @default("PENDING")
   
-  items         FoodOrderItem[]
-  review        Review?
-  createdAt     DateTime    @default(now())
-  updatedAt     DateTime    @updatedAt
+  items          FoodOrderItem[]
+  review         Review?
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  @@index([paymentStatus])
+  @@index([createdAt])
 }
 
 model FoodOrderItem {
@@ -294,13 +343,54 @@ model FoodOrderItem {
   menuItem      MenuItem    @relation(fields: [menuItemId], references: [id])
   quantity      Int
   price         Float       // Snapshot price
+  requestNote   String?     // Special request per item
 }
 
+model HousekeepingItem {
+  id        String  @id @default(uuid())
+  name      String
+  category  String
+  price     Float
+  available Boolean @default(true)
+  stock     Int?    // optional stock
+  active    Boolean @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  orderItems HousekeepingOrderItem[]
+}
+
+model HousekeepingOrder {
+  id            String     @id @default(uuid())
+  status        String     @default("PENDING")     // PENDING, PREPARING, COMPLETED, CANCELLED
+  paymentStatus String     @default("PENDING")     // PENDING, PAID, EXPIRED
+  paymentId     String?    @unique
+  paymentUrl    String?
+  totalAmount   Float
+  channel       OrderChannel @default(ROOM_SERVICE)
+  guestName     String?
+  roomNumber    String?
+  guestPhone    String?
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+  items         HousekeepingOrderItem[]
+}
+
+model HousekeepingOrderItem {
+  id        String            @id @default(uuid())
+  orderId   String
+  order     HousekeepingOrder @relation(fields: [orderId], references: [id])
+  itemId    String
+  item      HousekeepingItem  @relation(fields: [itemId], references: [id])
+  quantity  Int
+  price     Float
+  requestNote String?
+}
 model Accommodation {
   id          String   @id @default(uuid())
   name        String
   capacity    String
   price       Float
+  points      Int      @default(0)
   stock       Int      @default(0)
   description String
   rating      Float    @default(0)
@@ -327,6 +417,17 @@ model AccommodationAllotment {
   @@unique([accommodationId, date])
 }
 
+model AttractionPriceSchedule {
+  id           String     @id @default(uuid())
+  attractionId String
+  attraction   Attraction @relation(fields: [attractionId], references: [id], onDelete: Cascade)
+  validFrom    DateTime
+  validUntil   DateTime
+  price        Float
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+  @@index([attractionId, validFrom, validUntil])
+}
 model Reward {
   id          String   @id @default(uuid())
   name        String
@@ -383,4 +484,13 @@ model SystemSetting {
   description String?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+}
+
+model RoomServiceRoom {
+  id        String   @id @default(uuid())
+  number    String
+  slug      String   @unique
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }

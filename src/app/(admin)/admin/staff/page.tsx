@@ -5,29 +5,15 @@ import { User, Shield, Check, Phone, Mail } from 'lucide-react';
 import { UserAccessManager } from '@/components/admin/UserAccessManager';
 import { CreateStaffDialog } from '@/components/admin/CreateStaffDialog';
 import { PERMISSION_LABELS } from '@/lib/permissions';
-import { cookies } from 'next/headers';
-import { verifyToken } from '@/lib/auth';
 import { hasPermission, ROLE_DEFAULT_PERMISSIONS, PERMISSIONS } from '@/lib/permissions';
+import { getAuthUser } from '@/lib/serverAuth';
 
 export default async function StaffPage() {
-  const cookieStore = await cookies();
-  const token = cookieStore.get('token')?.value || '';
-  const payload = verifyToken(token) as any;
-  let role: string = '';
-  let userPermissions: string[] = [];
-  if (payload) {
-    role = payload.role;
-    let permsStr: string | null = (payload.permissions as string) ?? null;
-    if (!permsStr && payload.userId) {
-      const u = await prisma.user.findUnique({ where: { id: payload.userId }, select: { permissions: true } });
-      permsStr = u?.permissions ?? null;
-    }
-    if (permsStr) {
-      try { userPermissions = JSON.parse(permsStr); } catch { userPermissions = []; }
-    }
-    if (userPermissions.length === 0 && role in ROLE_DEFAULT_PERMISSIONS) {
-      userPermissions = ROLE_DEFAULT_PERMISSIONS[role as keyof typeof ROLE_DEFAULT_PERMISSIONS];
-    }
+  const auth = await getAuthUser();
+  const role = auth?.role || '';
+  let userPermissions: string[] = auth?.permissions || [];
+  if (userPermissions.length === 0 && role in ROLE_DEFAULT_PERMISSIONS) {
+    userPermissions = ROLE_DEFAULT_PERMISSIONS[role as keyof typeof ROLE_DEFAULT_PERMISSIONS];
   }
   const canManageRoles = hasPermission(userPermissions, PERMISSIONS.MANAGE_ROLES);
   const users = await prisma.user.findMany({

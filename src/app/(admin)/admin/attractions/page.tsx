@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Plus, Trash2, Edit2, Ticket, CheckCircle, XCircle, Loader2 } from 'lucide-react';
+import AdminPriceScheduleDialog from '@/components/admin/AdminPriceScheduleDialog';
 
 interface Attraction {
   id: string;
@@ -12,6 +13,7 @@ interface Attraction {
   description: string;
   price: number;
   originalPrice?: number;
+  points?: number;
   benefits: string; // JSON string
   imageUrl?: string;
   active: boolean;
@@ -27,11 +29,13 @@ export default function AdminAttractionsPage() {
     description: '',
     price: '',
     originalPrice: '',
+    points: '0',
     benefits: '',
     imageUrl: '',
     active: true,
   });
   const [uploading, setUploading] = useState(false);
+  const [pricingFor, setPricingFor] = useState<{ id: string; name: string } | null>(null);
 
   useEffect(() => {
     fetchAttractions();
@@ -55,6 +59,7 @@ export default function AdminAttractionsPage() {
       description: '', 
       price: '', 
       originalPrice: '',
+      points: '0',
       benefits: '', 
       imageUrl: '', 
       active: true 
@@ -79,6 +84,7 @@ export default function AdminAttractionsPage() {
       description: item.description,
       price: item.price.toString(),
       originalPrice: item.originalPrice ? item.originalPrice.toString() : '',
+      points: item.points ? item.points.toString() : '0',
       benefits: benefitsString,
       imageUrl: item.imageUrl || '',
       active: item.active,
@@ -125,6 +131,7 @@ export default function AdminAttractionsPage() {
       const payload = {
         ...formData,
         price: parseFloat(formData.price),
+        points: parseInt(formData.points) || 0,
         benefits: benefitsArray,
       };
 
@@ -164,7 +171,7 @@ export default function AdminAttractionsPage() {
 
   return (
     <div className="space-y-8">
-      <div className="flex justify-between items-center">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
           <h2 className="text-3xl font-bold tracking-tight text-gray-900">Manage Attractions</h2>
           <p className="text-muted-foreground">Add or edit tickets and wahana.</p>
@@ -177,6 +184,7 @@ export default function AdminAttractionsPage() {
                 setIsAdding(true);
             }
           }} 
+          className="w-full md:w-auto"
         >
           {isAdding ? <><XCircle size={16} className="mr-2" /> Cancel</> : <><Plus size={16} className="mr-2" /> Add New</>}
         </Button>
@@ -216,6 +224,15 @@ export default function AdminAttractionsPage() {
                     value={formData.originalPrice}
                     onChange={(e) => setFormData({...formData, originalPrice: e.target.value})}
                     placeholder="Fill to show discount"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Points Earned</label>
+                  <Input 
+                    type="number"
+                    value={formData.points}
+                    onChange={(e) => setFormData({...formData, points: e.target.value})}
+                    placeholder="e.g. 50"
                   />
                 </div>
                 <div className="space-y-2 md:col-span-2">
@@ -277,7 +294,7 @@ export default function AdminAttractionsPage() {
         </Card>
       )}
 
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+      <div className="grid gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
         {attractions.map((item) => (
           <Card key={item.id} className={`border-gray-200 shadow-sm hover:shadow-md transition-shadow ${!item.active ? 'opacity-60 bg-gray-50' : 'bg-white'}`}>
             <CardContent className="p-6">
@@ -288,6 +305,9 @@ export default function AdminAttractionsPage() {
                 <div className="flex gap-2">
                   <Button variant="ghost" size="icon" onClick={() => handleEditClick(item)} className="h-8 w-8 text-gray-500 hover:text-blue-600">
                     <Edit2 size={16} />
+                  </Button>
+                  <Button variant="ghost" size="icon" onClick={() => setPricingFor({ id: item.id, name: item.name })} className="h-8 w-8 text-gray-500 hover:text-amber-600" title="Manage Pricing">
+                    <CheckCircle size={16} />
                   </Button>
                   <Button variant="ghost" size="icon" onClick={() => handleDelete(item.id)} className="h-8 w-8 text-gray-500 hover:text-red-600">
                     <Trash2 size={16} />
@@ -308,6 +328,11 @@ export default function AdminAttractionsPage() {
                     <span className="font-bold text-gray-900">
                         {new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(item.price)}
                     </span>
+                    {item.points ? (
+                      <span className="text-xs text-amber-600 font-medium mt-1">
+                        + {item.points} Points
+                      </span>
+                    ) : null}
                 </div>
                 <span className={`text-xs px-2 py-1 rounded-full font-medium ${item.active ? 'bg-green-100 text-green-700' : 'bg-gray-200 text-gray-600'}`}>
                     {item.active ? 'Active' : 'Inactive'}
@@ -322,6 +347,16 @@ export default function AdminAttractionsPage() {
             </div>
         )}
       </div>
+      {pricingFor && (
+        <AdminPriceScheduleDialog
+          attractionId={pricingFor.id}
+          attractionName={pricingFor.name}
+          open={!!pricingFor}
+          onOpenChange={(open) => {
+            if (!open) setPricingFor(null);
+          }}
+        />
+      )}
     </div>
   );
 }
