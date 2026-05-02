@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { PAYMENT_METHODS } from '@/lib/fees';
-import { Loader2, TrendingUp, Users, MapPin, Calendar } from 'lucide-react';
+import { Loader2, TrendingUp, Users, MapPin, Calendar, Download } from 'lucide-react';
 
 function listToLines(list: string[]) {
   return (list || []).join('\n');
@@ -54,8 +54,9 @@ export default function AdminKtpPromoPage() {
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [analytics, setAnalytics] = useState<AnalyticsData | null>(null);
-  const [loadingAnalytics, setLoadingAnalytics] = useState(false);
-  const [settings, setSettings] = useState<Settings>({
+   const [loadingAnalytics, setLoadingAnalytics] = useState(false);
+   const [exporting, setExporting] = useState(false);
+   const [settings, setSettings] = useState<Settings>({
     active: false,
     title: 'Promo KTP',
     price: 0,
@@ -130,6 +131,28 @@ export default function AdminKtpPromoPage() {
     loadAnalytics();
   }, []);
 
+  async function handleExport() {
+    setExporting(true);
+    try {
+      const res = await fetch('/api/admin/ktp-promo/analytics/export');
+      if (!res.ok) throw new Error('Gagal export data');
+      
+      const blob = await res.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `ktp-promo-export-${new Date().toISOString().split('T')[0]}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+    } catch (e: any) {
+      alert(e.message || 'Gagal export data');
+    } finally {
+      setExporting(false);
+    }
+  }
+
   async function save() {
     setSaving(true);
     try {
@@ -181,9 +204,15 @@ export default function AdminKtpPromoPage() {
           <h2 className="text-3xl font-bold tracking-tight text-gray-900">Promo KTP</h2>
           <p className="text-muted-foreground">Konfigurasi tiket masuk/wahana khusus Promo KTP.</p>
         </div>
-        <Button onClick={save} disabled={saving || loading}>
-          {saving ? 'Menyimpan...' : 'Simpan'}
-        </Button>
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={handleExport} disabled={exporting || loading}>
+            {exporting ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Download className="h-4 w-4 mr-2" />}
+            Export CSV
+          </Button>
+          <Button onClick={save} disabled={saving || loading}>
+            {saving ? 'Menyimpan...' : 'Simpan'}
+          </Button>
+        </div>
       </div>
 
       {analytics && (
