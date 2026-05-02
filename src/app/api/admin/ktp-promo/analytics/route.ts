@@ -38,6 +38,7 @@ export async function GET(req: Request) {
 
     const provinceStats: Record<string, { count: number; revenue: number }> = {};
     const regencyStats: Record<string, { count: number; revenue: number }> = {};
+    const districtStats: Record<string, { count: number; revenue: number; regency: string; province: string }> = {};
     const dailyStats: Record<string, { count: number; revenue: number }> = {};
 
     bookings.forEach((b) => {
@@ -48,6 +49,7 @@ export async function GET(req: Request) {
 
         const prov = ktp.province || 'Unknown';
         const reg = ktp.regency || 'Unknown';
+        const dist = ktp.district || 'Unknown';
         const date = b.createdAt.toISOString().split('T')[0];
 
         // Province
@@ -59,6 +61,11 @@ export async function GET(req: Request) {
         if (!regencyStats[reg]) regencyStats[reg] = { count: 0, revenue: 0 };
         regencyStats[reg].count += 1;
         regencyStats[reg].revenue += b.amount;
+
+        // District
+        if (!districtStats[dist]) districtStats[dist] = { count: 0, revenue: 0, regency: reg, province: prov };
+        districtStats[dist].count += 1;
+        districtStats[dist].revenue += b.amount;
 
         // Daily
         if (!dailyStats[date]) dailyStats[date] = { count: 0, revenue: 0 };
@@ -75,6 +82,10 @@ export async function GET(req: Request) {
       .map(([name, stats]) => ({ name, ...stats }))
       .sort((a, b) => b.count - a.count);
 
+    const districts = Object.entries(districtStats)
+      .map(([name, stats]) => ({ name, ...stats }))
+      .sort((a, b) => b.count - a.count);
+
     const daily = Object.entries(dailyStats)
       .map(([date, stats]) => ({ date, ...stats }))
       .sort((a, b) => a.date.localeCompare(b.date));
@@ -84,6 +95,7 @@ export async function GET(req: Request) {
       totalRevenue: bookings.reduce((sum, b) => sum + b.amount, 0),
       provinces,
       regencies,
+      districts,
       daily,
     });
   } catch (error: any) {

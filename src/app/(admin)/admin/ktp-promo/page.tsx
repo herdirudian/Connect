@@ -46,6 +46,7 @@ type AnalyticsData = {
   totalRevenue: number;
   provinces: Array<{ name: string; count: number; revenue: number }>;
   regencies: Array<{ name: string; count: number; revenue: number }>;
+  districts: Array<{ name: string; count: number; revenue: number; regency: string; province: string }>;
   daily: Array<{ date: string; count: number; revenue: number }>;
 };
 
@@ -244,7 +245,7 @@ export default function AdminKtpPromoPage() {
             </CardHeader>
             <CardContent>
               <div className="space-y-3">
-                {analytics.provinces.slice(0, 5).map((p, i) => (
+                {analytics.provinces.slice(0, 10).map((p, i) => (
                   <div key={p.name} className="space-y-1">
                     <div className="flex justify-between text-sm font-bold">
                       <span>{p.name}</span>
@@ -270,7 +271,7 @@ export default function AdminKtpPromoPage() {
             </CardHeader>
             <CardContent>
               <div className="space-y-3">
-                {analytics.regencies.slice(0, 5).map((p, i) => (
+                {analytics.regencies.slice(0, 10).map((p, i) => (
                   <div key={p.name} className="space-y-1">
                     <div className="flex justify-between text-sm font-bold">
                       <span>{p.name}</span>
@@ -288,6 +289,42 @@ export default function AdminKtpPromoPage() {
             </CardContent>
           </Card>
         </div>
+      )}
+
+      {analytics && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-sm font-bold uppercase tracking-wider text-gray-500 flex items-center gap-2">
+              <MapPin className="h-4 w-4" /> Data Lengkap Wilayah (Provinsi, Kota, Kecamatan)
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="relative overflow-x-auto border rounded-xl">
+              <table className="w-full text-sm text-left">
+                <thead className="text-xs text-gray-700 uppercase bg-gray-50 border-b">
+                  <tr>
+                    <th className="px-4 py-3">Provinsi</th>
+                    <th className="px-4 py-3">Kota/Kabupaten</th>
+                    <th className="px-4 py-3">Kecamatan</th>
+                    <th className="px-4 py-3 text-right">Jumlah Tiket</th>
+                    <th className="px-4 py-3 text-right">Pendapatan</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y">
+                  {analytics.districts.map((d, i) => (
+                    <tr key={i} className="hover:bg-gray-50 transition-colors">
+                      <td className="px-4 py-3 font-medium text-gray-900">{d.province}</td>
+                      <td className="px-4 py-3 text-gray-600">{d.regency}</td>
+                      <td className="px-4 py-3 text-gray-600 font-bold">{d.name}</td>
+                      <td className="px-4 py-3 text-right font-black text-brand-dark">{d.count}</td>
+                      <td className="px-4 py-3 text-right text-gray-600">Rp {d.revenue.toLocaleString('id-ID')}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </CardContent>
+        </Card>
       )}
 
       <Card>
