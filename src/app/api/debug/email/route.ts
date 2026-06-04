@@ -1,8 +1,14 @@
 import { NextResponse } from 'next/server';
 import nodemailer from 'nodemailer';
+import { getAuthUser } from '@/lib/serverAuth';
 
 export async function GET(req: Request) {
   try {
+    const user = await getAuthUser();
+    if (!user || user.role !== 'ADMIN') {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
     const host = process.env.SMTP_HOST;
     const port = process.env.SMTP_PORT;
     const user = process.env.SMTP_USER;

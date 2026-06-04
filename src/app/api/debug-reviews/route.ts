@@ -1,10 +1,16 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { getAuthUser } from '@/lib/serverAuth';
 
 export const dynamic = 'force-dynamic';
 
 export async function GET() {
   try {
+    const user = await getAuthUser();
+    if (!user || user.role !== 'ADMIN') {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
     const attractions = await prisma.attraction.findMany({
       select: { id: true, name: true }
     });

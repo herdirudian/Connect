@@ -22,8 +22,62 @@ function decodeJwtRole(token: string): string | null {
 
 export async function middleware(req: NextRequest) {
   const pathname = req.nextUrl.pathname;
+  const response = await handleMiddleware(req);
 
-  // 1. Rate Limiting for API routes
+  // Add security headers to all responses
+  const securityHeaders = {
+    'X-DNS-Prefetch-Control': 'on',
+    'Strict-Transport-Security': 'max-age=63072000; includeSubDomains; preload',
+    'X-XSS-Protection': '1; mode=block',
+    'X-Frame-Options': 'SAMEORIGIN',
+    'X-Content-Type-Options': 'nosniff',
+    'Referrer-Policy': 'origin-when-cross-origin',
+    'Permissions-Policy': 'camera=(), microphone=(), geolocation=()',
+    'Content-Security-Policy': [
+      "default-src 'self'",
+      "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://*.xendit.co https://*.sentry.io https://*.google-analytics.com https://*.googletagmanager.com",
+      "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
+      "img-src 'self' data: blob: https://*.unsplash.com https://*.xendit.co https://*.cloudinary.com",
+      "font-src 'self' https://fonts.gstatic.com",
+      "connect-src 'self' https://*.xendit.co https://*.sentry.io https://*.google-analytics.com",
+      "frame-src 'self' https://*.xendit.co",
+      "media-src 'self'",
+      "object-src 'none'",
+      "base-uri 'self'",
+      "form-action 'self'",
+      "frame-ancestors 'self'"
+    ].join('; ')
+  };
+
+  Object.entries(securityHeaders).forEach(([key, value]) => {
+    response.headers.set(key, value);
+  });
+
+  return response;
+}
+
+async function handleMiddleware(req: NextRequest) {
+  const pathname = req.nextUrl.pathname;
+  const method = req.method;
+
+  // 1. CSRF Protection for non-GET API requests
+  if (pathname.startsWith('/api') && !['GET', 'HEAD', 'OPTIONS'].includes(method)) {
+    const origin = req.headers.get('origin');
+    const host = req.headers.get('host');
+    const referer = req.headers.get('referer');
+
+    // Simple CSRF check: Origin must match Host or Referer must start with App URL
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL || '';
+    const isSameOrigin = origin && (origin === `https://${host}` || origin === `http://${host}` || (appUrl && origin === appUrl));
+    
+    // In production, we should be stricter. For now, we allow if no origin (e.g. from mobile app) 
+    // but if origin exists it must match.
+    if (origin && !isSameOrigin) {
+        return new NextResponse('Invalid Origin (CSRF)', { status: 403 });
+    }
+  }
+
+  // 2. Rate Limiting for API routes
   if (pathname.startsWith('/api')) {
     const ip = req.headers.get('x-forwarded-for') || 'unknown';
     
