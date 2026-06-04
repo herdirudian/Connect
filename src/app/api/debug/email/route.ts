@@ -11,7 +11,7 @@ export async function GET(req: Request) {
 
     const host = process.env.SMTP_HOST;
     const port = process.env.SMTP_PORT;
-    const user = process.env.SMTP_USER;
+    const smtpUser = process.env.SMTP_USER;
     const secure = process.env.SMTP_SECURE;
     const from = process.env.FROM_EMAIL;
 
@@ -21,7 +21,7 @@ export async function GET(req: Request) {
     const config = {
       host,
       port,
-      user,
+      user: smtpUser,
       pass_status: pass,
       secure,
       from,
