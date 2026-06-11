@@ -144,9 +144,12 @@ export async function POST(req: Request) {
       const defaultUrl = 'https://family.thelodgegroup.id';
       const appUrl = /connect\.thelodgegroup\.id/.test(envUrl) || !envUrl ? defaultUrl : envUrl;
       const phoneDigits = String(guestPhone || '').replace(/\D/g, '');
+      const externalId = `ROOM-${order.id}`;
+      console.log(`[Room Service] Creating Xendit Invoice: ${externalId}`);
+      
       const invoice = await Invoice.createInvoice({
         data: {
-          externalId: `ROOM-${order.id}`,
+          externalId,
           amount: order.totalAmount,
           description: `Room Service - Kamar ${finalRoomNumber}`,
           invoiceDuration: 3600, // 1 hour
@@ -156,6 +159,8 @@ export async function POST(req: Request) {
           failureRedirectUrl: `${appUrl}/room-service/track?phone=${encodeURIComponent(phoneDigits)}&last4=${encodeURIComponent(phoneDigits.slice(-4))}`,
         },
       });
+
+      console.log(`[Room Service] Invoice Created: ${invoice.id} for ${externalId}`);
 
       await prisma.foodOrder.update({
         where: { id: order.id },

@@ -40,8 +40,10 @@ export async function POST(req: Request) {
 
     console.log(`[Xendit Webhook] Processing - Status: ${status}, ExternalID: ${external_id}`);
 
+    const isPaid = status === 'PAID' || status === 'SETTLED';
+
     // We use booking/food order ID as external_id
-    if (status === 'PAID') {
+    if (isPaid) {
       if (external_id && external_id.startsWith('RS-COMBO:')) {
           const parts = external_id.split(':');
           const foodId = parts[1] !== 'NONE' ? parts[1] : null;
@@ -330,6 +332,8 @@ export async function POST(req: Request) {
                     console.error('Error sending reception notification:', e);
                 }
             }
+        } else {
+            console.warn(`[Xendit Webhook] No matching booking found for ExternalID: ${external_id}`);
         }
       }
     } else if (status === 'EXPIRED') {
@@ -386,11 +390,13 @@ export async function POST(req: Request) {
                 }
             });
        }
+    } else {
+      console.log(`[Xendit Webhook] Ignored - Status is ${status} (not PAID/SETTLED/EXPIRED) for ${external_id}`);
     }
 
-    return NextResponse.json({ received: true });
-  } catch (error) {
-    console.error('Webhook Error:', error);
-    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+    return NextResponse.json({ success: true });
+  } catch (error: any) {
+    console.error('Xendit Webhook Error:', error);
+    return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
