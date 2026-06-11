@@ -90,8 +90,16 @@ async function getConfig(): Promise<WhatsAppConfig> {
 }
 
 async function sendWhatsAppMessageRaw(config: WhatsAppConfig, to: string, message: string) {
-  if (!config.enabled) return { ok: false, error: 'DISABLED' as const };
-  if (!config.url) return { ok: false, error: 'NO_URL' as const };
+  if (!config.enabled) {
+    console.log('[WhatsApp] Sending skipped: Disabled');
+    return { ok: false, error: 'DISABLED' as const };
+  }
+  if (!config.url) {
+    console.error('[WhatsApp] Sending failed: No URL configured');
+    return { ok: false, error: 'NO_URL' as const };
+  }
+
+  console.log(`[WhatsApp] Sending message to ${to}...`);
 
   const vars = {
     to,
@@ -144,6 +152,7 @@ async function sendWhatsAppMessageRaw(config: WhatsAppConfig, to: string, messag
     }
 
     if (!res.ok) {
+      console.error(`[WhatsApp] HTTP Error ${httpStatus}:`, text);
       return { ok: false, error: 'HTTP_ERROR' as const, status: httpStatus, responseText: text, responseJson: parsed };
     }
 
@@ -160,11 +169,14 @@ async function sendWhatsAppMessageRaw(config: WhatsAppConfig, to: string, messag
             : true;
 
     if (!providerOk) {
+      console.error(`[WhatsApp] Provider Error:`, text);
       return { ok: false, error: 'PROVIDER_ERROR' as const, status: httpStatus, responseText: text, responseJson: parsed };
     }
 
+    console.log(`[WhatsApp] Success sending to ${to}`);
     return { ok: true, status: httpStatus, responseText: text, responseJson: parsed };
   } catch (e: any) {
+    console.error(`[WhatsApp] Fetch Error:`, e);
     return { ok: false, error: 'FETCH_ERROR' as const, message: String(e?.message || e) };
   } finally {
     clearTimeout(t);
@@ -226,8 +238,12 @@ function formatHousekeepingOrderMessage(order: any) {
 }
 
 export async function notifyRoomServiceOrderPaid(input: { foodOrderId?: string | null; hkOrderId?: string | null }) {
+  console.log('[WhatsApp] notifyRoomServiceOrderPaid triggered', input);
   const config = await getConfig();
-  if (!config.enabled) return { ok: true, skipped: true as const };
+  if (!config.enabled) {
+    console.log('[WhatsApp] Notification skipped: WA_ENABLED is false');
+    return { ok: true, skipped: true as const };
+  }
 
   const results: Array<{
     channel: WhatsAppChannel;
@@ -246,7 +262,9 @@ export async function notifyRoomServiceOrderPaid(input: { foodOrderId?: string |
     });
     if (order) {
       const message = formatFoodOrderMessage(order);
-      for (const to of splitRecipients(config.restaurantTo)) {
+      const recipients = splitRecipients(config.restaurantTo);
+      console.log(`[WhatsApp] Sending Food Order ${order.id} to ${recipients.length} recipients`);
+      for (const to of recipients) {
         const r = await sendWhatsAppMessageRaw(config, to, message);
         results.push({
           channel: 'RESTAURANT',
@@ -258,6 +276,8 @@ export async function notifyRoomServiceOrderPaid(input: { foodOrderId?: string |
           error: (r as any).error,
         });
       }
+    } else {
+      console.warn(`[WhatsApp] Food Order ${input.foodOrderId} not found`);
     }
   }
 
@@ -268,7 +288,9 @@ export async function notifyRoomServiceOrderPaid(input: { foodOrderId?: string |
     });
     if (order) {
       const message = formatHousekeepingOrderMessage(order);
-      for (const to of splitRecipients(config.housekeepingTo)) {
+      const recipients = splitRecipients(config.housekeepingTo);
+      console.log(`[WhatsApp] Sending HK Order ${order.id} to ${recipients.length} recipients`);
+      for (const to of recipients) {
         const r = await sendWhatsAppMessageRaw(config, to, message);
         results.push({
           channel: 'HOUSEKEEPING',
@@ -280,9 +302,12 @@ export async function notifyRoomServiceOrderPaid(input: { foodOrderId?: string |
           error: (r as any).error,
         });
       }
+    } else {
+      console.warn(`[WhatsApp] HK Order ${input.hkOrderId} not found`);
     }
   }
 
+  console.log(`[WhatsApp] Finished sending notifications. Success: ${results.every((r) => r.ok)}`);
   return { ok: results.every((r) => r.ok), results };
 }
 
