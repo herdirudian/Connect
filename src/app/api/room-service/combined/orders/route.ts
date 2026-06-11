@@ -160,9 +160,7 @@ export async function POST(req: Request) {
       }
 
       // Create single invoice for combined amount
-      const envUrl = process.env.NEXT_PUBLIC_APP_URL || '';
-      const defaultUrl = 'https://family.thelodgegroup.id';
-      const appUrl = /connect\.thelodgegroup\.id/.test(envUrl) || !envUrl ? defaultUrl : envUrl;
+      const appUrl = 'https://family.thelodgegroup.id';
       const digits = String(guestPhone || '').replace(/\D/g, '');
 
       let xenditPaymentMethods: string[] | undefined;

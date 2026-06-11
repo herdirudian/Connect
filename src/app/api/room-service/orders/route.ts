@@ -141,8 +141,7 @@ export async function POST(req: Request) {
         }
       } catch {}
       const envUrl = process.env.NEXT_PUBLIC_APP_URL || '';
-      const defaultUrl = 'https://family.thelodgegroup.id';
-      const appUrl = /connect\.thelodgegroup\.id/.test(envUrl) || !envUrl ? defaultUrl : envUrl;
+      const appUrl = 'https://family.thelodgegroup.id';
       const phoneDigits = String(guestPhone || '').replace(/\D/g, '');
       const externalId = `ROOM-${order.id}`;
       console.log(`[Room Service] Creating Xendit Invoice: ${externalId}`);
