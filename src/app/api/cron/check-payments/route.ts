@@ -42,6 +42,8 @@ export async function GET(req: Request) {
       }
     });
 
+    console.log(`[Cron] Found ${pendingFoodOrders.length} pending food orders to check`);
+
     // Find pending housekeeping orders from the last 24 hours
     const pendingHKOrders = await prisma.housekeepingOrder.findMany({
       where: {
@@ -51,6 +53,8 @@ export async function GET(req: Request) {
       },
       orderBy: { createdAt: 'desc' }
     });
+
+    console.log(`[Cron] Found ${pendingHKOrders.length} pending HK orders to check`);
 
     const results = [];
 

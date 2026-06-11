@@ -30,13 +30,15 @@ export async function POST(req: Request) {
         status = 'PAID';
         external_id = body.data.reference_id;
         id = body.data.id;
-        console.log(`Payment Request Succeeded for Reference: ${external_id}`);
+        console.log(`[Xendit Webhook] Payment Request Succeeded: ${external_id} (${id})`);
     } else if (body.event === 'payment.failed' || body.event === 'payment.expired') {
         status = 'EXPIRED';
         external_id = body.data.reference_id;
         id = body.data.id;
-        console.log(`Payment Request Failed/Expired for Reference: ${external_id}`);
+        console.log(`[Xendit Webhook] Payment Request Failed/Expired: ${external_id}`);
     }
+
+    console.log(`[Xendit Webhook] Processing - Status: ${status}, ExternalID: ${external_id}`);
 
     // We use booking/food order ID as external_id
     if (status === 'PAID') {
@@ -46,6 +48,9 @@ export async function POST(req: Request) {
           const hkId = parts[2] !== 'NONE' ? parts[2] : null;
           let shouldNotifyFood = false;
           let shouldNotifyHK = false;
+
+          console.log(`[Xendit Webhook] Handling RS-COMBO: FoodID=${foodId}, HKID=${hkId}`);
+
           if (foodId) {
             const current = await prisma.foodOrder.findUnique({
               where: { id: foodId },
@@ -57,6 +62,7 @@ export async function POST(req: Request) {
                 data: { status: 'CONFIRMED', paymentStatus: 'PAID', paymentId: id }
               });
               shouldNotifyFood = true;
+              console.log(`[Xendit Webhook] RS-COMBO: FoodOrder ${foodId} updated to PAID`);
             }
           }
           if (hkId) {
@@ -70,6 +76,7 @@ export async function POST(req: Request) {
                 data: { status: 'CONFIRMED', paymentStatus: 'PAID', paymentId: id }
               });
               shouldNotifyHK = true;
+              console.log(`[Xendit Webhook] RS-COMBO: HKOrder ${hkId} updated to PAID`);
             }
           }
           if (shouldNotifyFood || shouldNotifyHK) {
@@ -78,9 +85,9 @@ export async function POST(req: Request) {
               hkOrderId: shouldNotifyHK ? hkId : null
             });
           }
-      } else
-      if (external_id.startsWith('FOOD-')) {
+      } else if (external_id && external_id.startsWith('FOOD-')) {
           const orderId = external_id.replace('FOOD-', '');
+          console.log(`[Xendit Webhook] Handling FOOD Order: ${orderId}`);
           const order = await prisma.foodOrder.findUnique({
               where: { id: orderId },
               include: { user: true }
@@ -119,9 +126,11 @@ export async function POST(req: Request) {
                     `Your food order #${order.id.substring(0,8)} has been paid and is being prepared.`
                 );
               }
+              console.log(`[Xendit Webhook] FoodOrder ${orderId} updated to PAID`);
           }
-      } else if (external_id.startsWith('ROOM-')) {
+      } else if (external_id && external_id.startsWith('ROOM-')) {
           const orderId = external_id.replace('ROOM-', '');
+          console.log(`[Xendit Webhook] Handling ROOM Order: ${orderId}`);
           const order = await prisma.foodOrder.findUnique({
               where: { id: orderId }
           });
@@ -136,10 +145,12 @@ export async function POST(req: Request) {
                     }
                 });
                 await notifyRoomServiceOrderPaid({ foodOrderId: orderId, hkOrderId: null });
+                console.log(`[Xendit Webhook] RoomService Order ${orderId} updated to PAID`);
               }
           }
-      } else if (external_id.startsWith('HK-')) {
+      } else if (external_id && external_id.startsWith('HK-')) {
           const orderId = external_id.replace('HK-', '');
+          console.log(`[Xendit Webhook] Handling HK Order: ${orderId}`);
           const order = await prisma.housekeepingOrder.findUnique({
               where: { id: orderId }
           });
@@ -154,9 +165,11 @@ export async function POST(req: Request) {
                     }
                 });
                 await notifyRoomServiceOrderPaid({ foodOrderId: null, hkOrderId: orderId });
+                console.log(`[Xendit Webhook] Housekeeping Order ${orderId} updated to PAID`);
               }
           }
-      } else {
+      } else if (external_id) {
+        console.log(`[Xendit Webhook] Handling Booking: ${external_id}`);
         const booking = await prisma.booking.findUnique({
             where: { id: external_id },
             include: { user: true }
@@ -172,6 +185,7 @@ export async function POST(req: Request) {
                 paymentId: id,
             }
             });
+            console.log(`[Xendit Webhook] Booking ${external_id} updated to PAID`);
 
             // Calculate Points Logic
             let earnedPoints = Math.floor(booking.amount); // Default behavior
