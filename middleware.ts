@@ -61,7 +61,8 @@ async function handleMiddleware(req: NextRequest) {
   const method = req.method;
 
   // 1. CSRF Protection for non-GET API requests
-  if (pathname.startsWith('/api') && !['GET', 'HEAD', 'OPTIONS'].includes(method)) {
+  // Skip CSRF for Xendit webhooks as they come from outside
+  if (pathname.startsWith('/api') && !pathname.startsWith('/api/webhooks/xendit') && !['GET', 'HEAD', 'OPTIONS'].includes(method)) {
     const origin = req.headers.get('origin');
     const host = req.headers.get('host');
     const referer = req.headers.get('referer');
