@@ -64,7 +64,7 @@ export async function POST(req: Request) {
 
     const body = await req.json();
     console.log('[Attractions API] Request body:', JSON.stringify(body));
-    const { name, description, price, originalPrice, points, benefits, imageUrl, active } = body;
+    const { name, description, price, originalPrice, points, benefits, imageUrl, active, rating } = body;
 
     console.log('[Attractions API] Creating attraction in database...');
     const attraction = await prisma.attraction.create({
@@ -74,7 +74,8 @@ export async function POST(req: Request) {
         price: parseFloat(price),
         originalPrice: originalPrice ? parseFloat(originalPrice) : null,
         points: points ? parseInt(points) : 0,
-        benefits: JSON.stringify(benefits || []),
+        rating: rating ? parseFloat(rating) : 0,
+        benefits: typeof benefits === 'string' ? benefits : JSON.stringify(benefits || []),
         imageUrl: imageUrl || null,
         active: active !== undefined ? active : true,
       },
