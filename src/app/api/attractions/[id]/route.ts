@@ -45,10 +45,12 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
     });
     return NextResponse.json(updated);
   } catch (error: any) {
-    console.error(`[Attractions API] Error updating attraction ${params}:`, error);
+    console.error(`[Attractions API] Error updating attraction:`, error);
     return NextResponse.json({ 
         error: 'Failed to update',
-        details: error.message
+        message: error.message,
+        stack: error.stack,
+        prismaError: error.code
     }, { status: 500 });
   }
 }

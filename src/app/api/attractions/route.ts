@@ -87,7 +87,9 @@ export async function POST(req: Request) {
     console.error('[Attractions API] Error creating attraction:', error);
     return NextResponse.json({ 
       error: 'Failed to create attraction',
-      details: error.message 
+      message: error.message,
+      stack: error.stack,
+      prismaError: error.code // Prisma error code if available
     }, { status: 500 });
   }
 }
