@@ -19,11 +19,15 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
     const cookieStore = await cookies();
     const token = cookieStore.get('token')?.value || '';
     const decoded = verifyToken(token);
-    if (!decoded || (decoded as any).role !== 'ADMIN') return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    if (!decoded || (decoded as any).role !== 'ADMIN') {
+        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
 
     const body = await req.json();
     const { name, description, price, originalPrice, points, benefits, imageUrl, active } = body;
     const { id } = await params;
+
+    console.log(`[Attractions API] Updating attraction ${id}:`, JSON.stringify(body));
 
     const updated = await prisma.attraction.update({
       where: { id },
@@ -39,8 +43,12 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
       },
     });
     return NextResponse.json(updated);
-  } catch {
-    return NextResponse.json({ error: 'Failed to update' }, { status: 500 });
+  } catch (error: any) {
+    console.error(`[Attractions API] Error updating attraction ${params}:`, error);
+    return NextResponse.json({ 
+        error: 'Failed to update',
+        details: error.message
+    }, { status: 500 });
   }
 }
 

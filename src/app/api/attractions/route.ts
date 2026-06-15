@@ -43,22 +43,30 @@ export async function GET(req: Request) {
 
 export async function POST(req: Request) {
   try {
+    console.log('[Attractions API] POST request received');
     const cookieStore = await cookies();
     const token = cookieStore.get('token')?.value || '';
     
     let payload = null;
     if (token) {
+      try {
         payload = verifyToken(token) as any;
+      } catch (e) {
+        console.error('[Attractions API] Token verification failed:', e);
+      }
     }
     
     // Check if user is Admin
     if (!payload || payload.role !== 'ADMIN') {
+      console.warn('[Attractions API] Unauthorized access attempt', { payload });
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     const body = await req.json();
+    console.log('[Attractions API] Request body:', JSON.stringify(body));
     const { name, description, price, originalPrice, points, benefits, imageUrl, active } = body;
 
+    console.log('[Attractions API] Creating attraction in database...');
     const attraction = await prisma.attraction.create({
       data: {
         name,
@@ -72,9 +80,13 @@ export async function POST(req: Request) {
       },
     });
 
+    console.log('[Attractions API] Attraction created successfully:', attraction.id);
     return NextResponse.json(attraction);
-  } catch (error) {
-    console.error(error);
-    return NextResponse.json({ error: 'Failed to create attraction' }, { status: 500 });
+  } catch (error: any) {
+    console.error('[Attractions API] Error creating attraction:', error);
+    return NextResponse.json({ 
+      error: 'Failed to create attraction',
+      details: error.message 
+    }, { status: 500 });
   }
 }
