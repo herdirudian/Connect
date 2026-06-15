@@ -231,7 +231,7 @@ model PromoCode {
 model Attraction {
   id          String   @id @default(uuid())
   name        String
-  description String
+  description String   @db.Text
   price       Float
   points      Int      @default(0)
   rating      Float    @default(0)
