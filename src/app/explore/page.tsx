@@ -46,6 +46,7 @@ interface Attraction {
   id: string;
   name: string;
   description: string;
+  category: string;
   price: number;
   originalPrice?: number;
   imageUrl?: string;
@@ -62,6 +63,7 @@ export default function GreeterHubPage() {
   const [loading, setLoading] = useState(true);
   const [currentPromo, setCurrentPromo] = useState(0);
   const [activeFilter, setActiveFilter] = useState('ALL');
+  const [activeCategory, setActiveCategory] = useState('ALL');
   const [zoom, setZoom] = useState(1);
   const [searchQuery, setSearchQuery] = useState('');
   const [showQR, setShowQR] = useState<{ url: string; name: string } | null>(null);
@@ -69,6 +71,16 @@ export default function GreeterHubPage() {
   const [qrImageData, setQRImageData] = useState<string>('');
 
   const mapRef = useRef<HTMLDivElement>(null);
+
+  const categories = [
+    { id: 'ALL', label: 'Semua', icon: LayoutDashboard },
+    { id: 'TICKET', label: 'Tiket Masuk', icon: Ticket },
+    { id: 'RIDE', label: 'Wahana', icon: Zap },
+    { id: 'STAY', label: 'Penginapan', icon: Tent },
+    { id: 'FOOD', label: 'Cafe & Resto', icon: Utensils },
+    { id: 'TREKKING', label: 'Trekking', icon: MapIcon },
+    { id: 'PACKAGE', label: 'Paket Hemat', icon: Heart },
+  ];
 
   useEffect(() => {
     if (showQR) {
@@ -98,9 +110,13 @@ export default function GreeterHubPage() {
 
   const filteredAttractions = attractions.filter(attr => {
     const matchesSearch = attr.name.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesCategory = activeCategory === 'ALL' || attr.category === activeCategory;
+    
+    // Additional sub-filter by tags if needed
     const tags = attr.tags?.toLowerCase() || '';
-    if (activeFilter === 'ALL') return matchesSearch;
-    return matchesSearch && tags.includes(activeFilter.toLowerCase());
+    const matchesFilter = activeFilter === 'ALL' || tags.includes(activeFilter.toLowerCase());
+
+    return matchesSearch && matchesCategory && matchesFilter;
   });
 
   const getStatusBadge = (status: string, waitTime?: string) => {
@@ -309,17 +325,33 @@ export default function GreeterHubPage() {
 
         {/* SECTION 2: PLAYGROUND HUB */}
         <section id="wahana" className="space-y-8">
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
-            <h2 className="text-2xl font-black italic text-brand tracking-tight">2. PLAYGROUND HUB</h2>
-            
-            <div className="flex flex-wrap gap-2">
-              {['ALL', '#RamahAnak', '#Ekstrem', '#Instagramable'].map(tag => (
+          <div className="flex flex-col space-y-8">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+              <h2 className="text-2xl font-black italic text-brand tracking-tight">2. PRODUCT EXPLORER</h2>
+              
+              <div className="flex flex-wrap gap-2">
+                {['ALL', '#RamahAnak', '#Ekstrem', '#Instagramable', '#Grup'].map(tag => (
+                  <button
+                    key={tag}
+                    onClick={() => setActiveFilter(tag)}
+                    className={`px-4 py-1.5 rounded-full text-xs font-bold transition-all border-2 ${activeFilter === tag ? 'bg-brand border-brand text-white shadow-lg' : 'bg-white border-gray-200 text-gray-500 hover:border-brand'}`}
+                  >
+                    {tag}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Category Filter Pills */}
+            <div className="flex overflow-x-auto pb-4 gap-4 no-scrollbar">
+              {categories.map(cat => (
                 <button
-                  key={tag}
-                  onClick={() => setActiveFilter(tag)}
-                  className={`px-4 py-1.5 rounded-full text-xs font-bold transition-all border-2 ${activeFilter === tag ? 'bg-brand border-brand text-white shadow-lg' : 'bg-white border-gray-200 text-gray-500 hover:border-brand'}`}
+                  key={cat.id}
+                  onClick={() => setActiveCategory(cat.id)}
+                  className={`flex items-center gap-3 px-6 py-4 rounded-2xl font-bold whitespace-nowrap transition-all border-2 ${activeCategory === cat.id ? 'bg-brand border-brand text-white shadow-xl scale-105' : 'bg-white border-gray-100 text-gray-500 hover:border-brand/30'}`}
                 >
-                  {tag}
+                  <cat.icon size={20} />
+                  <span>{cat.label}</span>
                 </button>
               ))}
             </div>

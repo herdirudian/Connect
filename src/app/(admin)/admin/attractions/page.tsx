@@ -12,6 +12,7 @@ interface Attraction {
   id: string;
   name: string;
   description: string;
+  category: string;
   price: number;
   originalPrice?: number;
   points?: number;
@@ -32,6 +33,7 @@ export default function AdminAttractionsPage() {
   const [formData, setFormData] = useState({
     name: '',
     description: '',
+    category: 'RIDE',
     price: '',
     originalPrice: '',
     points: '0',
@@ -66,6 +68,7 @@ export default function AdminAttractionsPage() {
     setFormData({ 
       name: '', 
       description: '', 
+      category: 'RIDE',
       price: '', 
       originalPrice: '',
       points: '0',
@@ -95,6 +98,7 @@ export default function AdminAttractionsPage() {
     setFormData({
       name: item.name,
       description: item.description,
+      category: item.category || 'RIDE',
       price: item.price.toString(),
       originalPrice: item.originalPrice ? item.originalPrice.toString() : '',
       points: item.points ? item.points.toString() : '0',
@@ -223,6 +227,21 @@ export default function AdminAttractionsPage() {
                     placeholder="e.g. Hot Air Balloon"
                     required
                   />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Product Category</label>
+                  <select 
+                    value={formData.category}
+                    onChange={(e) => setFormData({...formData, category: e.target.value})}
+                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    <option value="TICKET">Tiket Masuk</option>
+                    <option value="RIDE">Wahana</option>
+                    <option value="STAY">Penginapan</option>
+                    <option value="FOOD">Cafe & Resto</option>
+                    <option value="TREKKING">Trekking</option>
+                    <option value="PACKAGE">Paket Hemat / Terusan</option>
+                  </select>
                 </div>
                 <div className="space-y-2">
                   <label className="text-sm font-medium">Price (IDR)</label>
@@ -370,6 +389,7 @@ export default function AdminAttractionsPage() {
               </div>
               
               <h3 className="font-bold text-lg mb-1">{item.name}</h3>
+              <p className="text-[10px] font-black text-brand/60 uppercase tracking-widest mb-2">{item.category}</p>
               <p className="text-sm text-gray-500 mb-3 line-clamp-2">{item.description}</p>
               
               <div className="flex flex-wrap gap-1 mb-3">
