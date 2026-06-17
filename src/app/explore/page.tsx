@@ -461,9 +461,9 @@ export default function GreeterHubPage() {
       {/* 2. Comparison Modal */}
       {showCompare && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setShowCompare(null)} />
+          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setShowCompare(false)} />
           <Card className="relative w-full max-w-4xl bg-white rounded-[32px] overflow-hidden border-none shadow-2xl animate-in fade-in zoom-in-95 duration-200">
-            <button onClick={() => setShowCompare(null)} className="absolute top-6 right-6 p-2 bg-gray-100 rounded-full text-gray-500 hover:bg-gray-200"><X size={20} /></button>
+            <button onClick={() => setShowCompare(false)} className="absolute top-6 right-6 p-2 bg-gray-100 rounded-full text-gray-500 hover:bg-gray-200"><X size={20} /></button>
             <CardContent className="p-8 md:p-12">
               <div className="mb-8">
                 <h3 className="text-3xl font-black italic text-brand tracking-tighter uppercase">Perbandingan Paket Wisata</h3>
@@ -507,7 +507,7 @@ export default function GreeterHubPage() {
               </div>
               
               <div className="mt-8 flex justify-end">
-                <Button onClick={() => setShowCompare(null)} className="bg-brand hover:bg-brand/90 rounded-xl font-bold uppercase tracking-wider px-8 h-12">Mengerti, Tutup</Button>
+                <Button onClick={() => setShowCompare(false)} className="bg-brand hover:bg-brand/90 rounded-xl font-bold uppercase tracking-wider px-8 h-12">Mengerti, Tutup</Button>
               </div>
             </CardContent>
           </Card>
