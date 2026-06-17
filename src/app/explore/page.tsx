@@ -121,9 +121,11 @@ export default function GreeterHubPage() {
               <a href="#wahana" className="text-gray-500 hover:text-brand transition-colors">Wahana</a>
               <a href="#map" className="text-gray-500 hover:text-brand transition-colors">Peta</a>
             </nav>
-            <Button size="sm" className="bg-brand hover:bg-brand/90" asChild>
-              <Link href="/promo/ktp">Beli Tiket Promo</Link>
-            </Button>
+            <Link href="/promo/ktp">
+              <Button size="sm" className="bg-brand hover:bg-brand/90">
+                Beli Tiket Promo
+              </Button>
+            </Link>
           </div>
         </div>
       </header>
@@ -148,13 +150,15 @@ export default function GreeterHubPage() {
                   <img src={promo.imageUrl} alt={promo.title} className="w-full h-full object-cover" />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent flex flex-col justify-end p-8 md:p-12 text-white">
                     <h3 className="text-3xl md:text-5xl font-black mb-2 uppercase tracking-tighter">{promo.title}</h3>
-                    <p className="text-sm md:text-lg text-gray-200 max-w-2xl mb-6">{promo.description}</p>
-                    {promo.linkUrl && (
-                      <Button size="lg" className="w-fit bg-brand hover:bg-brand/90 text-white rounded-full font-bold px-8 shadow-xl" asChild>
-                        <a href={promo.linkUrl}>Cek Detail Promo</a>
+                  <p className="text-sm md:text-lg text-gray-200 max-w-2xl mb-6">{promo.description}</p>
+                  {promo.linkUrl && (
+                    <Link href={promo.linkUrl}>
+                      <Button size="lg" className="w-fit bg-brand hover:bg-brand/90 text-white rounded-full font-bold px-8 shadow-xl">
+                        Cek Detail Promo
                       </Button>
-                    )}
-                  </div>
+                    </Link>
+                  )}
+                </div>
                 </div>
               ))}
               
