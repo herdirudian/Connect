@@ -330,9 +330,9 @@ export default function GreeterHubPage() {
 
       {/* Floating Bottom Nav for Greeters (Mobile) */}
       <div className="fixed bottom-6 left-1/2 -translate-x-1/2 bg-white/80 backdrop-blur-xl border border-white/20 shadow-2xl rounded-full px-6 py-3 md:hidden flex items-center gap-8 z-50">
-        <a href="#promo" className="text-gray-400 hover:text-brand transition-colors"><Badge variant="ghost">Promo</Badge></a>
-        <a href="#wahana" className="text-gray-400 hover:text-brand transition-colors"><Badge variant="ghost">Wahana</Badge></a>
-        <a href="#map" className="text-gray-400 hover:text-brand transition-colors"><Badge variant="ghost">Peta</Badge></a>
+        <a href="#promo" className="text-gray-400 hover:text-brand transition-colors"><Badge variant="outline">Promo</Badge></a>
+        <a href="#wahana" className="text-gray-400 hover:text-brand transition-colors"><Badge variant="outline">Wahana</Badge></a>
+        <a href="#map" className="text-gray-400 hover:text-brand transition-colors"><Badge variant="outline">Peta</Badge></a>
       </div>
     </div>
   );
