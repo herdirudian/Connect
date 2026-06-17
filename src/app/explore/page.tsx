@@ -24,9 +24,14 @@ import {
   Bus,
   Zap,
   Heart,
-  Star
+  Star,
+  QrCode,
+  ArrowRightLeft,
+  CloudSun,
+  X
 } from 'lucide-react';
 import Link from 'next/link';
+import QRCode from 'qrcode';
 
 interface Promotion {
   id: string;
@@ -58,8 +63,17 @@ export default function GreeterHubPage() {
   const [activeFilter, setActiveFilter] = useState('ALL');
   const [zoom, setZoom] = useState(1);
   const [searchQuery, setSearchQuery] = useState('');
+  const [showQR, setShowQR] = useState<{ url: string; name: string } | null>(null);
+  const [showCompare, setShowCompare] = useState(false);
+  const [qrImageData, setQRImageData] = useState<string>('');
 
   const mapRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (showQR) {
+      QRCode.toDataURL(showQR.url, { width: 300, margin: 2 }).then(setQRImageData);
+    }
+  }, [showQR]);
 
   useEffect(() => {
     Promise.all([
@@ -167,6 +181,10 @@ export default function GreeterHubPage() {
             </div>
           </div>
           <div className="hidden md:flex items-center gap-6">
+            <div className="flex items-center gap-2 px-4 py-1.5 bg-blue-50 rounded-full border border-blue-100">
+              <CloudSun size={16} className="text-blue-500" />
+              <span className="text-[10px] font-bold text-blue-700 uppercase tracking-tight">Cuaca Cerah • Wahana Beroperasi</span>
+            </div>
             <nav className="flex gap-4 text-sm font-medium">
               <a href="#promo" className="text-gray-500 hover:text-brand transition-colors">Promo</a>
               <a href="#wahana" className="text-gray-500 hover:text-brand transition-colors">Wahana</a>
@@ -187,7 +205,17 @@ export default function GreeterHubPage() {
         <section id="promo" className="space-y-8">
           <div className="flex items-center justify-between">
             <h2 className="text-2xl font-black italic text-brand tracking-tight">1. THE LANDING HUB</h2>
-            <Badge variant="outline" className="text-brand border-brand">Hot Deals Today</Badge>
+            <div className="flex gap-2">
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={() => setShowCompare(true)}
+                className="rounded-full border-brand text-brand font-bold hover:bg-brand hover:text-white"
+              >
+                <ArrowRightLeft size={14} className="mr-2" /> Bandingkan Paket
+              </Button>
+              <Badge variant="outline" className="text-brand border-brand hidden sm:flex">Hot Deals Today</Badge>
+            </div>
           </div>
 
           {/* Carousel */}
@@ -257,7 +285,21 @@ export default function GreeterHubPage() {
                   </div>
                   <p className="text-xs text-gray-500 line-clamp-2 mb-2">{attr.description}</p>
                   {renderBenefitIcons(attr.benefits)}
-                  <Button className="w-full mt-4 rounded-xl bg-gray-100 text-gray-900 hover:bg-brand hover:text-white transition-colors border-none font-bold" variant="outline">Jelaskan ke Tamu</Button>
+                  <div className="flex gap-2 mt-4">
+                    <Button 
+                      className="flex-1 rounded-xl bg-gray-100 text-gray-900 hover:bg-brand hover:text-white transition-colors border-none font-bold" 
+                      variant="outline"
+                    >
+                      Jelaskan
+                    </Button>
+                    <Button 
+                      onClick={() => setShowQR({ url: `${window.location.origin}/checkout/${attr.id}`, name: attr.name })}
+                      className="rounded-xl bg-brand/10 text-brand hover:bg-brand hover:text-white border-none" 
+                      size="icon"
+                    >
+                      <QrCode size={18} />
+                    </Button>
+                  </div>
                 </CardContent>
               </Card>
             ))}
@@ -386,6 +428,90 @@ export default function GreeterHubPage() {
         <a href="#wahana" className="text-gray-400 hover:text-brand transition-colors"><Badge variant="outline">Wahana</Badge></a>
         <a href="#map" className="text-gray-400 hover:text-brand transition-colors"><Badge variant="outline">Peta</Badge></a>
       </div>
+
+      {/* MODALS */}
+      
+      {/* 1. QR Code Modal */}
+      {showQR && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setShowQR(null)} />
+          <Card className="relative w-full max-w-sm bg-white rounded-[32px] overflow-hidden border-none shadow-2xl animate-in zoom-in-95 duration-200">
+            <button onClick={() => setShowQR(null)} className="absolute top-4 right-4 p-2 bg-gray-100 rounded-full text-gray-500 hover:bg-gray-200"><X size={18} /></button>
+            <CardContent className="p-8 text-center">
+              <div className="mb-6">
+                <Badge className="bg-brand/10 text-brand border-none font-bold mb-2">SCAN UNTUK BELI</Badge>
+                <h3 className="text-xl font-black uppercase tracking-tight">{showQR.name}</h3>
+              </div>
+              <div className="bg-gray-50 p-4 rounded-3xl border-2 border-dashed border-gray-200 mb-6">
+                {qrImageData ? (
+                  <img src={qrImageData} alt="QR Code" className="w-full aspect-square rounded-xl" />
+                ) : (
+                  <div className="w-full aspect-square flex items-center justify-center"><Loader2 className="animate-spin text-brand" /></div>
+                )}
+              </div>
+              <p className="text-xs text-gray-500 leading-relaxed">
+                Tunjukkan QR Code ini kepada tamu. Tamu dapat melakukan scan untuk langsung menuju halaman pembayaran aman Xendit.
+              </p>
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
+      {/* 2. Comparison Modal */}
+      {showCompare && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setShowCompare(null)} />
+          <Card className="relative w-full max-w-4xl bg-white rounded-[32px] overflow-hidden border-none shadow-2xl animate-in fade-in zoom-in-95 duration-200">
+            <button onClick={() => setShowCompare(null)} className="absolute top-6 right-6 p-2 bg-gray-100 rounded-full text-gray-500 hover:bg-gray-200"><X size={20} /></button>
+            <CardContent className="p-8 md:p-12">
+              <div className="mb-8">
+                <h3 className="text-3xl font-black italic text-brand tracking-tighter uppercase">Perbandingan Paket Wisata</h3>
+                <p className="text-gray-500">Gunakan tabel ini untuk menjelaskan keuntungan paket terusan kepada tamu.</p>
+              </div>
+              
+              <div className="overflow-x-auto">
+                <table className="w-full text-left border-collapse">
+                  <thead>
+                    <tr className="border-b-2 border-gray-100">
+                      <th className="py-4 px-4 text-xs font-black text-gray-400 uppercase tracking-widest">Fasilitas & Wahana</th>
+                      <th className="py-4 px-4 text-center bg-gray-50/50"><Badge variant="outline" className="text-gray-500 border-gray-300">TIKET REGULER</Badge></th>
+                      <th className="py-4 px-4 text-center bg-brand/5"><Badge className="bg-brand text-white border-none">PAKET TERUSAN</Badge></th>
+                    </tr>
+                  </thead>
+                  <tbody className="text-sm font-bold">
+                    {[
+                      { name: 'Tiket Masuk Kawasan', reg: true, ter: true },
+                      { name: 'Free Welcome Drink', reg: true, ter: true },
+                      { name: 'Akses Wahana Sky Hammock', reg: false, ter: true },
+                      { name: 'Akses Wahana Zip Bike', reg: false, ter: true },
+                      { name: 'Akses Wahana Valley Swing', reg: false, ter: true },
+                      { name: 'Akses Wahana Hot Air Balloon', reg: false, ter: true },
+                      { name: 'Funicular (In & Out)', reg: false, ter: true },
+                      { name: 'Meal Voucher (10k/50k)', reg: false, ter: true },
+                      { name: 'Free 1 Soft File Photo', reg: false, ter: true },
+                    ].map((row, i) => (
+                      <tr key={i} className="border-b border-gray-50 hover:bg-gray-50/30 transition-colors">
+                        <td className="py-4 px-4 text-gray-700">{row.name}</td>
+                        <td className="py-4 px-4 text-center bg-gray-50/50">{row.reg ? <CheckCircle2 size={18} className="mx-auto text-green-500" /> : <X size={18} className="mx-auto text-gray-300" />}</td>
+                        <td className="py-4 px-4 text-center bg-brand/5">{row.ter ? <CheckCircle2 size={18} className="mx-auto text-brand" /> : <X size={18} className="mx-auto text-gray-300" />}</td>
+                      </tr>
+                    ))}
+                    <tr className="bg-gray-50/50">
+                      <td className="py-6 px-4 text-gray-900 font-black italic uppercase">Total Value</td>
+                      <td className="py-6 px-4 text-center text-lg text-gray-400 line-through">Rp 285.000</td>
+                      <td className="py-6 px-4 text-center text-2xl text-brand font-black">Rp 165.000</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+              
+              <div className="mt-8 flex justify-end">
+                <Button onClick={() => setShowCompare(null)} className="bg-brand hover:bg-brand/90 rounded-xl font-bold uppercase tracking-wider px-8 h-12">Mengerti, Tutup</Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
     </div>
   );
 }
