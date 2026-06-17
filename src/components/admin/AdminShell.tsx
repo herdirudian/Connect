@@ -24,7 +24,8 @@ import {
   MessageSquare,
   Percent,
   Brush,
-  BadgePercent
+  BadgePercent,
+  LayoutPanelTop
 } from 'lucide-react';
 import { NotificationBell } from '@/components/admin/NotificationBell';
 import { hasPermission, PERMISSIONS } from '@/lib/permissions';
@@ -75,6 +76,7 @@ export function AdminShell({ children, userPermissions }: AdminShellProps) {
                 <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Main Menu</p>
                 <nav className="space-y-1">
                   <NavLink href="/admin" icon={LayoutDashboard} active={pathname === '/admin'}>Admin Overview</NavLink>
+                  {can(PERMISSIONS.MANAGE_PROMOS) && <NavLink href="/admin/promotions" icon={LayoutPanelTop} active={pathname.startsWith('/admin/promotions')}>Explore Hub Banners</NavLink>}
                   {can(PERMISSIONS.MANAGE_BOOKINGS) && <NavLink href="/admin/bookings" icon={CalendarCheck} active={pathname.startsWith('/admin/bookings')}>Manage Bookings</NavLink>}
                   {can(PERMISSIONS.MANAGE_USERS) && <NavLink href="/admin/users" icon={Users} active={pathname.startsWith('/admin/users')}>Manajemen Member</NavLink>}
                   {can(PERMISSIONS.MANAGE_ROLES) && <NavLink href="/admin/staff" icon={Shield} active={pathname.startsWith('/admin/staff')}>Manajemen Staff</NavLink>}
