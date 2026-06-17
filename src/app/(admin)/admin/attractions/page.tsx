@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Plus, Trash2, Edit2, Ticket, CheckCircle, XCircle, Loader2 } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
 import AdminPriceScheduleDialog from '@/components/admin/AdminPriceScheduleDialog';
 
 interface Attraction {
@@ -16,6 +17,10 @@ interface Attraction {
   points?: number;
   benefits: string; // JSON string
   imageUrl?: string;
+  videoUrl?: string;
+  status: 'OPEN' | 'MAINTENANCE' | 'CROWDED';
+  waitTime?: string;
+  tags?: string;
   active: boolean;
 }
 
@@ -95,10 +100,10 @@ export default function AdminAttractionsPage() {
       points: item.points ? item.points.toString() : '0',
       benefits: benefitsString,
       imageUrl: item.imageUrl || '',
-      videoUrl: (item as any).videoUrl || '',
-      status: (item as any).status || 'OPEN',
-      waitTime: (item as any).waitTime || '',
-      tags: (item as any).tags || '',
+      videoUrl: item.videoUrl || '',
+      status: item.status || 'OPEN',
+      waitTime: item.waitTime || '',
+      tags: item.tags || '',
       active: item.active,
     });
     setEditingId(item.id);
@@ -367,6 +372,28 @@ export default function AdminAttractionsPage() {
               <h3 className="font-bold text-lg mb-1">{item.name}</h3>
               <p className="text-sm text-gray-500 mb-3 line-clamp-2">{item.description}</p>
               
+              <div className="flex flex-wrap gap-1 mb-3">
+                {item.status === 'OPEN' && <Badge className="bg-green-500 text-[10px] h-5">OPEN</Badge>}
+                {item.status === 'MAINTENANCE' && <Badge variant="destructive" className="text-[10px] h-5">MAINTENANCE</Badge>}
+                {item.status === 'CROWDED' && <Badge className="bg-orange-500 text-[10px] h-5">CROWDED</Badge>}
+                {item.waitTime && <Badge variant="outline" className="text-[10px] h-5">⏳ {item.waitTime}</Badge>}
+                {item.videoUrl && <Badge variant="secondary" className="text-[10px] h-5">🎥 VIDEO</Badge>}
+              </div>
+
+              {item.tags && (
+                <div className="flex flex-wrap gap-1 mb-3">
+                  {item.tags.split(',').map(tag => (
+                    <span key={tag} className="text-[9px] font-bold bg-brand/5 text-brand px-1.5 py-0.5 rounded uppercase border border-brand/10">{tag.trim()}</span>
+                  ))}
+                </div>
+              )}
+
+              {item.benefits && (
+                <div className="text-[10px] text-gray-400 italic mb-4 line-clamp-1">
+                  🎁 {JSON.parse(item.benefits || '[]').length} Benefits configured
+                </div>
+              )}
+
               <div className="flex justify-between items-center mt-4 pt-4 border-t border-gray-100">
                 <div className="flex flex-col">
                     {item.originalPrice && item.originalPrice > item.price && (
