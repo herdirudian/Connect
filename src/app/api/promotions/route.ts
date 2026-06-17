@@ -6,7 +6,6 @@ import { cookies } from 'next/headers';
 export async function GET() {
   try {
     const promotions = await prisma.promotion.findMany({
-      where: { active: true },
       orderBy: { priority: 'desc' },
     });
     return NextResponse.json(promotions);
