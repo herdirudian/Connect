@@ -24,7 +24,7 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
     }
 
     const body = await req.json();
-    const { name, description, price, originalPrice, points, benefits, imageUrl, active, rating } = body;
+    const { name, description, price, originalPrice, points, benefits, imageUrl, videoUrl, status, tags, active, rating } = body;
     const { id } = await params;
 
     console.log(`[Attractions API] Updating attraction ${id}:`, JSON.stringify(body));
@@ -40,6 +40,9 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
         rating: rating !== undefined ? parseFloat(rating) : undefined,
         benefits: benefits ? (typeof benefits === 'string' ? benefits : JSON.stringify(benefits)) : undefined,
         imageUrl,
+        videoUrl,
+        status,
+        tags,
         active,
       },
     });

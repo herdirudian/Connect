@@ -236,6 +236,9 @@ model Attraction {
   points      Int      @default(0)
   rating      Float    @default(0)
   imageUrl    String?
+  videoUrl    String?  // Short video loops (Reels style)
+  status      String   @default("OPEN") // "OPEN", "MAINTENANCE", "CROWDED"
+  tags        String?  // #RamahAnak, #Ekstrem, #Instagramable
   benefits    String?  @db.Text // JSON string list of benefits
   active      Boolean  @default(true)
   originalPrice Float? // Price before discount (for display only)
@@ -243,6 +246,18 @@ model Attraction {
   updatedAt   DateTime @updatedAt
   reviews     Review[]
   priceSchedules AttractionPriceSchedule[]
+}
+
+model Promotion {
+  id          String   @id @default(uuid())
+  title       String
+  description String?  @db.Text
+  imageUrl    String
+  linkUrl     String?
+  active      Boolean  @default(true)
+  priority    Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 }
 
 model Restaurant {

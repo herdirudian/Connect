@@ -32,6 +32,9 @@ export default function AdminAttractionsPage() {
     points: '0',
     benefits: '',
     imageUrl: '',
+    videoUrl: '',
+    status: 'OPEN',
+    tags: '',
     active: true,
   });
   const [uploading, setUploading] = useState(false);
@@ -87,6 +90,9 @@ export default function AdminAttractionsPage() {
       points: item.points ? item.points.toString() : '0',
       benefits: benefitsString,
       imageUrl: item.imageUrl || '',
+      videoUrl: (item as any).videoUrl || '',
+      status: (item as any).status || 'OPEN',
+      tags: (item as any).tags || '',
       active: item.active,
     });
     setEditingId(item.id);
@@ -235,37 +241,66 @@ export default function AdminAttractionsPage() {
                     placeholder="e.g. 50"
                   />
                 </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Ride Status</label>
+                  <select 
+                    value={formData.status}
+                    onChange={(e) => setFormData({...formData, status: e.target.value})}
+                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    <option value="OPEN">Open (Buka)</option>
+                    <option value="MAINTENANCE">Maintenance (Pemeliharaan)</option>
+                    <option value="CROWDED">Crowded (Antrean Padat)</option>
+                  </select>
+                </div>
+                <div className="space-y-2 md:col-span-2">
+                  <label className="text-sm font-medium">Tags (comma separated)</label>
+                  <Input 
+                    value={formData.tags}
+                    onChange={(e) => setFormData({...formData, tags: e.target.value})}
+                    placeholder="#RamahAnak, #Ekstrem"
+                  />
+                </div>
                 <div className="space-y-2 md:col-span-2">
                   <label className="text-sm font-medium">Description</label>
-                  <Input 
+                  <textarea 
                     value={formData.description}
                     onChange={(e) => setFormData({...formData, description: e.target.value})}
-                    placeholder="Brief description of the attraction"
+                    className="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                    placeholder="Tell more about this attraction..."
                     required
                   />
                 </div>
                 <div className="space-y-2 md:col-span-2">
-                  <label className="text-sm font-medium">Image</label>
-                  <div className="flex gap-2">
-                    <Input 
-                        type="file" 
-                        accept="image/*"
-                        onChange={handleFileUpload}
-                        disabled={uploading}
-                        className="cursor-pointer"
-                    />
-                    {uploading && <Loader2 className="animate-spin h-10 w-10 text-brand" />}
-                  </div>
-                  {formData.imageUrl && (
-                    <div className="mt-2 relative h-32 w-full rounded-md overflow-hidden border border-gray-200">
-                        <img src={formData.imageUrl} alt="Preview" className="h-full w-full object-cover" />
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium">Image (Main Photo)</label>
+                      <div className="flex gap-2">
+                        <Input 
+                            type="file" 
+                            accept="image/*"
+                            onChange={handleFileUpload}
+                            disabled={uploading}
+                            className="cursor-pointer"
+                        />
+                        {uploading && <Loader2 className="animate-spin h-10 w-10 text-brand" />}
+                      </div>
+                      {formData.imageUrl && (
+                        <div className="mt-2 relative h-32 w-full rounded-md overflow-hidden border border-gray-200">
+                            <img src={formData.imageUrl} alt="Preview" className="h-full w-full object-cover" />
+                        </div>
+                      )}
                     </div>
-                  )}
-                  <Input 
-                    type="hidden"
-                    value={formData.imageUrl}
-                    readOnly
-                  />
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium">Short Video (URL)</label>
+                      <Input 
+                        value={formData.videoUrl}
+                        onChange={(e) => setFormData({...formData, videoUrl: e.target.value})}
+                        placeholder="https://.../video.mp4"
+                      />
+                      <p className="text-[10px] text-gray-500">Video 3-5s for Reels style loop</p>
+                    </div>
+                  </div>
                 </div>
                 <div className="space-y-2 md:col-span-2">
                   <label className="text-sm font-medium">Benefits (comma separated)</label>
