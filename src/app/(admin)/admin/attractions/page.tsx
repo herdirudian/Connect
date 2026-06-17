@@ -194,8 +194,8 @@ export default function AdminAttractionsPage() {
     <div className="space-y-8">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
-          <h2 className="text-3xl font-bold tracking-tight text-gray-900">Manage Attractions</h2>
-          <p className="text-muted-foreground">Add or edit tickets and wahana.</p>
+          <h2 className="text-3xl font-bold tracking-tight text-gray-900 uppercase italic">Explore Products</h2>
+          <p className="text-muted-foreground">Manage all products displayed in the Greeter Hub (Tickets, Rides, Stay, Food, etc).</p>
         </div>
         <Button 
           onClick={() => {

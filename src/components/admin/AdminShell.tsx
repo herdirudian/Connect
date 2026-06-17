@@ -76,7 +76,8 @@ export function AdminShell({ children, userPermissions }: AdminShellProps) {
                 <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Main Menu</p>
                 <nav className="space-y-1">
                   <NavLink href="/admin" icon={LayoutDashboard} active={pathname === '/admin'}>Admin Overview</NavLink>
-                  {can(PERMISSIONS.MANAGE_PROMOS) && <NavLink href="/admin/promotions" icon={LayoutPanelTop} active={pathname.startsWith('/admin/promotions')}>Explore Hub Banners</NavLink>}
+                  {can(PERMISSIONS.MANAGE_PROMOS) && <NavLink href="/admin/promotions" icon={LayoutPanelTop} active={pathname.startsWith('/admin/promotions')}>Explore Banners</NavLink>}
+                  {can(PERMISSIONS.MANAGE_ATTRACTIONS) && <NavLink href="/admin/attractions" icon={Ticket} active={pathname.startsWith('/admin/attractions')}>Explore Products</NavLink>}
                   {can(PERMISSIONS.MANAGE_BOOKINGS) && <NavLink href="/admin/bookings" icon={CalendarCheck} active={pathname.startsWith('/admin/bookings')}>Manage Bookings</NavLink>}
                   {can(PERMISSIONS.MANAGE_USERS) && <NavLink href="/admin/users" icon={Users} active={pathname.startsWith('/admin/users')}>Manajemen Member</NavLink>}
                   {can(PERMISSIONS.MANAGE_ROLES) && <NavLink href="/admin/staff" icon={Shield} active={pathname.startsWith('/admin/staff')}>Manajemen Staff</NavLink>}
@@ -91,7 +92,6 @@ export function AdminShell({ children, userPermissions }: AdminShellProps) {
             <div>
                 <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Service Management</p>
                 <nav className="space-y-1">
-                  {can(PERMISSIONS.MANAGE_ATTRACTIONS) && <NavLink href="/admin/attractions" icon={Ticket} active={pathname.startsWith('/admin/attractions')}>Attractions</NavLink>}
                   {(can(PERMISSIONS.MANAGE_FOOD) || can(PERMISSIONS.PROCESS_RS_ORDERS) || can(PERMISSIONS.VIEW_RS_ORDERS)) && (
                     <NavLink href="/admin/food" icon={Utensils} active={pathname.startsWith('/admin/food')}>Food & Beverage</NavLink>
                   )}
