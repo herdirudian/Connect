@@ -65,6 +65,9 @@ export default function AdminAttractionsPage() {
       points: '0',
       benefits: '', 
       imageUrl: '', 
+      videoUrl: '',
+      status: 'OPEN',
+      tags: '',
       active: true 
     });
     setIsAdding(false);
