@@ -28,7 +28,8 @@ import {
   QrCode,
   ArrowRightLeft,
   CloudSun,
-  X
+  X,
+  Loader2
 } from 'lucide-react';
 import Link from 'next/link';
 import QRCode from 'qrcode';
