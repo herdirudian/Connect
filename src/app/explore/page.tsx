@@ -312,7 +312,7 @@ export default function GreeterHubPage() {
                       Jelaskan
                     </Button>
                     <Button 
-                      onClick={() => setShowQR({ url: `${window.location.origin}/checkout/${attr.id}`, name: attr.name })}
+                      onClick={() => setShowQR({ url: `https://family.thelodgegroup.id/booking/tickets`, name: attr.name })}
                       className="rounded-xl bg-brand/10 text-brand hover:bg-brand hover:text-white border-none" 
                       size="icon"
                     >
