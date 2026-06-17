@@ -16,7 +16,15 @@ import {
   Filter,
   ZoomIn,
   ZoomOut,
-  Maximize2
+  Maximize2,
+  Coffee,
+  Camera,
+  Utensils,
+  Ticket,
+  Bus,
+  Zap,
+  Heart,
+  Star
 } from 'lucide-react';
 import Link from 'next/link';
 
@@ -37,6 +45,7 @@ interface Attraction {
   imageUrl?: string;
   videoUrl?: string;
   status: 'OPEN' | 'MAINTENANCE' | 'CROWDED';
+  waitTime?: string;
   tags?: string;
   benefits?: string;
 }
@@ -79,16 +88,58 @@ export default function GreeterHubPage() {
     return matchesSearch && tags.includes(activeFilter.toLowerCase());
   });
 
-  const getStatusBadge = (status: string) => {
+  const getStatusBadge = (status: string, waitTime?: string) => {
     switch (status) {
       case 'OPEN':
-        return <Badge className="bg-green-500 hover:bg-green-600"><CheckCircle2 size={12} className="mr-1" /> Buka</Badge>;
+        return (
+          <div className="flex flex-col items-end gap-1">
+            <Badge className="bg-green-500 hover:bg-green-600"><CheckCircle2 size={12} className="mr-1" /> Buka</Badge>
+            {waitTime && <span className="text-[10px] font-bold bg-white/90 text-green-700 px-2 py-0.5 rounded-full shadow-sm">⏳ {waitTime}</span>}
+          </div>
+        );
       case 'MAINTENANCE':
         return <Badge variant="destructive"><AlertCircle size={12} className="mr-1" /> Pemeliharaan</Badge>;
       case 'CROWDED':
-        return <Badge className="bg-orange-500 hover:bg-orange-600"><Clock size={12} className="mr-1" /> Antrean Padat</Badge>;
+        return (
+          <div className="flex flex-col items-end gap-1">
+            <Badge className="bg-orange-500 hover:bg-orange-600"><Clock size={12} className="mr-1" /> Antrean Padat</Badge>
+            {waitTime && <span className="text-[10px] font-bold bg-white/90 text-orange-700 px-2 py-0.5 rounded-full shadow-sm">⏳ {waitTime}</span>}
+          </div>
+        );
       default:
         return <Badge variant="secondary">Buka</Badge>;
+    }
+  };
+
+  const renderBenefitIcons = (benefitsStr?: string) => {
+    if (!benefitsStr) return null;
+    try {
+      const benefits = JSON.parse(benefitsStr);
+      if (!Array.isArray(benefits)) return null;
+      
+      return (
+        <div className="flex flex-wrap gap-2 mt-3">
+          {benefits.slice(0, 4).map((b: string, i: number) => {
+            const text = b.toLowerCase();
+            let Icon = Ticket;
+            if (text.includes('drink') || text.includes('minum')) Icon = Coffee;
+            if (text.includes('photo') || text.includes('foto')) Icon = Camera;
+            if (text.includes('meal') || text.includes('makan')) Icon = Utensils;
+            if (text.includes('shuttle') || text.includes('wara-wiri')) Icon = Bus;
+            if (text.includes('adrenalin') || text.includes('zip')) Icon = Zap;
+            
+            return (
+              <div key={i} className="flex items-center gap-1 bg-gray-50 px-2 py-1 rounded-lg border border-gray-100 shadow-sm" title={b}>
+                <Icon size={10} className="text-brand" />
+                <span className="text-[9px] font-bold text-gray-600 truncate max-w-[60px]">{b}</span>
+              </div>
+            );
+          })}
+          {benefits.length > 4 && <span className="text-[9px] font-bold text-gray-400 self-center">+{benefits.length - 4}</span>}
+        </div>
+      );
+    } catch (e) {
+      return null;
     }
   };
 
@@ -204,8 +255,9 @@ export default function GreeterHubPage() {
                       <span className="text-gray-400 line-through text-sm">Rp {attr.originalPrice.toLocaleString()}</span>
                     )}
                   </div>
-                  <p className="text-xs text-gray-500 line-clamp-2 mb-4">{attr.description}</p>
-                  <Button className="w-full rounded-xl bg-gray-100 text-gray-900 hover:bg-brand hover:text-white transition-colors border-none font-bold" variant="outline">Jelaskan ke Tamu</Button>
+                  <p className="text-xs text-gray-500 line-clamp-2 mb-2">{attr.description}</p>
+                  {renderBenefitIcons(attr.benefits)}
+                  <Button className="w-full mt-4 rounded-xl bg-gray-100 text-gray-900 hover:bg-brand hover:text-white transition-colors border-none font-bold" variant="outline">Jelaskan ke Tamu</Button>
                 </CardContent>
               </Card>
             ))}
@@ -262,7 +314,7 @@ export default function GreeterHubPage() {
                   
                   {/* Status Overlay */}
                   <div className="absolute top-4 right-4">
-                    {getStatusBadge(attr.status)}
+                    {getStatusBadge(attr.status, attr.waitTime)}
                   </div>
 
                   {/* Video Indicator */}

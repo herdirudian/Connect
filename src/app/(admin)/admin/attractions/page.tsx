@@ -31,9 +31,10 @@ export default function AdminAttractionsPage() {
     originalPrice: '',
     points: '0',
     benefits: '',
-    imageUrl: '',
+    imageUrl: '', 
     videoUrl: '',
     status: 'OPEN',
+    waitTime: '',
     tags: '',
     active: true,
   });
@@ -67,6 +68,7 @@ export default function AdminAttractionsPage() {
       imageUrl: '', 
       videoUrl: '',
       status: 'OPEN',
+      waitTime: '',
       tags: '',
       active: true 
     });
@@ -95,6 +97,7 @@ export default function AdminAttractionsPage() {
       imageUrl: item.imageUrl || '',
       videoUrl: (item as any).videoUrl || '',
       status: (item as any).status || 'OPEN',
+      waitTime: (item as any).waitTime || '',
       tags: (item as any).tags || '',
       active: item.active,
     });
@@ -255,6 +258,14 @@ export default function AdminAttractionsPage() {
                     <option value="MAINTENANCE">Maintenance (Pemeliharaan)</option>
                     <option value="CROWDED">Crowded (Antrean Padat)</option>
                   </select>
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Wait Time (Estimasi Antrean)</label>
+                  <Input 
+                    value={formData.waitTime}
+                    onChange={(e) => setFormData({...formData, waitTime: e.target.value})}
+                    placeholder="e.g. 10-15 menit"
+                  />
                 </div>
                 <div className="space-y-2 md:col-span-2">
                   <label className="text-sm font-medium">Tags (comma separated)</label>

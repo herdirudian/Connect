@@ -238,6 +238,7 @@ model Attraction {
   imageUrl    String?
   videoUrl    String?  // Short video loops (Reels style)
   status      String   @default("OPEN") // "OPEN", "MAINTENANCE", "CROWDED"
+  waitTime    String?  // Estimasi antrean: "5-10 menit"
   tags        String?  // #RamahAnak, #Ekstrem, #Instagramable
   benefits    String?  @db.Text // JSON string list of benefits
   active      Boolean  @default(true)
