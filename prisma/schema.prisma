@@ -277,6 +277,9 @@ model ExploreSettings {
   // Itinerary
   itineraryData     String?  @db.Text // JSON string for time-based suggestions
   
+  // Amenities
+  amenitiesData     String?  @db.Text // JSON string for nearby facilities (Toilet, Mushola, etc)
+  
   updatedAt         DateTime @updatedAt
 }
 

@@ -31,7 +31,10 @@ import {
   X,
   Loader2,
   LayoutDashboard,
-  Tent
+  Tent,
+  Info,
+  MapPin,
+  Baby
 } from 'lucide-react';
 import Link from 'next/link';
 import QRCode from 'qrcode';
@@ -64,6 +67,7 @@ export default function GreeterHubPage() {
   const [attractions, setAttractions] = useState<Attraction[]>([]);
   const [exploreSettings, setExploreSettings] = useState<any>(null);
   const [currentItinerary, setCurrentItinerary] = useState<any>(null);
+  const [showAmenities, setShowAmenities] = useState(false);
   const [showPreview, setShowPreview] = useState<{ type: 'image' | 'video', url: string, name: string } | null>(null);
   const [loading, setLoading] = useState(true);
   const [currentPromo, setCurrentPromo] = useState(0);
@@ -244,6 +248,47 @@ export default function GreeterHubPage() {
 
       <main className="max-w-7xl mx-auto px-4 mt-8 space-y-16">
         
+        {/* Floating Quick Actions for Greeter */}
+        <div className="fixed bottom-8 right-8 z-[90] flex flex-col gap-4">
+          <Button 
+            onClick={() => setShowCompare(true)}
+            className="w-14 h-14 rounded-full bg-brand shadow-2xl hover:scale-110 transition-transform p-0"
+          >
+            <ArrowRightLeft className="text-white" size={24} />
+          </Button>
+          
+          <div className="relative group">
+            <Button 
+              onClick={() => setShowAmenities(!showAmenities)}
+              className={`w-14 h-14 rounded-full shadow-2xl transition-all p-0 ${showAmenities ? 'bg-gray-900 scale-110' : 'bg-white text-gray-900 hover:bg-gray-50'}`}
+            >
+              <Info size={24} />
+            </Button>
+            
+            {showAmenities && (
+              <div className="absolute bottom-16 right-0 w-72 bg-white rounded-3xl shadow-2xl border border-gray-100 p-4 animate-in slide-in-from-bottom-4 duration-300">
+                <h4 className="text-xs font-black text-gray-400 uppercase tracking-widest mb-4 px-2">Nearby Amenities</h4>
+                <div className="space-y-2">
+                  {(exploreSettings?.amenitiesData ? JSON.parse(exploreSettings.amenitiesData) : []).map((amenity: any) => (
+                    <div key={amenity.id} className="flex items-start gap-3 p-3 rounded-2xl hover:bg-gray-50 transition-colors">
+                      <div className="bg-brand/10 p-2 rounded-xl text-brand">
+                        <MapPin size={16} />
+                      </div>
+                      <div>
+                        <p className="text-xs font-bold text-gray-900">{amenity.name}</p>
+                        <p className="text-[10px] text-gray-500 leading-tight mt-0.5">{amenity.location}</p>
+                      </div>
+                    </div>
+                  ))}
+                  {(!exploreSettings?.amenitiesData || JSON.parse(exploreSettings.amenitiesData).length === 0) && (
+                    <p className="text-[10px] text-gray-400 text-center py-4 italic">Belum ada data fasilitas.</p>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+
         {/* SECTION 1: THE LANDING HUB (PROMO) */}
         <section id="promo" className="space-y-8">
           <div className="flex items-center justify-between">

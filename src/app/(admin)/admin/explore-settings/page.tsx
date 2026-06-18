@@ -22,6 +22,13 @@ interface ItineraryItem {
   note: string;
 }
 
+interface AmenityItem {
+  id: string;
+  name: string;
+  location: string;
+  icon: string;
+}
+
 export default function AdminExploreSettingsPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -33,6 +40,7 @@ export default function AdminExploreSettingsPage() {
   const [statusMessage, setStatusMessage] = useState('Seluruh Wahana Beroperasi Normal');
   const [rows, setRows] = useState<ComparisonRow[]>([]);
   const [itineraries, setItineraries] = useState<ItineraryItem[]>([]);
+  const [amenities, setAmenities] = useState<AmenityItem[]>([]);
 
   useEffect(() => {
     fetchSettings();
@@ -50,6 +58,7 @@ export default function AdminExploreSettingsPage() {
       setStatusMessage(data.statusMessage || 'Seluruh Wahana Beroperasi Normal');
       setRows(JSON.parse(data.comparisonData || '[]'));
       setItineraries(JSON.parse(data.itineraryData || '[]'));
+      setAmenities(JSON.parse(data.amenitiesData || '[]'));
     } catch (error) {
       console.error('Error fetching settings:', error);
     } finally {
@@ -71,7 +80,8 @@ export default function AdminExploreSettingsPage() {
           weatherInfo,
           statusMessage,
           comparisonData: rows,
-          itineraryData: itineraries
+          itineraryData: itineraries,
+          amenitiesData: amenities
         }),
       });
 
@@ -120,6 +130,20 @@ export default function AdminExploreSettingsPage() {
     const newItin = [...itineraries];
     newItin[index] = { ...newItin[index], [field]: value };
     setItineraries(newItin);
+  };
+
+  const addAmenity = () => {
+    setAmenities([...amenities, { id: Date.now().toString(), name: 'Fasilitas Baru', location: 'Lokasi', icon: 'MapPin' }]);
+  };
+
+  const removeAmenity = (index: number) => {
+    setAmenities(amenities.filter((_, i) => i !== index));
+  };
+
+  const updateAmenity = (index: number, field: keyof AmenityItem, value: string) => {
+    const newAmen = [...amenities];
+    newAmen[index] = { ...newAmen[index], [field]: value };
+    setAmenities(newAmen);
   };
 
   if (loading) {
@@ -288,6 +312,62 @@ export default function AdminExploreSettingsPage() {
                     </td>
                     <td className="py-4 px-6 text-right">
                       <Button variant="ghost" size="icon" onClick={() => removeItinerary(idx)} className="text-gray-300 hover:text-red-500 hover:bg-red-50">
+                        <Trash2 size={18} />
+                      </Button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card className="rounded-3xl border-none shadow-xl overflow-hidden">
+        <CardHeader className="bg-gray-800 text-white p-6 flex flex-row items-center justify-between">
+          <div>
+            <CardTitle className="text-xl font-black italic uppercase">Nearby Amenities (Fasilitas Umum)</CardTitle>
+            <p className="text-xs text-gray-400 font-medium">Atur daftar fasilitas umum terdekat untuk panduan Greeter.</p>
+          </div>
+          <Button onClick={addAmenity} variant="outline" className="bg-white/10 border-white/20 hover:bg-white/20 text-white rounded-xl">
+            <Plus size={18} className="mr-2" /> Tambah Fasilitas
+          </Button>
+        </CardHeader>
+        <CardContent className="p-0">
+          <div className="overflow-x-auto">
+            <table className="w-full text-left border-collapse">
+              <thead>
+                <tr className="bg-gray-50 border-b border-gray-100">
+                  <th className="py-4 px-6 text-xs font-black text-gray-400 uppercase w-48">Nama Fasilitas</th>
+                  <th className="py-4 px-6 text-xs font-black text-gray-400 uppercase">Lokasi / Arah</th>
+                  <th className="py-4 px-6 text-xs font-black text-gray-400 uppercase w-32">Ikon</th>
+                  <th className="py-4 px-6 text-right text-xs font-black text-gray-400 uppercase">Aksi</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-50">
+                {amenities.map((amenity, idx) => (
+                  <tr key={idx} className="hover:bg-gray-50/50 transition-colors">
+                    <td className="py-4 px-6">
+                      <Input value={amenity.name} onChange={(e) => updateAmenity(idx, 'name', e.target.value)} placeholder="Contoh: Toilet" className="font-bold rounded-lg" />
+                    </td>
+                    <td className="py-4 px-6">
+                      <Input value={amenity.location} onChange={(e) => updateAmenity(idx, 'location', e.target.value)} placeholder="Contoh: Dekat Area Resto" className="text-sm rounded-lg" />
+                    </td>
+                    <td className="py-4 px-6">
+                      <select 
+                        value={amenity.icon} 
+                        onChange={(e) => updateAmenity(idx, 'icon', e.target.value)}
+                        className="w-full h-10 rounded-lg border-gray-200 text-sm focus:ring-brand focus:border-brand"
+                      >
+                        <option value="Restroom">Toilet</option>
+                        <option value="Mosque">Mushola</option>
+                        <option value="FirstAid">P3K</option>
+                        <option value="Baby">Ruang Bayi</option>
+                        <option value="MapPin">Umum</option>
+                      </select>
+                    </td>
+                    <td className="py-4 px-6 text-right">
+                      <Button variant="ghost" size="icon" onClick={() => removeAmenity(idx)} className="text-gray-300 hover:text-red-500 hover:bg-red-50">
                         <Trash2 size={18} />
                       </Button>
                     </td>

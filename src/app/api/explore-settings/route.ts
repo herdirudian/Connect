@@ -21,6 +21,13 @@ const DEFAULT_ITINERARY = [
   { startTime: '14:00', endTime: '17:00', route: 'Hot Air Balloon → Trekking Pinus → Ngopi di Omah Bambu', note: 'Suasana sore yang sejuk' },
 ];
 
+const DEFAULT_AMENITIES = [
+  { id: 'toilet', name: 'Toilet Terdekat', location: 'Samping Loket Funicular & Area Resto', icon: 'Restroom' },
+  { id: 'mushola', name: 'Mushola', location: 'Lantai 2 Area Bamboo Resto', icon: 'Mosque' },
+  { id: 'p3k', name: 'Pos P3K', location: 'Dekat Pintu Keluar Utama', icon: 'FirstAid' },
+  { id: 'nursing', name: 'Ruang Menyusui', location: 'Area Informasi (Depan)', icon: 'Baby' },
+];
+
 export async function GET() {
   try {
     let settings = await prisma.exploreSettings.findUnique({
@@ -36,6 +43,7 @@ export async function GET() {
           priceReguler: 'Rp 125.000',
           priceTerusan: 'Rp 165.000',
           itineraryData: JSON.stringify(DEFAULT_ITINERARY),
+          amenitiesData: JSON.stringify(DEFAULT_AMENITIES),
         }
       });
     }
@@ -56,7 +64,7 @@ export async function PUT(req: Request) {
     }
 
     const body = await req.json();
-    const { comparisonData, priceBasic, priceReguler, priceTerusan, operationalStatus, weatherInfo, statusMessage, itineraryData } = body;
+    const { comparisonData, priceBasic, priceReguler, priceTerusan, operationalStatus, weatherInfo, statusMessage, itineraryData, amenitiesData } = body;
 
     const updated = await prisma.exploreSettings.upsert({
       where: { id: 'singleton' },
@@ -69,6 +77,7 @@ export async function PUT(req: Request) {
         weatherInfo,
         statusMessage,
         itineraryData: itineraryData ? (typeof itineraryData === 'string' ? itineraryData : JSON.stringify(itineraryData)) : undefined,
+        amenitiesData: amenitiesData ? (typeof amenitiesData === 'string' ? amenitiesData : JSON.stringify(amenitiesData)) : undefined,
       },
       create: {
         id: 'singleton',
@@ -80,6 +89,7 @@ export async function PUT(req: Request) {
         weatherInfo: weatherInfo || 'Cerah',
         statusMessage: statusMessage || 'Seluruh Wahana Beroperasi Normal',
         itineraryData: itineraryData ? (typeof itineraryData === 'string' ? itineraryData : JSON.stringify(itineraryData)) : JSON.stringify(DEFAULT_ITINERARY),
+        amenitiesData: amenitiesData ? (typeof amenitiesData === 'string' ? amenitiesData : JSON.stringify(amenitiesData)) : JSON.stringify(DEFAULT_AMENITIES),
       }
     });
 
