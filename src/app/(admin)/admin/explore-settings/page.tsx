@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Plus, Trash2, Save, CheckCircle2, XCircle, Loader2, Settings2 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
-import { toast } from 'sonner';
+import { toast } from '@/hooks/use-toast';
 
 interface ComparisonRow {
   name: string;
@@ -57,12 +57,19 @@ export default function AdminExploreSettingsPage() {
       });
 
       if (res.ok) {
-        toast.success('Pengaturan Explore berhasil disimpan');
+        toast({
+          title: "Berhasil",
+          description: "Pengaturan Explore berhasil disimpan",
+        });
       } else {
         throw new Error('Gagal menyimpan');
       }
     } catch (error) {
-      toast.error('Gagal menyimpan pengaturan');
+      toast({
+        title: "Error",
+        description: "Gagal menyimpan pengaturan",
+        variant: "destructive"
+      });
     } finally {
       setSaving(false);
     }

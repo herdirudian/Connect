@@ -75,6 +75,7 @@ export function AdminShell({ children, userPermissions }: AdminShellProps) {
         <div className="px-6 py-4 flex-1 overflow-y-auto">
             <div className="mb-6">
                 <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Main Menu</p>
+                <nav className="space-y-1">
                   <NavLink href="/admin" icon={LayoutDashboard} active={pathname === '/admin'}>Admin Overview</NavLink>
                   {can(PERMISSIONS.MANAGE_PROMOS) && <NavLink href="/admin/promotions" icon={LayoutPanelTop} active={pathname.startsWith('/admin/promotions')}>Explore Banners</NavLink>}
                   {can(PERMISSIONS.MANAGE_PROMOS) && <NavLink href="/admin/explore-settings" icon={Settings2} active={pathname.startsWith('/admin/explore-settings')}>Explore Settings</NavLink>}
