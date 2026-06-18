@@ -63,6 +63,7 @@ export default function GreeterHubPage() {
   const [promotions, setPromotions] = useState<Promotion[]>([]);
   const [attractions, setAttractions] = useState<Attraction[]>([]);
   const [exploreSettings, setExploreSettings] = useState<any>(null);
+  const [currentItinerary, setCurrentItinerary] = useState<any>(null);
   const [showPreview, setShowPreview] = useState<{ type: 'image' | 'video', url: string, name: string } | null>(null);
   const [loading, setLoading] = useState(true);
   const [currentPromo, setCurrentPromo] = useState(0);
@@ -104,6 +105,17 @@ export default function GreeterHubPage() {
       setLoading(false);
     });
   }, []);
+
+  useEffect(() => {
+    if (exploreSettings?.itineraryData) {
+      const itins = JSON.parse(exploreSettings.itineraryData);
+      const now = new Date();
+      const currentTime = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
+      
+      const found = itins.find((i: any) => currentTime >= i.startTime && currentTime <= i.endTime);
+      setCurrentItinerary(found || itins[0]); // Default to first if none found
+    }
+  }, [exploreSettings]);
 
   // Auto-rotate carousel
   useEffect(() => {
@@ -343,6 +355,19 @@ export default function GreeterHubPage() {
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
               <h2 className="text-2xl font-black italic text-brand tracking-tight">2. PRODUCT EXPLORER</h2>
               
+              {currentItinerary && (
+                <div className="flex items-center gap-4 bg-brand/5 border border-brand/10 p-4 rounded-2xl animate-in slide-in-from-right duration-500">
+                  <div className="bg-brand text-white p-2 rounded-xl shadow-lg">
+                    <MapIcon size={20} />
+                  </div>
+                  <div>
+                    <p className="text-[10px] font-black text-brand uppercase tracking-widest mb-0.5">Best Route Suggestion ({currentItinerary.startTime} - {currentItinerary.endTime})</p>
+                    <p className="text-sm font-bold text-gray-900">{currentItinerary.route}</p>
+                    <p className="text-[10px] text-gray-500 font-medium italic">💡 {currentItinerary.note}</p>
+                  </div>
+                </div>
+              )}
+
               <div className="flex flex-wrap gap-2">
                 {['ALL', '#RamahAnak', '#Ekstrem', '#Instagramable', '#Grup'].map(tag => (
                   <button

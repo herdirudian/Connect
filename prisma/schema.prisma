@@ -274,6 +274,9 @@ model ExploreSettings {
   weatherInfo       String   @default("Cerah")
   statusMessage     String   @default("Seluruh Wahana Beroperasi Normal")
   
+  // Itinerary
+  itineraryData     String?  @db.Text // JSON string for time-based suggestions
+  
   updatedAt         DateTime @updatedAt
 }
 

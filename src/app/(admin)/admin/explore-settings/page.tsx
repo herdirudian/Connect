@@ -15,6 +15,13 @@ interface ComparisonRow {
   ter: boolean;
 }
 
+interface ItineraryItem {
+  startTime: string;
+  endTime: string;
+  route: string;
+  note: string;
+}
+
 export default function AdminExploreSettingsPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -25,6 +32,7 @@ export default function AdminExploreSettingsPage() {
   const [weatherInfo, setWeatherInfo] = useState('Cerah');
   const [statusMessage, setStatusMessage] = useState('Seluruh Wahana Beroperasi Normal');
   const [rows, setRows] = useState<ComparisonRow[]>([]);
+  const [itineraries, setItineraries] = useState<ItineraryItem[]>([]);
 
   useEffect(() => {
     fetchSettings();
@@ -41,6 +49,7 @@ export default function AdminExploreSettingsPage() {
       setWeatherInfo(data.weatherInfo || 'Cerah');
       setStatusMessage(data.statusMessage || 'Seluruh Wahana Beroperasi Normal');
       setRows(JSON.parse(data.comparisonData || '[]'));
+      setItineraries(JSON.parse(data.itineraryData || '[]'));
     } catch (error) {
       console.error('Error fetching settings:', error);
     } finally {
@@ -61,7 +70,8 @@ export default function AdminExploreSettingsPage() {
           operationalStatus,
           weatherInfo,
           statusMessage,
-          comparisonData: rows
+          comparisonData: rows,
+          itineraryData: itineraries
         }),
       });
 
@@ -96,6 +106,20 @@ export default function AdminExploreSettingsPage() {
     const newRows = [...rows];
     newRows[index] = { ...newRows[index], [field]: value };
     setRows(newRows);
+  };
+
+  const addItinerary = () => {
+    setItineraries([...itineraries, { startTime: '08:00', endTime: '10:00', route: 'Rute Baru', note: 'Catatan' }]);
+  };
+
+  const removeItinerary = (index: number) => {
+    setItineraries(itineraries.filter((_, i) => i !== index));
+  };
+
+  const updateItinerary = (index: number, field: keyof ItineraryItem, value: string) => {
+    const newItin = [...itineraries];
+    newItin[index] = { ...newItin[index], [field]: value };
+    setItineraries(newItin);
   };
 
   if (loading) {
@@ -214,6 +238,56 @@ export default function AdminExploreSettingsPage() {
                     </td>
                     <td className="py-4 px-6 text-right">
                       <Button variant="ghost" size="icon" onClick={() => removeRow(idx)} className="text-gray-300 hover:text-red-500 hover:bg-red-50">
+                        <Trash2 size={18} />
+                      </Button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card className="rounded-3xl border-none shadow-xl overflow-hidden">
+        <CardHeader className="bg-brand text-white p-6 flex flex-row items-center justify-between">
+          <div>
+            <CardTitle className="text-xl font-black italic uppercase">Best Route Suggestions (Itinerary)</CardTitle>
+            <p className="text-xs text-brand-foreground/80 font-medium">Atur rekomendasi rute berdasarkan jam kedatangan tamu.</p>
+          </div>
+          <Button onClick={addItinerary} variant="outline" className="bg-white/10 border-white/20 hover:bg-white/20 text-white rounded-xl">
+            <Plus size={18} className="mr-2" /> Tambah Waktu
+          </Button>
+        </CardHeader>
+        <CardContent className="p-0">
+          <div className="overflow-x-auto">
+            <table className="w-full text-left border-collapse">
+              <thead>
+                <tr className="bg-gray-50 border-b border-gray-100">
+                  <th className="py-4 px-6 text-xs font-black text-gray-400 uppercase w-32">Mulai</th>
+                  <th className="py-4 px-6 text-xs font-black text-gray-400 uppercase w-32">Selesai</th>
+                  <th className="py-4 px-6 text-xs font-black text-gray-400 uppercase">Rekomendasi Rute</th>
+                  <th className="py-4 px-6 text-xs font-black text-gray-400 uppercase">Catatan Greeter</th>
+                  <th className="py-4 px-6 text-right text-xs font-black text-gray-400 uppercase">Aksi</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-50">
+                {itineraries.map((itin, idx) => (
+                  <tr key={idx} className="hover:bg-gray-50/50 transition-colors">
+                    <td className="py-4 px-6">
+                      <Input type="time" value={itin.startTime} onChange={(e) => updateItinerary(idx, 'startTime', e.target.value)} className="font-bold rounded-lg" />
+                    </td>
+                    <td className="py-4 px-6">
+                      <Input type="time" value={itin.endTime} onChange={(e) => updateItinerary(idx, 'endTime', e.target.value)} className="font-bold rounded-lg" />
+                    </td>
+                    <td className="py-4 px-6">
+                      <Input value={itin.route} onChange={(e) => updateItinerary(idx, 'route', e.target.value)} placeholder="Contoh: Funicular -> Sky Hammock" className="font-bold rounded-lg" />
+                    </td>
+                    <td className="py-4 px-6">
+                      <Input value={itin.note} onChange={(e) => updateItinerary(idx, 'note', e.target.value)} placeholder="Contoh: Mumpung belum antre" className="text-sm rounded-lg" />
+                    </td>
+                    <td className="py-4 px-6 text-right">
+                      <Button variant="ghost" size="icon" onClick={() => removeItinerary(idx)} className="text-gray-300 hover:text-red-500 hover:bg-red-50">
                         <Trash2 size={18} />
                       </Button>
                     </td>

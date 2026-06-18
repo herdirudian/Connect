@@ -15,6 +15,12 @@ const DEFAULT_COMPARISON = [
   { name: 'Free 1 Soft File Photo', bas: false, reg: false, ter: true },
 ];
 
+const DEFAULT_ITINERARY = [
+  { startTime: '08:00', endTime: '11:00', route: 'Funicular → Sky Hammock → Zip Bike', note: 'Mumpung belum antre panjang' },
+  { startTime: '11:00', endTime: '14:00', route: 'Makan Siang di Bamboo Resto → Valley Swing → Foto di Sky Tree', note: 'Waktu santai & istirahat' },
+  { startTime: '14:00', endTime: '17:00', route: 'Hot Air Balloon → Trekking Pinus → Ngopi di Omah Bambu', note: 'Suasana sore yang sejuk' },
+];
+
 export async function GET() {
   try {
     let settings = await prisma.exploreSettings.findUnique({
@@ -29,6 +35,7 @@ export async function GET() {
           priceBasic: 'Rp 50.000',
           priceReguler: 'Rp 125.000',
           priceTerusan: 'Rp 165.000',
+          itineraryData: JSON.stringify(DEFAULT_ITINERARY),
         }
       });
     }
@@ -49,7 +56,7 @@ export async function PUT(req: Request) {
     }
 
     const body = await req.json();
-    const { comparisonData, priceBasic, priceReguler, priceTerusan, operationalStatus, weatherInfo, statusMessage } = body;
+    const { comparisonData, priceBasic, priceReguler, priceTerusan, operationalStatus, weatherInfo, statusMessage, itineraryData } = body;
 
     const updated = await prisma.exploreSettings.upsert({
       where: { id: 'singleton' },
@@ -61,6 +68,7 @@ export async function PUT(req: Request) {
         operationalStatus,
         weatherInfo,
         statusMessage,
+        itineraryData: itineraryData ? (typeof itineraryData === 'string' ? itineraryData : JSON.stringify(itineraryData)) : undefined,
       },
       create: {
         id: 'singleton',
@@ -71,6 +79,7 @@ export async function PUT(req: Request) {
         operationalStatus: operationalStatus || 'NORMAL',
         weatherInfo: weatherInfo || 'Cerah',
         statusMessage: statusMessage || 'Seluruh Wahana Beroperasi Normal',
+        itineraryData: itineraryData ? (typeof itineraryData === 'string' ? itineraryData : JSON.stringify(itineraryData)) : JSON.stringify(DEFAULT_ITINERARY),
       }
     });
 
