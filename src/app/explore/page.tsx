@@ -509,31 +509,34 @@ export default function GreeterHubPage() {
                   <thead>
                     <tr className="border-b-2 border-gray-100">
                       <th className="py-4 px-4 text-xs font-black text-gray-400 uppercase tracking-widest">Fasilitas & Wahana</th>
-                      <th className="py-4 px-4 text-center bg-gray-50/50"><Badge variant="outline" className="text-gray-500 border-gray-300">TIKET REGULER</Badge></th>
-                      <th className="py-4 px-4 text-center bg-brand/5"><Badge className="bg-brand text-white border-none">PAKET TERUSAN</Badge></th>
+                      <th className="py-4 px-4 text-center bg-gray-50/30"><Badge variant="outline" className="text-gray-400 border-gray-200">BASIC</Badge></th>
+                      <th className="py-4 px-4 text-center bg-gray-50/80"><Badge variant="outline" className="text-gray-500 border-gray-300">REGULER</Badge></th>
+                      <th className="py-4 px-4 text-center bg-brand/5"><Badge className="bg-brand text-white border-none">TERUSAN</Badge></th>
                     </tr>
                   </thead>
                   <tbody className="text-sm font-bold">
                     {[
-                      { name: 'Tiket Masuk Kawasan', reg: true, ter: true },
-                      { name: 'Free Welcome Drink', reg: true, ter: true },
-                      { name: 'Akses Wahana Sky Hammock', reg: false, ter: true },
-                      { name: 'Akses Wahana Zip Bike', reg: false, ter: true },
-                      { name: 'Akses Wahana Valley Swing', reg: false, ter: true },
-                      { name: 'Akses Wahana Hot Air Balloon', reg: false, ter: true },
-                      { name: 'Funicular (In & Out)', reg: false, ter: true },
-                      { name: 'Meal Voucher (10k/50k)', reg: false, ter: true },
-                      { name: 'Free 1 Soft File Photo', reg: false, ter: true },
+                      { name: 'Tiket Masuk Kawasan', bas: true, reg: true, ter: true },
+                      { name: 'Free Welcome Drink', bas: false, reg: true, ter: true },
+                      { name: 'Funicular (In & Out)', bas: false, reg: true, ter: true },
+                      { name: 'Akses Wahana Sky Hammock', bas: false, reg: false, ter: true },
+                      { name: 'Akses Wahana Zip Bike', bas: false, reg: false, ter: true },
+                      { name: 'Akses Wahana Valley Swing', bas: false, reg: false, ter: true },
+                      { name: 'Akses Wahana Hot Air Balloon', bas: false, reg: false, ter: true },
+                      { name: 'Meal Voucher (10k/50k)', bas: false, reg: false, ter: true },
+                      { name: 'Free 1 Soft File Photo', bas: false, reg: false, ter: true },
                     ].map((row, i) => (
                       <tr key={i} className="border-b border-gray-50 hover:bg-gray-50/30 transition-colors">
                         <td className="py-4 px-4 text-gray-700">{row.name}</td>
-                        <td className="py-4 px-4 text-center bg-gray-50/50">{row.reg ? <CheckCircle2 size={18} className="mx-auto text-green-500" /> : <X size={18} className="mx-auto text-gray-300" />}</td>
+                        <td className="py-4 px-4 text-center bg-gray-50/30">{row.bas ? <CheckCircle2 size={18} className="mx-auto text-gray-400" /> : <X size={18} className="mx-auto text-gray-200" />}</td>
+                        <td className="py-4 px-4 text-center bg-gray-50/80">{row.reg ? <CheckCircle2 size={18} className="mx-auto text-green-500" /> : <X size={18} className="mx-auto text-gray-300" />}</td>
                         <td className="py-4 px-4 text-center bg-brand/5">{row.ter ? <CheckCircle2 size={18} className="mx-auto text-brand" /> : <X size={18} className="mx-auto text-gray-300" />}</td>
                       </tr>
                     ))}
                     <tr className="bg-gray-50/50">
                       <td className="py-6 px-4 text-gray-900 font-black italic uppercase">Total Value</td>
-                      <td className="py-6 px-4 text-center text-lg text-gray-400 line-through">Rp 285.000</td>
+                      <td className="py-6 px-4 text-center text-base text-gray-400">Rp 50.000</td>
+                      <td className="py-6 px-4 text-center text-lg text-gray-500 font-black">Rp 125.000</td>
                       <td className="py-6 px-4 text-center text-2xl text-brand font-black">Rp 165.000</td>
                     </tr>
                   </tbody>
