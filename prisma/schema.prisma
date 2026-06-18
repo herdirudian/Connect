@@ -262,6 +262,15 @@ model Promotion {
   updatedAt   DateTime @updatedAt
 }
 
+model ExploreSettings {
+  id                String   @id @default("singleton")
+  comparisonData    String   @db.Text // JSON string for comparison table rows
+  priceBasic        String   @default("Rp 50.000")
+  priceReguler      String   @default("Rp 125.000")
+  priceTerusan      String   @default("Rp 165.000")
+  updatedAt         DateTime @updatedAt
+}
+
 model Restaurant {
   id          String   @id @default(uuid())
   name        String

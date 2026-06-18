@@ -62,6 +62,7 @@ interface Attraction {
 export default function GreeterHubPage() {
   const [promotions, setPromotions] = useState<Promotion[]>([]);
   const [attractions, setAttractions] = useState<Attraction[]>([]);
+  const [exploreSettings, setExploreSettings] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [currentPromo, setCurrentPromo] = useState(0);
   const [activeFilter, setActiveFilter] = useState('ALL');
@@ -93,10 +94,12 @@ export default function GreeterHubPage() {
   useEffect(() => {
     Promise.all([
       fetch('/api/promotions').then(res => res.json()),
-      fetch('/api/attractions').then(res => res.json())
-    ]).then(([promoData, attrData]) => {
+      fetch('/api/attractions').then(res => res.json()),
+      fetch('/api/explore-settings').then(res => res.json())
+    ]).then(([promoData, attrData, settingsData]) => {
       setPromotions(promoData);
       setAttractions(attrData);
+      setExploreSettings(settingsData);
       setLoading(false);
     });
   }, []);
@@ -515,7 +518,7 @@ export default function GreeterHubPage() {
                     </tr>
                   </thead>
                   <tbody className="text-sm font-bold">
-                    {[
+                    {(exploreSettings?.comparisonData ? JSON.parse(exploreSettings.comparisonData) : [
                       { name: 'Tiket Masuk Kawasan', bas: true, reg: true, ter: true },
                       { name: 'Free Welcome Drink', bas: false, reg: true, ter: true },
                       { name: 'Funicular (In & Out)', bas: false, reg: true, ter: true },
@@ -525,7 +528,7 @@ export default function GreeterHubPage() {
                       { name: 'Akses Wahana Hot Air Balloon', bas: false, reg: false, ter: true },
                       { name: 'Meal Voucher (10k/50k)', bas: false, reg: false, ter: true },
                       { name: 'Free 1 Soft File Photo', bas: false, reg: false, ter: true },
-                    ].map((row, i) => (
+                    ]).map((row: any, i: number) => (
                       <tr key={i} className="border-b border-gray-50 hover:bg-gray-50/30 transition-colors">
                         <td className="py-4 px-4 text-gray-700">{row.name}</td>
                         <td className="py-4 px-4 text-center bg-gray-50/30">{row.bas ? <CheckCircle2 size={18} className="mx-auto text-gray-400" /> : <X size={18} className="mx-auto text-gray-200" />}</td>
@@ -535,9 +538,9 @@ export default function GreeterHubPage() {
                     ))}
                     <tr className="bg-gray-50/50">
                       <td className="py-6 px-4 text-gray-900 font-black italic uppercase">Total Value</td>
-                      <td className="py-6 px-4 text-center text-base text-gray-400">Rp 50.000</td>
-                      <td className="py-6 px-4 text-center text-lg text-gray-500 font-black">Rp 125.000</td>
-                      <td className="py-6 px-4 text-center text-2xl text-brand font-black">Rp 165.000</td>
+                      <td className="py-6 px-4 text-center text-base text-gray-400">{exploreSettings?.priceBasic || 'Rp 50.000'}</td>
+                      <td className="py-6 px-4 text-center text-lg text-gray-500 font-black">{exploreSettings?.priceReguler || 'Rp 125.000'}</td>
+                      <td className="py-6 px-4 text-center text-2xl text-brand font-black">{exploreSettings?.priceTerusan || 'Rp 165.000'}</td>
                     </tr>
                   </tbody>
                 </table>
