@@ -238,6 +238,7 @@ model Attraction {
   rating      Float    @default(0)
   imageUrl    String?
   videoUrl    String?  // Short video loops (Reels style)
+  images      String?  @db.Text // JSON string for gallery images
   status      String   @default("OPEN") // "OPEN", "MAINTENANCE", "CROWDED"
   waitTime    String?  // Estimasi antrean: "5-10 menit"
   tags        String?  // #RamahAnak, #Ekstrem, #Instagramable

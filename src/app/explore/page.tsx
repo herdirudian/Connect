@@ -60,6 +60,7 @@ interface Attraction {
   waitTime?: string;
   tags?: string;
   benefits?: string;
+  images?: string; // JSON string
 }
 
 export default function GreeterHubPage() {
@@ -68,7 +69,8 @@ export default function GreeterHubPage() {
   const [exploreSettings, setExploreSettings] = useState<any>(null);
   const [currentItinerary, setCurrentItinerary] = useState<any>(null);
   const [showAmenities, setShowAmenities] = useState(false);
-  const [showPreview, setShowPreview] = useState<{ type: 'image' | 'video', url: string, name: string } | null>(null);
+  const [showPreview, setShowPreview] = useState<{ type: 'image' | 'video', url: string, name: string, gallery?: string[] } | null>(null);
+  const [activeGalleryIndex, setActiveGalleryIndex] = useState(0);
   const [loading, setLoading] = useState(true);
   const [currentPromo, setCurrentPromo] = useState(0);
   const [activeFilter, setActiveFilter] = useState('ALL');
@@ -459,11 +461,26 @@ export default function GreeterHubPage() {
                 {/* Reels Style Video Loop or Image */}
                 <div 
                   className="relative aspect-[9/16] md:aspect-video rounded-3xl overflow-hidden shadow-xl bg-gray-200 cursor-zoom-in"
-                  onClick={() => setShowPreview({ 
-                    type: attr.videoUrl ? 'video' : 'image', 
-                    url: attr.videoUrl || attr.imageUrl || '/placeholder.jpg',
-                    name: attr.name 
-                  })}
+                  onClick={() => {
+                    let galleryImages: string[] = [];
+                    try {
+                      galleryImages = attr.images ? JSON.parse(attr.images) : [];
+                      // If images is a comma-separated string instead of JSON array
+                      if (typeof galleryImages === 'string') {
+                        galleryImages = (galleryImages as string).split(',').map(s => s.trim());
+                      }
+                    } catch (e) {
+                      galleryImages = attr.images ? attr.images.split(',').map(s => s.trim()) : [];
+                    }
+
+                    setShowPreview({ 
+                      type: attr.videoUrl ? 'video' : 'image', 
+                      url: attr.videoUrl || attr.imageUrl || '/placeholder.jpg',
+                      name: attr.name,
+                      gallery: galleryImages.length > 0 ? galleryImages : undefined
+                    });
+                    setActiveGalleryIndex(0);
+                  }}
                 >
                   {attr.videoUrl ? (
                     <video 
@@ -684,7 +701,52 @@ export default function GreeterHubPage() {
           
           <div className="w-full h-full flex flex-col items-center justify-center p-4 md:p-12">
             <div className="relative w-full max-w-5xl h-full flex items-center justify-center">
-              {showPreview.type === 'video' ? (
+              {showPreview.gallery && showPreview.gallery.length > 0 ? (
+                <div className="relative w-full h-full flex items-center justify-center group">
+                  <img 
+                    src={showPreview.gallery[activeGalleryIndex]} 
+                    alt={`${showPreview.name} ${activeGalleryIndex + 1}`}
+                    className="max-w-full max-h-[70vh] object-contain rounded-2xl shadow-2xl animate-in fade-in zoom-in-95 duration-500"
+                  />
+                  
+                  {/* Gallery Navigation */}
+                  {showPreview.gallery.length > 1 && (
+                    <>
+                      <button 
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setActiveGalleryIndex(prev => (prev - 1 + showPreview.gallery!.length) % showPreview.gallery!.length);
+                        }}
+                        className="absolute left-4 p-4 bg-white/10 hover:bg-white/20 text-white rounded-full backdrop-blur-md transition-all opacity-0 group-hover:opacity-100"
+                      >
+                        <ChevronLeft size={32} />
+                      </button>
+                      <button 
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setActiveGalleryIndex(prev => (prev + 1) % showPreview.gallery!.length);
+                        }}
+                        className="absolute right-4 p-4 bg-white/10 hover:bg-white/20 text-white rounded-full backdrop-blur-md transition-all opacity-0 group-hover:opacity-100"
+                      >
+                        <ChevronRight size={32} />
+                      </button>
+
+                      {/* Thumbnails Indicator */}
+                      <div className="absolute -bottom-20 flex gap-2 overflow-x-auto p-2 no-scrollbar max-w-full">
+                        {showPreview.gallery.map((img, idx) => (
+                          <button
+                            key={idx}
+                            onClick={() => setActiveGalleryIndex(idx)}
+                            className={`relative w-16 h-16 rounded-xl overflow-hidden border-2 transition-all flex-shrink-0 ${activeGalleryIndex === idx ? 'border-brand scale-110 shadow-lg' : 'border-transparent opacity-50 hover:opacity-100'}`}
+                          >
+                            <img src={img} className="w-full h-full object-cover" alt="thumb" />
+                          </button>
+                        ))}
+                      </div>
+                    </>
+                  )}
+                </div>
+              ) : showPreview.type === 'video' ? (
                 <video 
                   src={showPreview.url} 
                   autoPlay 
@@ -700,9 +762,11 @@ export default function GreeterHubPage() {
                 />
               )}
             </div>
-            <div className="mt-6 text-center">
+            <div className={`text-center ${showPreview.gallery ? 'mt-32' : 'mt-6'}`}>
               <h3 className="text-2xl md:text-4xl font-black text-white uppercase tracking-tighter italic">{showPreview.name}</h3>
-              <p className="text-gray-400 text-sm mt-2 font-bold tracking-widest uppercase">THE LODGE MARIBAYA • EXPERIENCE PREVIEW</p>
+              <p className="text-gray-400 text-sm mt-2 font-bold tracking-widest uppercase">
+                {showPreview.gallery ? `PHOTO ${activeGalleryIndex + 1} OF ${showPreview.gallery.length}` : 'THE LODGE MARIBAYA • EXPERIENCE PREVIEW'}
+              </p>
             </div>
           </div>
         </div>

@@ -19,6 +19,7 @@ interface Attraction {
   benefits: string; // JSON string
   imageUrl?: string;
   videoUrl?: string;
+  images?: string; // JSON string
   status: 'OPEN' | 'MAINTENANCE' | 'CROWDED';
   waitTime?: string;
   tags?: string;
@@ -40,6 +41,7 @@ export default function AdminAttractionsPage() {
     benefits: '',
     imageUrl: '', 
     videoUrl: '',
+    images: '',
     status: 'OPEN',
     waitTime: '',
     tags: '',
@@ -75,6 +77,7 @@ export default function AdminAttractionsPage() {
       benefits: '', 
       imageUrl: '', 
       videoUrl: '',
+      images: '',
       status: 'OPEN',
       waitTime: '',
       tags: '',
@@ -105,6 +108,7 @@ export default function AdminAttractionsPage() {
       benefits: benefitsString,
       imageUrl: item.imageUrl || '',
       videoUrl: item.videoUrl || '',
+      images: item.images || '',
       status: item.status || 'OPEN',
       waitTime: item.waitTime || '',
       tags: item.tags || '',
@@ -348,6 +352,17 @@ export default function AdminAttractionsPage() {
                     placeholder="e.g. Safety gear included, 5 min ride, Photo op"
                   />
                 </div>
+                <div className="space-y-2 md:col-span-2">
+                  <label className="text-sm font-medium">Gallery Images (Comma separated URLs)</label>
+                  <textarea 
+                    value={formData.images}
+                    onChange={(e) => setFormData({...formData, images: e.target.value})}
+                    placeholder="/img1.jpg, /img2.jpg, /img3.jpg"
+                    className="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                  />
+                  <p className="text-[10px] text-gray-400 italic">Masukkan beberapa URL gambar dipisahkan koma untuk membuat galeri di halaman Explore.</p>
+                </div>
+
                 <div className="flex items-center space-x-2">
                     <input 
                         type="checkbox" 
