@@ -49,22 +49,28 @@ export async function PUT(req: Request) {
     }
 
     const body = await req.json();
-    const { comparisonData, priceBasic, priceReguler, priceTerusan } = body;
+    const { comparisonData, priceBasic, priceReguler, priceTerusan, operationalStatus, weatherInfo, statusMessage } = body;
 
     const updated = await prisma.exploreSettings.upsert({
       where: { id: 'singleton' },
       update: {
-        comparisonData: typeof comparisonData === 'string' ? comparisonData : JSON.stringify(comparisonData),
+        comparisonData: comparisonData ? (typeof comparisonData === 'string' ? comparisonData : JSON.stringify(comparisonData)) : undefined,
         priceBasic,
         priceReguler,
         priceTerusan,
+        operationalStatus,
+        weatherInfo,
+        statusMessage,
       },
       create: {
         id: 'singleton',
-        comparisonData: typeof comparisonData === 'string' ? comparisonData : JSON.stringify(comparisonData),
-        priceBasic,
-        priceReguler,
-        priceTerusan,
+        comparisonData: comparisonData ? (typeof comparisonData === 'string' ? comparisonData : JSON.stringify(comparisonData)) : JSON.stringify([]),
+        priceBasic: priceBasic || 'Rp 0',
+        priceReguler: priceReguler || 'Rp 0',
+        priceTerusan: priceTerusan || 'Rp 0',
+        operationalStatus: operationalStatus || 'NORMAL',
+        weatherInfo: weatherInfo || 'Cerah',
+        statusMessage: statusMessage || 'Seluruh Wahana Beroperasi Normal',
       }
     });
 

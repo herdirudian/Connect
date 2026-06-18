@@ -63,6 +63,7 @@ export default function GreeterHubPage() {
   const [promotions, setPromotions] = useState<Promotion[]>([]);
   const [attractions, setAttractions] = useState<Attraction[]>([]);
   const [exploreSettings, setExploreSettings] = useState<any>(null);
+  const [showPreview, setShowPreview] = useState<{ type: 'image' | 'video', url: string, name: string } | null>(null);
   const [loading, setLoading] = useState(true);
   const [currentPromo, setCurrentPromo] = useState(0);
   const [activeFilter, setActiveFilter] = useState('ALL');
@@ -203,9 +204,17 @@ export default function GreeterHubPage() {
             </div>
           </div>
           <div className="hidden md:flex items-center gap-6">
-            <div className="flex items-center gap-2 px-4 py-1.5 bg-blue-50 rounded-full border border-blue-100">
-              <CloudSun size={16} className="text-blue-500" />
-              <span className="text-[10px] font-bold text-blue-700 uppercase tracking-tight">Cuaca Cerah • Wahana Beroperasi</span>
+            <div className={`flex items-center gap-2 px-4 py-1.5 rounded-full border ${
+              exploreSettings?.operationalStatus === 'WEATHER_DELAY' 
+                ? 'bg-orange-50 border-orange-100 text-orange-700' 
+                : exploreSettings?.operationalStatus === 'MAINTENANCE'
+                ? 'bg-red-50 border-red-100 text-red-700'
+                : 'bg-blue-50 border-blue-100 text-blue-700'
+            }`}>
+              <CloudSun size={16} className={exploreSettings?.operationalStatus === 'NORMAL' ? 'text-blue-500' : 'text-current'} />
+              <span className="text-[10px] font-bold uppercase tracking-tight">
+                {exploreSettings?.weatherInfo || 'Cerah'} • {exploreSettings?.statusMessage || 'Wahana Beroperasi'}
+              </span>
             </div>
             <nav className="flex gap-4 text-sm font-medium">
               <a href="#promo" className="text-gray-500 hover:text-brand transition-colors">Promo</a>
@@ -376,9 +385,16 @@ export default function GreeterHubPage() {
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             {filteredAttractions.map(attr => (
-              <div key={attr.id} className="flex flex-col space-y-4">
+              <div key={attr.id} className="flex flex-col space-y-4 group">
                 {/* Reels Style Video Loop or Image */}
-                <div className="relative aspect-[9/16] md:aspect-video rounded-3xl overflow-hidden shadow-xl bg-gray-200 group">
+                <div 
+                  className="relative aspect-[9/16] md:aspect-video rounded-3xl overflow-hidden shadow-xl bg-gray-200 cursor-zoom-in"
+                  onClick={() => setShowPreview({ 
+                    type: attr.videoUrl ? 'video' : 'image', 
+                    url: attr.videoUrl || attr.imageUrl || '/placeholder.jpg',
+                    name: attr.name 
+                  })}
+                >
                   {attr.videoUrl ? (
                     <video 
                       src={attr.videoUrl}
@@ -386,15 +402,22 @@ export default function GreeterHubPage() {
                       loop 
                       muted 
                       playsInline 
-                      className="w-full h-full object-cover"
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
                     />
                   ) : (
-                    <img src={attr.imageUrl || '/placeholder.jpg'} alt={attr.name} className="w-full h-full object-cover" />
+                    <img src={attr.imageUrl || '/placeholder.jpg'} alt={attr.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" />
                   )}
                   
                   {/* Status Overlay */}
                   <div className="absolute top-4 right-4">
                     {getStatusBadge(attr.status, attr.waitTime)}
+                  </div>
+
+                  {/* Hover Action */}
+                  <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                    <div className="bg-white/20 backdrop-blur-md p-4 rounded-full border border-white/30">
+                      <Maximize2 className="text-white" size={32} />
+                    </div>
                   </div>
 
                   {/* Video Indicator */}
@@ -500,7 +523,7 @@ export default function GreeterHubPage() {
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setShowCompare(false)} />
           <Card className="relative w-full max-w-4xl bg-white rounded-[32px] overflow-hidden border-none shadow-2xl animate-in fade-in zoom-in-95 duration-200">
-            <button onClick={() => setShowCompare(false)} className="absolute top-6 right-6 p-2 bg-gray-100 rounded-full text-gray-500 hover:bg-gray-200"><X size={20} /></button>
+            <button onClick={() => setShowCompare(false)} className="absolute top-6 right-6 p-2 bg-gray-100 rounded-full text-gray-500 hover:bg-gray-200 transition-colors z-10"><X size={20} /></button>
             <CardContent className="p-8 md:p-12">
               <div className="mb-8">
                 <h3 className="text-3xl font-black italic text-brand tracking-tighter uppercase">Perbandingan Paket Wisata</h3>
@@ -551,6 +574,42 @@ export default function GreeterHubPage() {
               </div>
             </CardContent>
           </Card>
+        </div>
+      )}
+
+      {/* 3. Full Screen Preview Modal */}
+      {showPreview && (
+        <div className="fixed inset-0 z-[110] flex items-center justify-center bg-black/95 animate-in fade-in duration-300">
+          <button 
+            onClick={() => setShowPreview(null)} 
+            className="absolute top-6 right-6 p-3 bg-white/10 hover:bg-white/20 text-white rounded-full backdrop-blur-md transition-all z-20"
+          >
+            <X size={24} />
+          </button>
+          
+          <div className="w-full h-full flex flex-col items-center justify-center p-4 md:p-12">
+            <div className="relative w-full max-w-5xl h-full flex items-center justify-center">
+              {showPreview.type === 'video' ? (
+                <video 
+                  src={showPreview.url} 
+                  autoPlay 
+                  loop 
+                  controls 
+                  className="max-w-full max-h-full rounded-2xl shadow-2xl"
+                />
+              ) : (
+                <img 
+                  src={showPreview.url} 
+                  alt={showPreview.name} 
+                  className="max-w-full max-h-full object-contain rounded-2xl shadow-2xl" 
+                />
+              )}
+            </div>
+            <div className="mt-6 text-center">
+              <h3 className="text-2xl md:text-4xl font-black text-white uppercase tracking-tighter italic">{showPreview.name}</h3>
+              <p className="text-gray-400 text-sm mt-2 font-bold tracking-widest uppercase">THE LODGE MARIBAYA • EXPERIENCE PREVIEW</p>
+            </div>
+          </div>
         </div>
       )}
     </div>

@@ -21,6 +21,9 @@ export default function AdminExploreSettingsPage() {
   const [priceBasic, setPriceBasic] = useState('');
   const [priceReguler, setPriceReguler] = useState('');
   const [priceTerusan, setPriceTerusan] = useState('');
+  const [operationalStatus, setOperationalStatus] = useState('NORMAL');
+  const [weatherInfo, setWeatherInfo] = useState('Cerah');
+  const [statusMessage, setStatusMessage] = useState('Seluruh Wahana Beroperasi Normal');
   const [rows, setRows] = useState<ComparisonRow[]>([]);
 
   useEffect(() => {
@@ -34,6 +37,9 @@ export default function AdminExploreSettingsPage() {
       setPriceBasic(data.priceBasic);
       setPriceReguler(data.priceReguler);
       setPriceTerusan(data.priceTerusan);
+      setOperationalStatus(data.operationalStatus || 'NORMAL');
+      setWeatherInfo(data.weatherInfo || 'Cerah');
+      setStatusMessage(data.statusMessage || 'Seluruh Wahana Beroperasi Normal');
       setRows(JSON.parse(data.comparisonData || '[]'));
     } catch (error) {
       console.error('Error fetching settings:', error);
@@ -52,6 +58,9 @@ export default function AdminExploreSettingsPage() {
           priceBasic,
           priceReguler,
           priceTerusan,
+          operationalStatus,
+          weatherInfo,
+          statusMessage,
           comparisonData: rows
         }),
       });
@@ -109,26 +118,49 @@ export default function AdminExploreSettingsPage() {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <Card className="rounded-2xl border-none shadow-lg">
           <CardHeader className="bg-gray-50/50 border-b">
-            <CardTitle className="text-sm font-black text-gray-400 uppercase">Harga Paket Basic</CardTitle>
+            <CardTitle className="text-sm font-black text-gray-400 uppercase">Live Operational Status</CardTitle>
           </CardHeader>
-          <CardContent className="pt-6">
-            <Input value={priceBasic} onChange={(e) => setPriceBasic(e.target.value)} placeholder="Rp 50.000" className="text-lg font-bold rounded-xl" />
+          <CardContent className="pt-6 space-y-4">
+            <div className="space-y-2">
+              <label className="text-[10px] font-bold uppercase text-gray-400">Status Wahana</label>
+              <select 
+                value={operationalStatus} 
+                onChange={(e) => setOperationalStatus(e.target.value)}
+                className="w-full h-10 rounded-xl border-gray-200 text-sm font-bold focus:ring-brand focus:border-brand"
+              >
+                <option value="NORMAL">Normal (Semua Buka)</option>
+                <option value="WEATHER_DELAY">Weather Delay (Hujan/Angin)</option>
+                <option value="MAINTENANCE">Maintenance (Pemeliharaan)</option>
+              </select>
+            </div>
+            <div className="space-y-2">
+              <label className="text-[10px] font-bold uppercase text-gray-400">Info Cuaca</label>
+              <Input value={weatherInfo} onChange={(e) => setWeatherInfo(e.target.value)} placeholder="Cerah / Mendung" className="rounded-xl font-bold" />
+            </div>
+            <div className="space-y-2">
+              <label className="text-[10px] font-bold uppercase text-gray-400">Pesan Status</label>
+              <Input value={statusMessage} onChange={(e) => setStatusMessage(e.target.value)} placeholder="Seluruh Wahana Beroperasi" className="rounded-xl font-bold" />
+            </div>
           </CardContent>
         </Card>
-        <Card className="rounded-2xl border-none shadow-lg">
+
+        <Card className="rounded-2xl border-none shadow-lg md:col-span-2">
           <CardHeader className="bg-gray-50/50 border-b">
-            <CardTitle className="text-sm font-black text-gray-400 uppercase">Harga Paket Reguler</CardTitle>
+            <CardTitle className="text-sm font-black text-gray-400 uppercase">Harga Paket (Total Value)</CardTitle>
           </CardHeader>
-          <CardContent className="pt-6">
-            <Input value={priceReguler} onChange={(e) => setPriceReguler(e.target.value)} placeholder="Rp 125.000" className="text-lg font-bold rounded-xl" />
-          </CardContent>
-        </Card>
-        <Card className="rounded-2xl border-none shadow-lg">
-          <CardHeader className="bg-gray-50/50 border-b">
-            <CardTitle className="text-sm font-black text-gray-400 uppercase">Harga Paket Terusan</CardTitle>
-          </CardHeader>
-          <CardContent className="pt-6">
-            <Input value={priceTerusan} onChange={(e) => setPriceTerusan(e.target.value)} placeholder="Rp 165.000" className="text-lg font-bold rounded-xl" />
+          <CardContent className="pt-6 grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="space-y-2">
+              <label className="text-[10px] font-bold uppercase text-gray-400">Basic</label>
+              <Input value={priceBasic} onChange={(e) => setPriceBasic(e.target.value)} placeholder="Rp 50.000" className="text-lg font-bold rounded-xl" />
+            </div>
+            <div className="space-y-2">
+              <label className="text-[10px] font-bold uppercase text-gray-400">Reguler</label>
+              <Input value={priceReguler} onChange={(e) => setPriceReguler(e.target.value)} placeholder="Rp 125.000" className="text-lg font-bold rounded-xl" />
+            </div>
+            <div className="space-y-2">
+              <label className="text-[10px] font-bold uppercase text-gray-400">Terusan</label>
+              <Input value={priceTerusan} onChange={(e) => setPriceTerusan(e.target.value)} placeholder="Rp 165.000" className="text-lg font-bold rounded-xl" />
+            </div>
           </CardContent>
         </Card>
       </div>
