@@ -64,7 +64,7 @@ export async function PUT(req: Request) {
     }
 
     const body = await req.json();
-    const { comparisonData, priceBasic, priceReguler, priceTerusan, operationalStatus, weatherInfo, statusMessage, itineraryData, amenitiesData } = body;
+    const { comparisonData, priceBasic, priceReguler, priceTerusan, operationalStatus, weatherInfo, statusMessage, itineraryData, amenitiesData, mapImageUrl } = body;
 
     const updated = await prisma.exploreSettings.upsert({
       where: { id: 'singleton' },
@@ -78,6 +78,7 @@ export async function PUT(req: Request) {
         statusMessage,
         itineraryData: itineraryData ? (typeof itineraryData === 'string' ? itineraryData : JSON.stringify(itineraryData)) : undefined,
         amenitiesData: amenitiesData ? (typeof amenitiesData === 'string' ? amenitiesData : JSON.stringify(amenitiesData)) : undefined,
+        mapImageUrl,
       },
       create: {
         id: 'singleton',
@@ -90,6 +91,7 @@ export async function PUT(req: Request) {
         statusMessage: statusMessage || 'Seluruh Wahana Beroperasi Normal',
         itineraryData: itineraryData ? (typeof itineraryData === 'string' ? itineraryData : JSON.stringify(itineraryData)) : JSON.stringify(DEFAULT_ITINERARY),
         amenitiesData: amenitiesData ? (typeof amenitiesData === 'string' ? amenitiesData : JSON.stringify(amenitiesData)) : JSON.stringify(DEFAULT_AMENITIES),
+        mapImageUrl: mapImageUrl || '/map-placeholder.jpg',
       }
     });
 

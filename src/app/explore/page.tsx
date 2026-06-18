@@ -514,32 +514,57 @@ export default function GreeterHubPage() {
           </div>
         </section>
 
-        {/* SECTION 3: INTERACTIVE MAP */}
-        <section id="map" className="space-y-8">
+        {/* SECTION 3: RESORT DIGITAL MAP */}
+        <section id="peta" className="space-y-8">
           <div className="flex items-center justify-between">
             <h2 className="text-2xl font-black italic text-brand tracking-tight">3. RESORT DIGITAL MAP</h2>
             <div className="flex gap-2">
-              <Button size="icon" variant="outline" onClick={() => setZoom(prev => Math.min(prev + 0.2, 3))} className="rounded-full shadow-sm"><ZoomIn size={18} /></Button>
-              <Button size="icon" variant="outline" onClick={() => setZoom(prev => Math.max(prev - 0.2, 1))} className="rounded-full shadow-sm"><ZoomOut size={18} /></Button>
-              <Button size="icon" variant="outline" onClick={() => setZoom(1)} className="rounded-full shadow-sm"><Maximize2 size={18} /></Button>
+              <Button 
+                variant="outline" 
+                size="icon" 
+                onClick={() => setZoom(prev => Math.min(prev + 0.2, 3))}
+                className="rounded-xl border-gray-200"
+              >
+                <ZoomIn size={20} />
+              </Button>
+              <Button 
+                variant="outline" 
+                size="icon" 
+                onClick={() => setZoom(prev => Math.max(prev - 0.2, 0.5))}
+                className="rounded-xl border-gray-200"
+              >
+                <ZoomOut size={20} />
+              </Button>
+              <Button 
+                variant="outline" 
+                size="icon" 
+                onClick={() => setZoom(1)}
+                className="rounded-xl border-gray-200 text-xs font-bold"
+              >
+                RESET
+              </Button>
             </div>
           </div>
 
-          <Card className="rounded-[40px] overflow-hidden border-none shadow-2xl bg-white relative">
-            <div className="overflow-auto max-h-[70vh] p-4 cursor-grab active:cursor-grabbing" ref={mapRef}>
-              <div 
-                className="transition-transform duration-300 origin-top-left"
-                style={{ transform: `scale(${zoom})`, minWidth: '100%' }}
-              >
-                <img 
-                  src="https://thelodgemaribaya.com/wp-content/uploads/2023/11/MAP-THE-LODGE-MARIBAYA.webp" 
-                  alt="Resort Digital Map" 
-                  className="w-full h-auto rounded-2xl"
-                />
-              </div>
+          <Card className="rounded-[40px] overflow-hidden border-none shadow-2xl bg-gray-100 relative group min-h-[400px] md:min-h-[600px]">
+            <div 
+              ref={mapRef}
+              className="w-full h-full flex items-center justify-center overflow-auto no-scrollbar cursor-grab active:cursor-grabbing p-8"
+            >
+              <img 
+                src={exploreSettings?.mapImageUrl || "/map-placeholder.jpg"} 
+                alt="The Lodge Maribaya Map" 
+                className="max-w-none transition-transform duration-300 shadow-2xl rounded-2xl"
+                style={{ 
+                  transform: `scale(${zoom})`,
+                  width: '100%',
+                  height: 'auto',
+                  objectFit: 'contain'
+                }}
+              />
             </div>
             
-            {/* Map Legend (Floating) */}
+            {/* Map Legend Overlay */}
             <div className="absolute bottom-6 right-6 bg-white/90 backdrop-blur-md p-4 rounded-2xl shadow-xl border border-gray-100 max-w-xs">
               <h4 className="text-xs font-bold text-brand uppercase mb-2">Petunjuk Arah</h4>
               <div className="space-y-2 text-[11px] font-medium">

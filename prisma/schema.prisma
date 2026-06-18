@@ -280,6 +280,9 @@ model ExploreSettings {
   // Amenities
   amenitiesData     String?  @db.Text // JSON string for nearby facilities (Toilet, Mushola, etc)
   
+  // Digital Map
+  mapImageUrl       String?  @db.Text
+  
   updatedAt         DateTime @updatedAt
 }
 

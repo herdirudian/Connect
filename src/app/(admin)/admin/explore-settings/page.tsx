@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Plus, Trash2, Save, CheckCircle2, XCircle, Loader2, Settings2 } from 'lucide-react';
+import { Plus, Trash2, Save, CheckCircle2, XCircle, Loader2, Settings2, Map as MapIcon, Image as ImageIcon } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { toast } from '@/hooks/use-toast';
 
@@ -38,6 +38,7 @@ export default function AdminExploreSettingsPage() {
   const [operationalStatus, setOperationalStatus] = useState('NORMAL');
   const [weatherInfo, setWeatherInfo] = useState('Cerah');
   const [statusMessage, setStatusMessage] = useState('Seluruh Wahana Beroperasi Normal');
+  const [mapImageUrl, setMapImageUrl] = useState('');
   const [rows, setRows] = useState<ComparisonRow[]>([]);
   const [itineraries, setItineraries] = useState<ItineraryItem[]>([]);
   const [amenities, setAmenities] = useState<AmenityItem[]>([]);
@@ -56,6 +57,7 @@ export default function AdminExploreSettingsPage() {
       setOperationalStatus(data.operationalStatus || 'NORMAL');
       setWeatherInfo(data.weatherInfo || 'Cerah');
       setStatusMessage(data.statusMessage || 'Seluruh Wahana Beroperasi Normal');
+      setMapImageUrl(data.mapImageUrl || '');
       setRows(JSON.parse(data.comparisonData || '[]'));
       setItineraries(JSON.parse(data.itineraryData || '[]'));
       setAmenities(JSON.parse(data.amenitiesData || '[]'));
@@ -79,6 +81,7 @@ export default function AdminExploreSettingsPage() {
           operationalStatus,
           weatherInfo,
           statusMessage,
+          mapImageUrl,
           comparisonData: rows,
           itineraryData: itineraries,
           amenitiesData: amenities
@@ -166,6 +169,26 @@ export default function AdminExploreSettingsPage() {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <Card className="rounded-2xl border-none shadow-lg">
           <CardHeader className="bg-gray-50/50 border-b">
+            <CardTitle className="text-sm font-black text-gray-400 uppercase">Resort Digital Map</CardTitle>
+          </CardHeader>
+          <CardContent className="pt-6 space-y-4">
+            <div className="space-y-2">
+              <label className="text-[10px] font-bold uppercase text-gray-400">Map Image URL</label>
+              <div className="flex gap-2">
+                <Input value={mapImageUrl} onChange={(e) => setMapImageUrl(e.target.value)} placeholder="/peta-resort.jpg" className="rounded-xl font-bold" />
+              </div>
+              <p className="text-[10px] text-gray-400">Upload peta ke menu 'Explore Products' dulu jika belum punya URL.</p>
+            </div>
+            {mapImageUrl && (
+              <div className="relative aspect-video rounded-xl overflow-hidden border border-gray-100 shadow-inner">
+                <img src={mapImageUrl} alt="Map Preview" className="w-full h-full object-cover" />
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card className="rounded-2xl border-none shadow-lg">
+          <CardHeader className="bg-gray-50/50 border-b">
             <CardTitle className="text-sm font-black text-gray-400 uppercase">Live Operational Status</CardTitle>
           </CardHeader>
           <CardContent className="pt-6 space-y-4">
@@ -192,11 +215,11 @@ export default function AdminExploreSettingsPage() {
           </CardContent>
         </Card>
 
-        <Card className="rounded-2xl border-none shadow-lg md:col-span-2">
+        <Card className="rounded-2xl border-none shadow-lg md:col-span-1">
           <CardHeader className="bg-gray-50/50 border-b">
             <CardTitle className="text-sm font-black text-gray-400 uppercase">Harga Paket (Total Value)</CardTitle>
           </CardHeader>
-          <CardContent className="pt-6 grid grid-cols-1 md:grid-cols-3 gap-4">
+          <CardContent className="pt-6 space-y-4">
             <div className="space-y-2">
               <label className="text-[10px] font-bold uppercase text-gray-400">Basic</label>
               <Input value={priceBasic} onChange={(e) => setPriceBasic(e.target.value)} placeholder="Rp 50.000" className="text-lg font-bold rounded-xl" />
