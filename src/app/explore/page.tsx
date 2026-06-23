@@ -73,6 +73,7 @@ export default function GreeterHubPage() {
   const [currentItinerary, setCurrentItinerary] = useState<any>(null);
   const [showAmenities, setShowAmenities] = useState(false);
   const [showCalculator, setShowCalculator] = useState(false);
+  const [calcCategory, setCalcCategory] = useState('ALL');
   const [calcItems, setCalcItems] = useState<{ name: string, price: number, qty: number, category: string }[]>([]);
   const [showPreview, setShowPreview] = useState<{ type: 'image' | 'video', url: string, name: string, gallery?: string[] } | null>(null);
   const [activeGalleryIndex, setActiveGalleryIndex] = useState(0);
@@ -802,54 +803,73 @@ export default function GreeterHubPage() {
                 <p className="text-gray-500 text-sm">Simulasi harga untuk tamu rombongan.</p>
               </div>
 
+              {/* Category Filter Tabs for Calculator */}
+              <div className="flex overflow-x-auto pb-4 mb-4 gap-2 no-scrollbar">
+                {['ALL', ...Array.from(new Set(calcItems.map(i => i.category)))].map(cat => (
+                  <button
+                    key={cat}
+                    onClick={() => setCalcCategory(cat)}
+                    className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all border-2 whitespace-nowrap ${
+                      calcCategory === cat 
+                        ? 'bg-orange-500 border-orange-500 text-white shadow-lg' 
+                        : 'bg-white border-gray-100 text-gray-400 hover:border-orange-200'
+                    }`}
+                  >
+                    {cat}
+                  </button>
+                ))}
+              </div>
+
               <div className="space-y-6 max-h-[50vh] overflow-y-auto pr-2 no-scrollbar">
                 {/* Group by Category Dynamically */}
-                {Array.from(new Set(calcItems.map(i => i.category))).map(cat => {
-                  const items = calcItems.filter(i => i.category === cat);
-                  if (items.length === 0) return null;
+                {Array.from(new Set(calcItems.map(i => i.category)))
+                  .filter(cat => calcCategory === 'ALL' || calcCategory === cat)
+                  .map(cat => {
+                    const items = calcItems.filter(i => i.category === cat);
+                    if (items.length === 0) return null;
 
-                  return (
-                    <div key={cat} className="space-y-3">
-                      <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] px-2">{cat || 'LAINNYA'}</h4>
-                      <div className="space-y-2">
-                        {items.map((item) => {
-                          const idx = calcItems.findIndex(i => i.name === item.name && i.category === item.category);
-                          return (
-                            <div key={`${cat}-${idx}`} className="flex items-center justify-between p-4 bg-gray-50 rounded-2xl">
-                              <div className="flex-1">
-                                <p className="font-bold text-gray-900 text-sm">{item.name}</p>
-                                <p className="text-[10px] text-gray-500 font-medium">Rp {item.price.toLocaleString('id-ID')}</p>
+                    return (
+                      <div key={cat} className="space-y-3">
+                        <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] px-2">{cat || 'LAINNYA'}</h4>
+                        <div className="space-y-2">
+                          {items.map((item) => {
+                            const idx = calcItems.findIndex(i => i.name === item.name && i.category === item.category);
+                            return (
+                              <div key={`${cat}-${idx}`} className="flex items-center justify-between p-4 bg-gray-50 rounded-2xl">
+                                <div className="flex-1">
+                                  <p className="font-bold text-gray-900 text-sm">{item.name}</p>
+                                  <p className="text-[10px] text-gray-500 font-medium">Rp {item.price.toLocaleString('id-ID')}</p>
+                                </div>
+                                <div className="flex items-center gap-3 bg-white px-3 py-1.5 rounded-xl border border-gray-100 shadow-sm">
+                                  <button 
+                                    onClick={() => {
+                                      const newItems = [...calcItems];
+                                      newItems[idx].qty = Math.max(0, newItems[idx].qty - 1);
+                                      setCalcItems(newItems);
+                                    }}
+                                    className="text-gray-400 hover:text-orange-500 transition-colors"
+                                  >
+                                    <Minus size={14} />
+                                  </button>
+                                  <span className="w-6 text-center font-black text-gray-900 text-sm">{item.qty}</span>
+                                  <button 
+                                    onClick={() => {
+                                      const newItems = [...calcItems];
+                                      newItems[idx].qty += 1;
+                                      setCalcItems(newItems);
+                                    }}
+                                    className="text-gray-400 hover:text-orange-500 transition-colors"
+                                  >
+                                    <Plus size={14} />
+                                  </button>
+                                </div>
                               </div>
-                              <div className="flex items-center gap-3 bg-white px-3 py-1.5 rounded-xl border border-gray-100 shadow-sm">
-                                <button 
-                                  onClick={() => {
-                                    const newItems = [...calcItems];
-                                    newItems[idx].qty = Math.max(0, newItems[idx].qty - 1);
-                                    setCalcItems(newItems);
-                                  }}
-                                  className="text-gray-400 hover:text-orange-500 transition-colors"
-                                >
-                                  <Minus size={14} />
-                                </button>
-                                <span className="w-6 text-center font-black text-gray-900 text-sm">{item.qty}</span>
-                                <button 
-                                  onClick={() => {
-                                    const newItems = [...calcItems];
-                                    newItems[idx].qty += 1;
-                                    setCalcItems(newItems);
-                                  }}
-                                  className="text-gray-400 hover:text-orange-500 transition-colors"
-                                >
-                                  <Plus size={14} />
-                                </button>
-                              </div>
-                            </div>
-                          );
-                        })}
+                            );
+                          })}
+                        </div>
                       </div>
-                    </div>
-                  );
-                })}
+                    );
+                  })}
               </div>
 
               <div className="mt-8 p-6 bg-orange-50 rounded-[24px] border border-orange-100">
