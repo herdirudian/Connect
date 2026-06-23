@@ -336,16 +336,27 @@ export default function GreeterHubPage() {
                   key={promo.id}
                   className={`absolute inset-0 transition-opacity duration-1000 ${idx === currentPromo ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
                 >
-                  <img src={promo.imageUrl} alt={promo.title} className="w-full h-full object-cover" />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent flex flex-col justify-end p-8 md:p-12 text-white">
+                  <img 
+                    src={promo.imageUrl} 
+                    alt={promo.title} 
+                    className="w-full h-full object-cover cursor-zoom-in" 
+                    onClick={() => setShowPreview({
+                      type: 'image',
+                      url: promo.imageUrl,
+                      name: promo.title
+                    })}
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent flex flex-col justify-end p-8 md:p-12 text-white pointer-events-none">
                     <h3 className="text-3xl md:text-5xl font-black mb-2 uppercase tracking-tighter">{promo.title}</h3>
                   <p className="text-sm md:text-lg text-gray-200 max-w-2xl mb-6">{promo.description}</p>
                   {promo.linkUrl && (
-                    <Link href={promo.linkUrl}>
-                      <Button size="lg" className="w-fit bg-brand hover:bg-brand/90 text-white rounded-full font-bold px-8 shadow-xl">
-                        Cek Detail Promo
-                      </Button>
-                    </Link>
+                    <div className="pointer-events-auto">
+                      <Link href={promo.linkUrl}>
+                        <Button size="lg" className="w-fit bg-brand hover:bg-brand/90 text-white rounded-full font-bold px-8 shadow-xl">
+                          Cek Detail Promo
+                        </Button>
+                      </Link>
+                    </div>
                   )}
                 </div>
                 </div>
@@ -381,9 +392,19 @@ export default function GreeterHubPage() {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {attractions.filter(a => a.originalPrice).map(attr => (
               <Card key={attr.id} className="group border-none shadow-lg hover:shadow-2xl transition-all duration-300 rounded-2xl overflow-hidden bg-white">
-                <div className="relative h-48 overflow-hidden">
+                <div 
+                  className="relative h-48 overflow-hidden cursor-zoom-in"
+                  onClick={() => setShowPreview({
+                    type: 'image',
+                    url: attr.imageUrl || '/placeholder.jpg',
+                    name: attr.name
+                  })}
+                >
                   <img src={attr.imageUrl || '/placeholder.jpg'} alt={attr.name} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
                   <div className="absolute top-3 left-3 bg-brand text-white text-[10px] font-bold px-3 py-1 rounded-full shadow-lg">PAHE (PAKET HEMAT)</div>
+                  <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                    <Maximize2 className="text-white" size={24} />
+                  </div>
                 </div>
                 <CardContent className="p-5">
                   <h4 className="font-bold text-lg mb-1">{attr.name}</h4>
@@ -743,14 +764,14 @@ export default function GreeterHubPage() {
             <X size={24} />
           </button>
           
-          <div className="w-full h-full flex flex-col items-center justify-center p-4 md:p-12">
-            <div className="relative w-full max-w-5xl h-full flex items-center justify-center">
+          <div className="w-full h-full flex flex-col items-center justify-center p-2 md:p-12">
+            <div className="relative w-full max-w-7xl h-full flex items-center justify-center">
               {showPreview.gallery && showPreview.gallery.length > 0 ? (
                 <div className="relative w-full h-full flex items-center justify-center group">
                   <img 
                     src={showPreview.gallery[activeGalleryIndex]} 
                     alt={`${showPreview.name} ${activeGalleryIndex + 1}`}
-                    className="max-w-full max-h-[70vh] object-contain rounded-2xl shadow-2xl animate-in fade-in zoom-in-95 duration-500"
+                    className="max-w-full max-h-[80vh] object-contain rounded-2xl shadow-2xl animate-in fade-in zoom-in-95 duration-500"
                   />
                   
                   {/* Gallery Navigation */}
@@ -761,7 +782,7 @@ export default function GreeterHubPage() {
                           e.stopPropagation();
                           setActiveGalleryIndex(prev => (prev - 1 + showPreview.gallery!.length) % showPreview.gallery!.length);
                         }}
-                        className="absolute left-4 p-4 bg-white/10 hover:bg-white/20 text-white rounded-full backdrop-blur-md transition-all opacity-0 group-hover:opacity-100"
+                        className="absolute left-4 p-4 bg-white/10 hover:bg-white/20 text-white rounded-full backdrop-blur-md transition-all md:opacity-0 md:group-hover:opacity-100 z-30"
                       >
                         <ChevronLeft size={32} />
                       </button>
@@ -770,18 +791,18 @@ export default function GreeterHubPage() {
                           e.stopPropagation();
                           setActiveGalleryIndex(prev => (prev + 1) % showPreview.gallery!.length);
                         }}
-                        className="absolute right-4 p-4 bg-white/10 hover:bg-white/20 text-white rounded-full backdrop-blur-md transition-all opacity-0 group-hover:opacity-100"
+                        className="absolute right-4 p-4 bg-white/10 hover:bg-white/20 text-white rounded-full backdrop-blur-md transition-all md:opacity-0 md:group-hover:opacity-100 z-30"
                       >
                         <ChevronRight size={32} />
                       </button>
 
                       {/* Thumbnails Indicator */}
-                      <div className="absolute -bottom-20 flex gap-2 overflow-x-auto p-2 no-scrollbar max-w-full">
+                      <div className="absolute -bottom-16 md:-bottom-20 flex gap-2 overflow-x-auto p-2 no-scrollbar max-w-full z-30">
                         {showPreview.gallery.map((img, idx) => (
                           <button
                             key={idx}
                             onClick={() => setActiveGalleryIndex(idx)}
-                            className={`relative w-16 h-16 rounded-xl overflow-hidden border-2 transition-all flex-shrink-0 ${activeGalleryIndex === idx ? 'border-brand scale-110 shadow-lg' : 'border-transparent opacity-50 hover:opacity-100'}`}
+                            className={`relative w-12 h-12 md:w-16 md:h-16 rounded-xl overflow-hidden border-2 transition-all flex-shrink-0 ${activeGalleryIndex === idx ? 'border-brand scale-110 shadow-lg' : 'border-transparent opacity-50 hover:opacity-100'}`}
                           >
                             <img src={img} className="w-full h-full object-cover" alt="thumb" />
                           </button>
@@ -796,19 +817,19 @@ export default function GreeterHubPage() {
                   autoPlay 
                   loop 
                   controls 
-                  className="max-w-full max-h-full rounded-2xl shadow-2xl"
+                  className="max-w-full max-h-[85vh] rounded-2xl shadow-2xl"
                 />
               ) : (
                 <img 
                   src={showPreview.url} 
                   alt={showPreview.name} 
-                  className="max-w-full max-h-full object-contain rounded-2xl shadow-2xl" 
+                  className="max-w-full max-h-[85vh] object-contain rounded-2xl shadow-2xl" 
                 />
               )}
             </div>
-            <div className={`text-center ${showPreview.gallery ? 'mt-32' : 'mt-6'}`}>
-              <h3 className="text-2xl md:text-4xl font-black text-white uppercase tracking-tighter italic">{showPreview.name}</h3>
-              <p className="text-gray-400 text-sm mt-2 font-bold tracking-widest uppercase">
+            <div className={`text-center ${showPreview.gallery ? 'mt-24 md:mt-32' : 'mt-6'}`}>
+              <h3 className="text-xl md:text-4xl font-black text-white uppercase tracking-tighter italic">{showPreview.name}</h3>
+              <p className="text-gray-400 text-[10px] md:text-sm mt-2 font-bold tracking-widest uppercase">
                 {showPreview.gallery ? `PHOTO ${activeGalleryIndex + 1} OF ${showPreview.gallery.length}` : 'THE LODGE MARIBAYA • EXPERIENCE PREVIEW'}
               </p>
             </div>
