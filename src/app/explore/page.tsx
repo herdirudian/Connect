@@ -586,7 +586,12 @@ export default function GreeterHubPage() {
           <Card className="rounded-[40px] overflow-hidden border-none shadow-2xl bg-gray-100 relative group min-h-[400px] md:min-h-[600px]">
             <div 
               ref={mapRef}
-              className="w-full h-full flex items-center justify-center overflow-auto no-scrollbar cursor-grab active:cursor-grabbing p-8"
+              className="w-full h-full flex items-center justify-center overflow-auto no-scrollbar cursor-zoom-in p-8"
+              onClick={() => setShowPreview({ 
+                type: 'image', 
+                url: exploreSettings?.mapImageUrl || "/map-placeholder.jpg",
+                name: "RESORT DIGITAL MAP" 
+              })}
             >
               <img 
                 src={exploreSettings?.mapImageUrl || "/map-placeholder.jpg"} 
@@ -601,14 +606,9 @@ export default function GreeterHubPage() {
               />
             </div>
             
-            {/* Map Legend Overlay */}
-            <div className="absolute bottom-6 right-6 bg-white/90 backdrop-blur-md p-4 rounded-2xl shadow-xl border border-gray-100 max-w-xs">
-              <h4 className="text-xs font-bold text-brand uppercase mb-2">Petunjuk Arah</h4>
-              <div className="space-y-2 text-[11px] font-medium">
-                <div className="flex items-center gap-2 text-green-600"><div className="w-2 h-2 rounded-full bg-green-500" /> Area Glamping & Penginapan</div>
-                <div className="flex items-center gap-2 text-blue-600"><div className="w-2 h-2 rounded-full bg-blue-500" /> Restoran & Cafe</div>
-                <div className="flex items-center gap-2 text-orange-600"><div className="w-2 h-2 rounded-full bg-orange-500" /> Area Wahana & Playground</div>
-              </div>
+            {/* Map Action Overlay */}
+            <div className="absolute bottom-8 left-1/2 -translate-x-1/2 bg-white/20 backdrop-blur-md border border-white/30 px-6 py-3 rounded-full text-white text-[10px] font-black uppercase tracking-widest opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-2 pointer-events-none">
+              <Maximize2 size={14} /> Klik untuk Preview Layar Penuh
             </div>
           </Card>
         </section>
