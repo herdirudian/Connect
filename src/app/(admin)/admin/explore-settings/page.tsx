@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Plus, Trash2, Save, CheckCircle2, XCircle, Loader2, Settings2, Map as MapIcon, Image as ImageIcon } from 'lucide-react';
+import { Plus, Trash2, Save, CheckCircle2, XCircle, Loader2, Settings2, Map as MapIcon, Image as ImageIcon, Upload, X } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { toast } from '@/hooks/use-toast';
 
@@ -48,6 +48,7 @@ export default function AdminExploreSettingsPage() {
   const [weatherInfo, setWeatherInfo] = useState('Cerah');
   const [statusMessage, setStatusMessage] = useState('Seluruh Wahana Beroperasi Normal');
   const [mapImageUrl, setMapImageUrl] = useState('');
+  const [uploadingMap, setUploadingMap] = useState(false);
   const [rows, setRows] = useState<ComparisonRow[]>([]);
   const [itineraries, setItineraries] = useState<ItineraryItem[]>([]);
   const [amenities, setAmenities] = useState<AmenityItem[]>([]);
@@ -124,6 +125,26 @@ export default function AdminExploreSettingsPage() {
       setSaving(false);
     }
   }
+
+  const handleMapUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Validate size (max 5MB for map)
+    if (file.size > 5 * 1024 * 1024) {
+      toast({ title: "File terlalu besar", description: "Maksimal ukuran file adalah 5MB", variant: "destructive" });
+      return;
+    }
+
+    setUploadingMap(true);
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setMapImageUrl(reader.result as string);
+      setUploadingMap(false);
+      toast({ title: "Berhasil", description: "Gambar peta siap disimpan" });
+    };
+    reader.readAsDataURL(file);
+  };
 
   const addRow = () => {
     setRows([...rows, { name: 'Fasilitas Baru', bas: false, reg: false, ter: true }]);
@@ -205,15 +226,40 @@ export default function AdminExploreSettingsPage() {
           </CardHeader>
           <CardContent className="pt-6 space-y-4">
             <div className="space-y-2">
-              <label className="text-[10px] font-bold uppercase text-gray-400">Map Image URL</label>
-              <div className="flex gap-2">
-                <Input value={mapImageUrl} onChange={(e) => setMapImageUrl(e.target.value)} placeholder="/peta-resort.jpg" className="rounded-xl font-bold" />
+              <label className="text-[10px] font-bold uppercase text-gray-400">Pilih Gambar Peta</label>
+              <div className="relative group">
+                <input 
+                  type="file" 
+                  accept="image/*" 
+                  onChange={handleMapUpload}
+                  className="hidden" 
+                  id="map-upload"
+                />
+                <label 
+                  htmlFor="map-upload"
+                  className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-gray-200 rounded-2xl cursor-pointer hover:bg-gray-50 hover:border-brand transition-all"
+                >
+                  {uploadingMap ? (
+                    <Loader2 className="animate-spin text-brand" />
+                  ) : (
+                    <>
+                      <Upload className="text-gray-400 mb-2" size={24} />
+                      <span className="text-[10px] font-bold text-gray-400 uppercase">Upload Peta Baru</span>
+                    </>
+                  )}
+                </label>
               </div>
-              <p className="text-[10px] text-gray-400">Upload peta ke menu 'Explore Products' dulu jika belum punya URL.</p>
             </div>
+            
             {mapImageUrl && (
-              <div className="relative aspect-video rounded-xl overflow-hidden border border-gray-100 shadow-inner">
+              <div className="relative aspect-video rounded-xl overflow-hidden border border-gray-100 shadow-inner group">
                 <img src={mapImageUrl} alt="Map Preview" className="w-full h-full object-cover" />
+                <button 
+                  onClick={() => setMapImageUrl('')}
+                  className="absolute top-2 right-2 p-1 bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                >
+                  <X size={14} />
+                </button>
               </div>
             )}
           </CardContent>
