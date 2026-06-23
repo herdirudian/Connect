@@ -551,10 +551,10 @@ export default function GreeterHubPage() {
           </div>
         </section>
 
-        {/* SECTION 3: RESORT DIGITAL MAP */}
+        {/* SECTION 3: EXPLORE AREA MAP */}
         <section id="peta" className="space-y-8">
           <div className="flex items-center justify-between">
-            <h2 className="text-2xl font-black italic text-brand tracking-tight">3. RESORT DIGITAL MAP</h2>
+            <h2 className="text-2xl font-black italic text-brand tracking-tight">3. EXPLORE AREA MAP</h2>
             <div className="flex gap-2">
               <Button 
                 variant="outline" 
@@ -590,7 +590,7 @@ export default function GreeterHubPage() {
               onClick={() => setShowPreview({ 
                 type: 'image', 
                 url: exploreSettings?.mapImageUrl || "/map-placeholder.jpg",
-                name: "RESORT DIGITAL MAP" 
+                name: "EXPLORE AREA MAP" 
               })}
             >
               <img 

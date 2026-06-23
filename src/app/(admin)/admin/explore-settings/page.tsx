@@ -222,7 +222,7 @@ export default function AdminExploreSettingsPage() {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <Card className="rounded-2xl border-none shadow-lg">
           <CardHeader className="bg-gray-50/50 border-b">
-            <CardTitle className="text-sm font-black text-gray-400 uppercase">Resort Digital Map</CardTitle>
+            <CardTitle className="text-sm font-black text-gray-400 uppercase">Explore Area Map</CardTitle>
           </CardHeader>
           <CardContent className="pt-6 space-y-4">
             <div className="space-y-2">
