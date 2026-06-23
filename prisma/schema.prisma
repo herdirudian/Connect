@@ -269,6 +269,9 @@ model ExploreSettings {
   priceBasic        String   @default("Rp 50.000")
   priceReguler      String   @default("Rp 125.000")
   priceTerusan      String   @default("Rp 165.000")
+  originalPriceBasic String? @default("") // Struck price
+  originalPriceReguler String? @default("") // Struck price
+  originalPriceTerusan String? @default("") // Struck price
   
   // Live Status
   operationalStatus String   @default("NORMAL") // "NORMAL", "WEATHER_DELAY", "MAINTENANCE"

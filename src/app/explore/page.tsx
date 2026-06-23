@@ -693,9 +693,18 @@ export default function GreeterHubPage() {
                     ))}
                     <tr className="bg-gray-50/50">
                       <td className="py-6 px-4 text-gray-900 font-black italic uppercase">Total Value</td>
-                      <td className="py-6 px-4 text-center text-base text-gray-400">{exploreSettings?.priceBasic || 'Rp 50.000'}</td>
-                      <td className="py-6 px-4 text-center text-lg text-gray-500 font-black">{exploreSettings?.priceReguler || 'Rp 125.000'}</td>
-                      <td className="py-6 px-4 text-center text-2xl text-brand font-black">{exploreSettings?.priceTerusan || 'Rp 165.000'}</td>
+                      <td className="py-6 px-4 text-center">
+                        {exploreSettings?.originalPriceBasic && <div className="text-[10px] text-gray-400 line-through mb-1">{exploreSettings.originalPriceBasic}</div>}
+                        <div className="text-base text-gray-400 font-bold">{exploreSettings?.priceBasic || 'Rp 50.000'}</div>
+                      </td>
+                      <td className="py-6 px-4 text-center bg-gray-50/80">
+                        {exploreSettings?.originalPriceReguler && <div className="text-[10px] text-gray-400 line-through mb-1">{exploreSettings.originalPriceReguler}</div>}
+                        <div className="text-lg text-gray-500 font-black">{exploreSettings?.priceReguler || 'Rp 125.000'}</div>
+                      </td>
+                      <td className="py-6 px-4 text-center bg-brand/5">
+                        {exploreSettings?.originalPriceTerusan && <div className="text-xs text-brand/40 line-through mb-1 font-bold">{exploreSettings.originalPriceTerusan}</div>}
+                        <div className="text-2xl text-brand font-black">{exploreSettings?.priceTerusan || 'Rp 165.000'}</div>
+                      </td>
                     </tr>
                   </tbody>
                 </table>

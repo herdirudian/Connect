@@ -73,7 +73,12 @@ export async function PUT(req: Request) {
     }
 
     const body = await req.json();
-    const { comparisonData, priceBasic, priceReguler, priceTerusan, operationalStatus, weatherInfo, statusMessage, itineraryData, amenitiesData, mapImageUrl, calculatorData } = body;
+    const { 
+      comparisonData, 
+      priceBasic, priceReguler, priceTerusan, 
+      originalPriceBasic, originalPriceReguler, originalPriceTerusan,
+      operationalStatus, weatherInfo, statusMessage, itineraryData, amenitiesData, mapImageUrl, calculatorData 
+    } = body;
 
     const updated = await prisma.exploreSettings.upsert({
       where: { id: 'singleton' },
@@ -82,6 +87,9 @@ export async function PUT(req: Request) {
         priceBasic,
         priceReguler,
         priceTerusan,
+        originalPriceBasic,
+        originalPriceReguler,
+        originalPriceTerusan,
         operationalStatus,
         weatherInfo,
         statusMessage,
@@ -96,6 +104,9 @@ export async function PUT(req: Request) {
         priceBasic: priceBasic || 'Rp 0',
         priceReguler: priceReguler || 'Rp 0',
         priceTerusan: priceTerusan || 'Rp 0',
+        originalPriceBasic: originalPriceBasic || '',
+        originalPriceReguler: originalPriceReguler || '',
+        originalPriceTerusan: originalPriceTerusan || '',
         operationalStatus: operationalStatus || 'NORMAL',
         weatherInfo: weatherInfo || 'Cerah',
         statusMessage: statusMessage || 'Seluruh Wahana Beroperasi Normal',

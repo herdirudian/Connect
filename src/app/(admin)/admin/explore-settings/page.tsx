@@ -41,6 +41,9 @@ export default function AdminExploreSettingsPage() {
   const [priceBasic, setPriceBasic] = useState('');
   const [priceReguler, setPriceReguler] = useState('');
   const [priceTerusan, setPriceTerusan] = useState('');
+  const [originalPriceBasic, setOriginalPriceBasic] = useState('');
+  const [originalPriceReguler, setOriginalPriceReguler] = useState('');
+  const [originalPriceTerusan, setOriginalPriceTerusan] = useState('');
   const [operationalStatus, setOperationalStatus] = useState('NORMAL');
   const [weatherInfo, setWeatherInfo] = useState('Cerah');
   const [statusMessage, setStatusMessage] = useState('Seluruh Wahana Beroperasi Normal');
@@ -61,6 +64,9 @@ export default function AdminExploreSettingsPage() {
       setPriceBasic(data.priceBasic);
       setPriceReguler(data.priceReguler);
       setPriceTerusan(data.priceTerusan);
+      setOriginalPriceBasic(data.originalPriceBasic || '');
+      setOriginalPriceReguler(data.originalPriceReguler || '');
+      setOriginalPriceTerusan(data.originalPriceTerusan || '');
       setOperationalStatus(data.operationalStatus || 'NORMAL');
       setWeatherInfo(data.weatherInfo || 'Cerah');
       setStatusMessage(data.statusMessage || 'Seluruh Wahana Beroperasi Normal');
@@ -86,6 +92,9 @@ export default function AdminExploreSettingsPage() {
           priceBasic,
           priceReguler,
           priceTerusan,
+          originalPriceBasic,
+          originalPriceReguler,
+          originalPriceTerusan,
           operationalStatus,
           weatherInfo,
           statusMessage,
@@ -243,17 +252,37 @@ export default function AdminExploreSettingsPage() {
             <CardTitle className="text-sm font-black text-gray-400 uppercase">Harga Paket (Total Value)</CardTitle>
           </CardHeader>
           <CardContent className="pt-6 space-y-4">
-            <div className="space-y-2">
-              <label className="text-[10px] font-bold uppercase text-gray-400">Basic</label>
-              <Input value={priceBasic} onChange={(e) => setPriceBasic(e.target.value)} placeholder="Rp 50.000" className="text-lg font-bold rounded-xl" />
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <label className="text-[10px] font-bold uppercase text-gray-400">Basic</label>
+                <Input value={priceBasic} onChange={(e) => setPriceBasic(e.target.value)} placeholder="Rp 50.000" className="font-bold rounded-xl" />
+              </div>
+              <div className="space-y-2">
+                <label className="text-[10px] font-bold uppercase text-gray-400">Harga Coret</label>
+                <Input value={originalPriceBasic} onChange={(e) => setOriginalPriceBasic(e.target.value)} placeholder="Rp 75.000" className="text-xs text-gray-400 rounded-xl" />
+              </div>
             </div>
-            <div className="space-y-2">
-              <label className="text-[10px] font-bold uppercase text-gray-400">Reguler</label>
-              <Input value={priceReguler} onChange={(e) => setPriceReguler(e.target.value)} placeholder="Rp 125.000" className="text-lg font-bold rounded-xl" />
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <label className="text-[10px] font-bold uppercase text-gray-400">Reguler</label>
+                <Input value={priceReguler} onChange={(e) => setPriceReguler(e.target.value)} placeholder="Rp 125.000" className="font-bold rounded-xl" />
+              </div>
+              <div className="space-y-2">
+                <label className="text-[10px] font-bold uppercase text-gray-400">Harga Coret</label>
+                <Input value={originalPriceReguler} onChange={(e) => setOriginalPriceReguler(e.target.value)} placeholder="Rp 150.000" className="text-xs text-gray-400 rounded-xl" />
+              </div>
             </div>
-            <div className="space-y-2">
-              <label className="text-[10px] font-bold uppercase text-gray-400">Terusan</label>
-              <Input value={priceTerusan} onChange={(e) => setPriceTerusan(e.target.value)} placeholder="Rp 165.000" className="text-lg font-bold rounded-xl" />
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <label className="text-[10px] font-bold uppercase text-gray-400">Terusan</label>
+                <Input value={priceTerusan} onChange={(e) => setPriceTerusan(e.target.value)} placeholder="Rp 165.000" className="font-bold rounded-xl" />
+              </div>
+              <div className="space-y-2">
+                <label className="text-[10px] font-bold uppercase text-gray-400">Harga Coret</label>
+                <Input value={originalPriceTerusan} onChange={(e) => setOriginalPriceTerusan(e.target.value)} placeholder="Rp 285.000" className="text-xs text-gray-400 rounded-xl" />
+              </div>
             </div>
           </CardContent>
         </Card>
