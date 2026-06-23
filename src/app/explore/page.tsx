@@ -694,15 +694,30 @@ export default function GreeterHubPage() {
                     <tr className="bg-gray-50/50">
                       <td className="py-6 px-4 text-gray-900 font-black italic uppercase">Total Value</td>
                       <td className="py-6 px-4 text-center">
-                        {exploreSettings?.originalPriceBasic && <div className="text-[10px] text-gray-400 line-through mb-1">{exploreSettings.originalPriceBasic}</div>}
+                        {exploreSettings?.originalPriceBasic && (
+                          <div className="text-xs text-gray-400 font-bold line-through decoration-red-500/50 decoration-2 mb-1">
+                            {exploreSettings.originalPriceBasic.startsWith('Rp') ? '' : 'Rp '}{exploreSettings.originalPriceBasic}
+                          </div>
+                        )}
                         <div className="text-base text-gray-400 font-bold">{exploreSettings?.priceBasic || 'Rp 50.000'}</div>
                       </td>
                       <td className="py-6 px-4 text-center bg-gray-50/80">
-                        {exploreSettings?.originalPriceReguler && <div className="text-[10px] text-gray-400 line-through mb-1">{exploreSettings.originalPriceReguler}</div>}
+                        {exploreSettings?.originalPriceReguler && (
+                          <div className="text-xs text-gray-500 font-bold line-through decoration-red-500/50 decoration-2 mb-1">
+                            {exploreSettings.originalPriceReguler.startsWith('Rp') ? '' : 'Rp '}{exploreSettings.originalPriceReguler}
+                          </div>
+                        )}
                         <div className="text-lg text-gray-500 font-black">{exploreSettings?.priceReguler || 'Rp 125.000'}</div>
                       </td>
-                      <td className="py-6 px-4 text-center bg-brand/5">
-                        {exploreSettings?.originalPriceTerusan && <div className="text-xs text-brand/40 line-through mb-1 font-bold">{exploreSettings.originalPriceTerusan}</div>}
+                      <td className="py-6 px-4 text-center bg-brand/5 relative">
+                        {exploreSettings?.originalPriceTerusan && (
+                          <div className="flex flex-col items-center mb-1">
+                            <span className="text-sm text-brand/40 font-bold line-through decoration-red-500 decoration-2">
+                              {exploreSettings.originalPriceTerusan.startsWith('Rp') ? '' : 'Rp '}{exploreSettings.originalPriceTerusan}
+                            </span>
+                            <Badge className="mt-1 bg-red-500 text-white text-[8px] font-black px-1.5 py-0 rounded-full border-none animate-pulse">HEMAT BANGET!</Badge>
+                          </div>
+                        )}
                         <div className="text-2xl text-brand font-black">{exploreSettings?.priceTerusan || 'Rp 165.000'}</div>
                       </td>
                     </tr>
