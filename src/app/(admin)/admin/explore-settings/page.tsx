@@ -450,16 +450,12 @@ export default function AdminExploreSettingsPage() {
                 {calculatorItems.map((item, idx) => (
                   <tr key={idx} className="hover:bg-gray-50/50 transition-colors">
                     <td className="py-4 px-6">
-                      <select 
+                      <Input 
                         value={item.category} 
-                        onChange={(e) => updateCalculatorItem(idx, 'category', e.target.value)}
-                        className="w-full h-10 rounded-lg border-gray-200 text-xs font-bold focus:ring-brand focus:border-brand"
-                      >
-                        <option value="TIKET">TIKET</option>
-                        <option value="MAKANAN">MAKANAN</option>
-                        <option value="PENGINAPAN">PENGINAPAN</option>
-                        <option value="LAINNYA">LAINNYA</option>
-                      </select>
+                        onChange={(e) => updateCalculatorItem(idx, 'category', e.target.value.toUpperCase())}
+                        placeholder="Contoh: TIKET"
+                        className="font-black border-none bg-transparent focus:bg-white focus:ring-1 focus:ring-brand rounded-lg px-2 h-10 text-xs tracking-widest"
+                      />
                     </td>
                     <td className="py-4 px-6">
                       <Input value={item.name} onChange={(e) => updateCalculatorItem(idx, 'name', e.target.value)} placeholder="Contoh: Paket Buffet" className="font-bold rounded-lg" />

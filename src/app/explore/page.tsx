@@ -803,19 +803,19 @@ export default function GreeterHubPage() {
               </div>
 
               <div className="space-y-6 max-h-[50vh] overflow-y-auto pr-2 no-scrollbar">
-                {/* Group by Category */}
-                {['TIKET', 'MAKANAN', 'PENGINAPAN', 'LAINNYA'].map(cat => {
+                {/* Group by Category Dynamically */}
+                {Array.from(new Set(calcItems.map(i => i.category))).map(cat => {
                   const items = calcItems.filter(i => i.category === cat);
                   if (items.length === 0) return null;
 
                   return (
                     <div key={cat} className="space-y-3">
-                      <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] px-2">{cat}</h4>
+                      <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] px-2">{cat || 'LAINNYA'}</h4>
                       <div className="space-y-2">
                         {items.map((item) => {
                           const idx = calcItems.findIndex(i => i.name === item.name && i.category === item.category);
                           return (
-                            <div key={idx} className="flex items-center justify-between p-4 bg-gray-50 rounded-2xl">
+                            <div key={`${cat}-${idx}`} className="flex items-center justify-between p-4 bg-gray-50 rounded-2xl">
                               <div className="flex-1">
                                 <p className="font-bold text-gray-900 text-sm">{item.name}</p>
                                 <p className="text-[10px] text-gray-500 font-medium">Rp {item.price.toLocaleString('id-ID')}</p>
