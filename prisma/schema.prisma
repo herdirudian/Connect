@@ -285,7 +285,7 @@ model ExploreSettings {
   amenitiesData     String?  @db.Text // JSON string for nearby facilities (Toilet, Mushola, etc)
   
   // Digital Map
-  mapImageUrl       String?  @db.Text
+  mapImageUrl       String?  @db.LongText
   
   // Calculator
   calculatorData    String?  @db.Text // JSON string for calculator items (name & price)

@@ -119,6 +119,7 @@ export async function PUT(req: Request) {
 
     return NextResponse.json(updated);
   } catch (error) {
+    console.error('[Explore Settings API Error]:', error);
     return NextResponse.json({ error: 'Failed to update settings' }, { status: 500 });
   }
 }
