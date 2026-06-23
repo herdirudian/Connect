@@ -34,7 +34,10 @@ import {
   Tent,
   Info,
   MapPin,
-  Baby
+  Baby,
+  Calculator,
+  Plus,
+  Minus
 } from 'lucide-react';
 import Link from 'next/link';
 import QRCode from 'qrcode';
@@ -69,6 +72,8 @@ export default function GreeterHubPage() {
   const [exploreSettings, setExploreSettings] = useState<any>(null);
   const [currentItinerary, setCurrentItinerary] = useState<any>(null);
   const [showAmenities, setShowAmenities] = useState(false);
+  const [showCalculator, setShowCalculator] = useState(false);
+  const [calcItems, setCalcItems] = useState<{ name: string, price: number, qty: number }[]>([]);
   const [showPreview, setShowPreview] = useState<{ type: 'image' | 'video', url: string, name: string, gallery?: string[] } | null>(null);
   const [activeGalleryIndex, setActiveGalleryIndex] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -120,6 +125,13 @@ export default function GreeterHubPage() {
       
       const found = itins.find((i: any) => currentTime >= i.startTime && currentTime <= i.endTime);
       setCurrentItinerary(found || itins[0]); // Default to first if none found
+    }
+  }, [exploreSettings]);
+
+  useEffect(() => {
+    if (exploreSettings?.calculatorData) {
+      const items = JSON.parse(exploreSettings.calculatorData);
+      setCalcItems(items.map((i: any) => ({ ...i, qty: 0 })));
     }
   }, [exploreSettings]);
 
@@ -257,6 +269,13 @@ export default function GreeterHubPage() {
             className="w-14 h-14 rounded-full bg-brand shadow-2xl hover:scale-110 transition-transform p-0"
           >
             <ArrowRightLeft className="text-white" size={24} />
+          </Button>
+
+          <Button 
+            onClick={() => setShowCalculator(true)}
+            className="w-14 h-14 rounded-full bg-orange-500 shadow-2xl hover:scale-110 transition-transform p-0"
+          >
+            <Calculator className="text-white" size={24} />
           </Button>
           
           <div className="relative group">
@@ -769,6 +788,75 @@ export default function GreeterHubPage() {
               </p>
             </div>
           </div>
+        </div>
+      )}
+      {/* 4. Group Calculator Modal */}
+      {showCalculator && (
+        <div className="fixed inset-0 z-[115] flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setShowCalculator(false)} />
+          <Card className="relative w-full max-w-lg bg-white rounded-[32px] overflow-hidden border-none shadow-2xl animate-in fade-in zoom-in-95 duration-200">
+            <button onClick={() => setShowCalculator(false)} className="absolute top-6 right-6 p-2 bg-gray-100 rounded-full text-gray-500 hover:bg-gray-200 transition-colors z-10"><X size={20} /></button>
+            <CardContent className="p-8">
+              <div className="mb-6">
+                <h3 className="text-2xl font-black italic text-orange-600 tracking-tighter uppercase">Group Calculator</h3>
+                <p className="text-gray-500 text-sm">Simulasi harga untuk tamu rombongan.</p>
+              </div>
+
+              <div className="space-y-4 max-h-[40vh] overflow-y-auto pr-2 no-scrollbar">
+                {calcItems.map((item, idx) => (
+                  <div key={idx} className="flex items-center justify-between p-4 bg-gray-50 rounded-2xl">
+                    <div className="flex-1">
+                      <p className="font-bold text-gray-900">{item.name}</p>
+                      <p className="text-xs text-gray-500">Rp {item.price.toLocaleString('id-ID')}</p>
+                    </div>
+                    <div className="flex items-center gap-3 bg-white px-3 py-1.5 rounded-xl border border-gray-100 shadow-sm">
+                      <button 
+                        onClick={() => {
+                          const newItems = [...calcItems];
+                          newItems[idx].qty = Math.max(0, newItems[idx].qty - 1);
+                          setCalcItems(newItems);
+                        }}
+                        className="text-gray-400 hover:text-orange-500 transition-colors"
+                      >
+                        <Minus size={16} />
+                      </button>
+                      <span className="w-8 text-center font-black text-gray-900">{item.qty}</span>
+                      <button 
+                        onClick={() => {
+                          const newItems = [...calcItems];
+                          newItems[idx].qty += 1;
+                          setCalcItems(newItems);
+                        }}
+                        className="text-gray-400 hover:text-orange-500 transition-colors"
+                      >
+                        <Plus size={16} />
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              <div className="mt-8 p-6 bg-orange-50 rounded-[24px] border border-orange-100">
+                <div className="flex justify-between items-center mb-2">
+                  <span className="text-xs font-bold text-orange-600 uppercase tracking-widest">Total Estimasi</span>
+                  <span className="text-xs font-medium text-orange-400 italic">*{calcItems.reduce((acc, i) => acc + i.qty, 0)} items</span>
+                </div>
+                <div className="text-3xl font-black text-orange-700">
+                  Rp {calcItems.reduce((acc, i) => acc + (i.price * i.qty), 0).toLocaleString('id-ID')}
+                </div>
+              </div>
+
+              <Button 
+                onClick={() => {
+                  setCalcItems(calcItems.map(i => ({ ...i, qty: 0 })));
+                }} 
+                variant="ghost" 
+                className="w-full mt-4 text-gray-400 text-xs font-bold uppercase tracking-widest hover:text-orange-500"
+              >
+                Reset Hitungan
+              </Button>
+            </CardContent>
+          </Card>
         </div>
       )}
     </div>

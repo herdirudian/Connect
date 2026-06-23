@@ -29,6 +29,11 @@ interface AmenityItem {
   icon: string;
 }
 
+interface CalculatorItem {
+  name: string;
+  price: number;
+}
+
 export default function AdminExploreSettingsPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -42,6 +47,7 @@ export default function AdminExploreSettingsPage() {
   const [rows, setRows] = useState<ComparisonRow[]>([]);
   const [itineraries, setItineraries] = useState<ItineraryItem[]>([]);
   const [amenities, setAmenities] = useState<AmenityItem[]>([]);
+  const [calculatorItems, setCalculatorItems] = useState<CalculatorItem[]>([]);
 
   useEffect(() => {
     fetchSettings();
@@ -61,6 +67,7 @@ export default function AdminExploreSettingsPage() {
       setRows(JSON.parse(data.comparisonData || '[]'));
       setItineraries(JSON.parse(data.itineraryData || '[]'));
       setAmenities(JSON.parse(data.amenitiesData || '[]'));
+      setCalculatorItems(JSON.parse(data.calculatorData || '[]'));
     } catch (error) {
       console.error('Error fetching settings:', error);
     } finally {
@@ -84,7 +91,8 @@ export default function AdminExploreSettingsPage() {
           mapImageUrl,
           comparisonData: rows,
           itineraryData: itineraries,
-          amenitiesData: amenities
+          amenitiesData: amenities,
+          calculatorData: calculatorItems
         }),
       });
 
@@ -147,6 +155,20 @@ export default function AdminExploreSettingsPage() {
     const newAmen = [...amenities];
     newAmen[index] = { ...newAmen[index], [field]: value };
     setAmenities(newAmen);
+  };
+
+  const addCalculatorItem = () => {
+    setCalculatorItems([...calculatorItems, { name: 'Item Baru', price: 0 }]);
+  };
+
+  const removeCalculatorItem = (index: number) => {
+    setCalculatorItems(calculatorItems.filter((_, i) => i !== index));
+  };
+
+  const updateCalculatorItem = (index: number, field: keyof CalculatorItem, value: any) => {
+    const newItems = [...calculatorItems];
+    newItems[index] = { ...newItems[index], [field]: value };
+    setCalculatorItems(newItems);
   };
 
   if (loading) {
@@ -391,6 +413,53 @@ export default function AdminExploreSettingsPage() {
                     </td>
                     <td className="py-4 px-6 text-right">
                       <Button variant="ghost" size="icon" onClick={() => removeAmenity(idx)} className="text-gray-300 hover:text-red-500 hover:bg-red-50">
+                        <Trash2 size={18} />
+                      </Button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card className="rounded-3xl border-none shadow-xl overflow-hidden">
+        <CardHeader className="bg-orange-600 text-white p-6 flex flex-row items-center justify-between">
+          <div>
+            <CardTitle className="text-xl font-black italic uppercase">Group Calculator Items</CardTitle>
+            <p className="text-xs text-orange-100 font-medium">Daftar item dan harga untuk kalkulator simulasi group.</p>
+          </div>
+          <Button onClick={addCalculatorItem} variant="outline" className="bg-white/10 border-white/20 hover:bg-white/20 text-white rounded-xl">
+            <Plus size={18} className="mr-2" /> Tambah Item
+          </Button>
+        </CardHeader>
+        <CardContent className="p-0">
+          <div className="overflow-x-auto">
+            <table className="w-full text-left border-collapse">
+              <thead>
+                <tr className="bg-gray-50 border-b border-gray-100">
+                  <th className="py-4 px-6 text-xs font-black text-gray-400 uppercase">Nama Item / Paket</th>
+                  <th className="py-4 px-6 text-xs font-black text-gray-400 uppercase w-48">Harga Satuan (Rp)</th>
+                  <th className="py-4 px-6 text-right text-xs font-black text-gray-400 uppercase">Aksi</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-50">
+                {calculatorItems.map((item, idx) => (
+                  <tr key={idx} className="hover:bg-gray-50/50 transition-colors">
+                    <td className="py-4 px-6">
+                      <Input value={item.name} onChange={(e) => updateCalculatorItem(idx, 'name', e.target.value)} placeholder="Contoh: Paket Buffet" className="font-bold rounded-lg" />
+                    </td>
+                    <td className="py-4 px-6">
+                      <Input 
+                        type="number" 
+                        value={item.price} 
+                        onChange={(e) => updateCalculatorItem(idx, 'price', parseInt(e.target.value) || 0)} 
+                        className="font-bold rounded-lg" 
+                      />
+                    </td>
+                    <td className="py-4 px-6 text-right">
+                      <Button variant="ghost" size="icon" onClick={() => removeCalculatorItem(idx)} className="text-gray-300 hover:text-red-500 hover:bg-red-50">
                         <Trash2 size={18} />
                       </Button>
                     </td>

@@ -28,6 +28,12 @@ const DEFAULT_AMENITIES = [
   { id: 'nursing', name: 'Ruang Menyusui', location: 'Area Informasi (Depan)', icon: 'Baby' },
 ];
 
+const DEFAULT_CALCULATOR = [
+  { name: 'Tiket Masuk', price: 50000 },
+  { name: 'Paket Terusan', price: 165000 },
+  { name: 'Makan Siang (Prasmanan)', price: 75000 },
+];
+
 export async function GET() {
   try {
     let settings = await prisma.exploreSettings.findUnique({
@@ -44,6 +50,7 @@ export async function GET() {
           priceTerusan: 'Rp 165.000',
           itineraryData: JSON.stringify(DEFAULT_ITINERARY),
           amenitiesData: JSON.stringify(DEFAULT_AMENITIES),
+          calculatorData: JSON.stringify(DEFAULT_CALCULATOR),
         }
       });
     }
@@ -64,7 +71,7 @@ export async function PUT(req: Request) {
     }
 
     const body = await req.json();
-    const { comparisonData, priceBasic, priceReguler, priceTerusan, operationalStatus, weatherInfo, statusMessage, itineraryData, amenitiesData, mapImageUrl } = body;
+    const { comparisonData, priceBasic, priceReguler, priceTerusan, operationalStatus, weatherInfo, statusMessage, itineraryData, amenitiesData, mapImageUrl, calculatorData } = body;
 
     const updated = await prisma.exploreSettings.upsert({
       where: { id: 'singleton' },
@@ -79,6 +86,7 @@ export async function PUT(req: Request) {
         itineraryData: itineraryData ? (typeof itineraryData === 'string' ? itineraryData : JSON.stringify(itineraryData)) : undefined,
         amenitiesData: amenitiesData ? (typeof amenitiesData === 'string' ? amenitiesData : JSON.stringify(amenitiesData)) : undefined,
         mapImageUrl,
+        calculatorData: calculatorData ? (typeof calculatorData === 'string' ? calculatorData : JSON.stringify(calculatorData)) : undefined,
       },
       create: {
         id: 'singleton',
@@ -92,6 +100,7 @@ export async function PUT(req: Request) {
         itineraryData: itineraryData ? (typeof itineraryData === 'string' ? itineraryData : JSON.stringify(itineraryData)) : JSON.stringify(DEFAULT_ITINERARY),
         amenitiesData: amenitiesData ? (typeof amenitiesData === 'string' ? amenitiesData : JSON.stringify(amenitiesData)) : JSON.stringify(DEFAULT_AMENITIES),
         mapImageUrl: mapImageUrl || '/map-placeholder.jpg',
+        calculatorData: calculatorData ? (typeof calculatorData === 'string' ? calculatorData : JSON.stringify(calculatorData)) : JSON.stringify(DEFAULT_CALCULATOR),
       }
     });
 

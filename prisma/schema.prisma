@@ -284,6 +284,9 @@ model ExploreSettings {
   // Digital Map
   mapImageUrl       String?  @db.Text
   
+  // Calculator
+  calculatorData    String?  @db.Text // JSON string for calculator items (name & price)
+  
   updatedAt         DateTime @updatedAt
 }
 
