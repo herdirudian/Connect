@@ -29,9 +29,11 @@ const DEFAULT_AMENITIES = [
 ];
 
 const DEFAULT_CALCULATOR = [
-  { name: 'Tiket Masuk', price: 50000 },
-  { name: 'Paket Terusan', price: 165000 },
-  { name: 'Makan Siang (Prasmanan)', price: 75000 },
+  { name: 'Tiket Masuk (Weekday)', price: 50000, category: 'TIKET' },
+  { name: 'Tiket Masuk (Weekend)', price: 65000, category: 'TIKET' },
+  { name: 'Paket Terusan', price: 165000, category: 'TIKET' },
+  { name: 'Makan Siang Buffet', price: 75000, category: 'LAINNYA' },
+  { name: 'Snack Box', price: 25000, category: 'LAINNYA' },
 ];
 
 export async function GET() {

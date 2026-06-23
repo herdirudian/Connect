@@ -32,6 +32,7 @@ interface AmenityItem {
 interface CalculatorItem {
   name: string;
   price: number;
+  category: string;
 }
 
 export default function AdminExploreSettingsPage() {
@@ -158,7 +159,7 @@ export default function AdminExploreSettingsPage() {
   };
 
   const addCalculatorItem = () => {
-    setCalculatorItems([...calculatorItems, { name: 'Item Baru', price: 0 }]);
+    setCalculatorItems([...calculatorItems, { name: 'Item Baru', price: 0, category: 'TIKET' }]);
   };
 
   const removeCalculatorItem = (index: number) => {
@@ -439,6 +440,7 @@ export default function AdminExploreSettingsPage() {
             <table className="w-full text-left border-collapse">
               <thead>
                 <tr className="bg-gray-50 border-b border-gray-100">
+                  <th className="py-4 px-6 text-xs font-black text-gray-400 uppercase w-48">Kategori</th>
                   <th className="py-4 px-6 text-xs font-black text-gray-400 uppercase">Nama Item / Paket</th>
                   <th className="py-4 px-6 text-xs font-black text-gray-400 uppercase w-48">Harga Satuan (Rp)</th>
                   <th className="py-4 px-6 text-right text-xs font-black text-gray-400 uppercase">Aksi</th>
@@ -447,6 +449,18 @@ export default function AdminExploreSettingsPage() {
               <tbody className="divide-y divide-gray-50">
                 {calculatorItems.map((item, idx) => (
                   <tr key={idx} className="hover:bg-gray-50/50 transition-colors">
+                    <td className="py-4 px-6">
+                      <select 
+                        value={item.category} 
+                        onChange={(e) => updateCalculatorItem(idx, 'category', e.target.value)}
+                        className="w-full h-10 rounded-lg border-gray-200 text-xs font-bold focus:ring-brand focus:border-brand"
+                      >
+                        <option value="TIKET">TIKET</option>
+                        <option value="MAKANAN">MAKANAN</option>
+                        <option value="PENGINAPAN">PENGINAPAN</option>
+                        <option value="LAINNYA">LAINNYA</option>
+                      </select>
+                    </td>
                     <td className="py-4 px-6">
                       <Input value={item.name} onChange={(e) => updateCalculatorItem(idx, 'name', e.target.value)} placeholder="Contoh: Paket Buffet" className="font-bold rounded-lg" />
                     </td>
