@@ -89,28 +89,28 @@ body {
 .delay-300 { animation-delay: 0.3s; }
 .delay-500 { animation-delay: 0.5s; }
 
-/* Custom Scrollbar for Modal Description */
-.custom-scrollbar::-webkit-scrollbar {
-  width: 4px;
+/* Custom Scrollbar for Modal Description (Light Mode) */
+.custom-scrollbar-light::-webkit-scrollbar {
+  width: 5px;
 }
 
-.custom-scrollbar::-webkit-scrollbar-track {
-  background: rgba(255, 255, 255, 0.05);
+.custom-scrollbar-light::-webkit-scrollbar-track {
+  background: #f1f1f1;
   border-radius: 10px;
 }
 
-.custom-scrollbar::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.2);
+.custom-scrollbar-light::-webkit-scrollbar-thumb {
+  background: #ccc;
   border-radius: 10px;
 }
 
-.custom-scrollbar::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.3);
+.custom-scrollbar-light::-webkit-scrollbar-thumb:hover {
+  background: #bbb;
 }
 
 /* For Firefox */
-.custom-scrollbar {
+.custom-scrollbar-light {
   scrollbar-width: thin;
-  scrollbar-color: rgba(255, 255, 255, 0.2) rgba(255, 255, 255, 0.05);
+  scrollbar-color: #ccc #f1f1f1;
 }
 

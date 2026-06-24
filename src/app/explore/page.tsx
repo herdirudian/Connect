@@ -888,148 +888,146 @@ export default function GreeterHubPage() {
 
       {/* 3. Full Screen Preview Modal */}
       {showPreview && (
-        <div className="fixed inset-0 z-[110] flex items-center justify-center bg-black/95 animate-in fade-in duration-300">
-          <button 
-            onClick={() => setShowPreview(null)} 
-            className="absolute top-6 right-6 p-3 bg-white/10 hover:bg-white/20 text-white rounded-full backdrop-blur-md transition-all z-20"
-          >
-            <X size={24} />
-          </button>
-          
-          <div className="w-full h-full flex flex-col items-center justify-center p-2 md:p-12">
-            <div className="relative w-full max-w-7xl h-full flex items-center justify-center">
-              {showPreview.gallery && showPreview.gallery.length > 0 ? (
-                <div className="relative w-full h-full flex items-center justify-center group">
-                  <img 
-                    src={showPreview.gallery[activeGalleryIndex]} 
-                    alt={`${showPreview.name} ${activeGalleryIndex + 1}`}
-                    className="max-w-full max-h-[80vh] object-contain rounded-2xl shadow-2xl animate-in fade-in zoom-in-95 duration-500"
-                  />
-                  
-                  {/* Gallery Navigation */}
-                  {showPreview.gallery.length > 1 && (
-                    <>
-                      <button 
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setActiveGalleryIndex(prev => (prev - 1 + showPreview.gallery!.length) % showPreview.gallery!.length);
-                        }}
-                        className="absolute left-4 p-4 bg-white/10 hover:bg-white/20 text-white rounded-full backdrop-blur-md transition-all md:opacity-0 md:group-hover:opacity-100 z-30"
-                      >
-                        <ChevronLeft size={32} />
-                      </button>
-                      <button 
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setActiveGalleryIndex(prev => (prev + 1) % showPreview.gallery!.length);
-                        }}
-                        className="absolute right-4 p-4 bg-white/10 hover:bg-white/20 text-white rounded-full backdrop-blur-md transition-all md:opacity-0 md:group-hover:opacity-100 z-30"
-                      >
-                        <ChevronRight size={32} />
-                      </button>
+        <div className="fixed inset-0 z-[110] flex items-center justify-center bg-black/60 backdrop-blur-sm animate-in fade-in duration-300 p-4 md:p-8">
+          <div className="relative w-full max-w-5xl bg-white rounded-[40px] shadow-2xl overflow-hidden animate-in zoom-in-95 duration-300">
+            {/* Close Button */}
+            <button 
+              onClick={() => setShowPreview(null)}
+              className="absolute top-6 right-6 z-[120] p-3 bg-gray-100 hover:bg-gray-200 text-gray-900 rounded-full transition-all hover:rotate-90"
+            >
+              <X size={24} />
+            </button>
 
-                      {/* Thumbnails Indicator */}
-                      <div className="absolute -bottom-16 md:-bottom-20 flex gap-2 overflow-x-auto p-2 no-scrollbar max-w-full z-30">
-                        {showPreview.gallery.map((img, idx) => (
-                          <button
-                            key={idx}
-                            onClick={() => setActiveGalleryIndex(idx)}
-                            className={`relative w-12 h-12 md:w-16 md:h-16 rounded-xl overflow-hidden border-2 transition-all flex-shrink-0 ${activeGalleryIndex === idx ? 'border-brand scale-110 shadow-lg' : 'border-transparent opacity-50 hover:opacity-100'}`}
-                          >
-                            <img src={img} className="w-full h-full object-cover" alt="thumb" />
-                          </button>
-                        ))}
-                      </div>
-                    </>
-                  )}
-                </div>
-              ) : showPreview.type === 'video' ? (
-                <video 
-                  src={showPreview.url} 
-                  autoPlay 
-                  loop 
-                  controls 
-                  className="max-w-full max-h-[85vh] rounded-2xl shadow-2xl"
-                />
-              ) : (
-                <img 
-                  src={showPreview.url} 
-                  alt={showPreview.name} 
-                  className="max-w-full max-h-[85vh] object-contain rounded-2xl shadow-2xl" 
-                />
-              )}
-            </div>
-            <div className={`text-center max-w-3xl px-6 ${showPreview.gallery ? 'mt-24 md:mt-32' : 'mt-6'}`}>
-              <div className="flex flex-col items-center gap-2 mb-4">
-                <h3 className="text-2xl md:text-5xl font-black text-white uppercase tracking-tighter italic leading-none">{showPreview.name}</h3>
-                <div className="flex items-center gap-3">
-                  {showPreview.price && (
-                    <div className="flex items-baseline gap-2">
-                      <span className="text-brand-light text-xl md:text-3xl font-black">Rp {showPreview.price.toLocaleString()}</span>
-                      {showPreview.originalPrice && (
-                        <span className="text-white/40 line-through text-sm md:text-lg">Rp {showPreview.originalPrice.toLocaleString()}</span>
-                      )}
-                    </div>
-                  )}
-                  {showPreview.tags && (
-                    <div className="flex gap-1">
-                      {showPreview.tags.split(',').map(tag => (
-                        <Badge key={tag} variant="outline" className="text-white/60 border-white/20 text-[10px] uppercase font-bold">
+            <div className="flex flex-col md:flex-row h-[90vh] md:h-auto max-h-[90vh]">
+              {/* Media Section */}
+              <div className="w-full md:w-1/2 relative h-[300px] md:h-[600px] bg-gray-50">
+                {showPreview.gallery && showPreview.gallery.length > 0 ? (
+                  <div className="w-full h-full relative group">
+                    <img 
+                      src={showPreview.gallery[activeGalleryIndex]} 
+                      alt={`${showPreview.name} ${activeGalleryIndex + 1}`}
+                      className="w-full h-full object-cover transition-all duration-500"
+                    />
+                    
+                    {/* Gallery Navigation Overlay */}
+                    {showPreview.gallery.length > 1 && (
+                      <>
+                        <button 
+                          onClick={() => setActiveGalleryIndex(prev => (prev - 1 + showPreview.gallery!.length) % showPreview.gallery!.length)}
+                          className="absolute left-4 top-1/2 -translate-y-1/2 p-2 bg-white/80 hover:bg-white text-gray-900 rounded-full shadow-lg transition-all"
+                        >
+                          <ChevronLeft size={24} />
+                        </button>
+                        <button 
+                          onClick={() => setActiveGalleryIndex(prev => (prev + 1) % showPreview.gallery!.length)}
+                          className="absolute right-4 top-1/2 -translate-y-1/2 p-2 bg-white/80 hover:bg-white text-gray-900 rounded-full shadow-lg transition-all"
+                        >
+                          <ChevronRight size={24} />
+                        </button>
+                        
+                        {/* Dots Indicator */}
+                        <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex gap-2 px-3 py-2 bg-black/20 backdrop-blur-md rounded-full">
+                          {showPreview.gallery.map((_, idx) => (
+                            <button
+                              key={idx}
+                              onClick={() => setActiveGalleryIndex(idx)}
+                              className={`w-2 h-2 rounded-full transition-all ${activeGalleryIndex === idx ? 'bg-white w-5' : 'bg-white/40'}`}
+                            />
+                          ))}
+                        </div>
+                      </>
+                    )}
+                  </div>
+                ) : showPreview.type === 'video' ? (
+                  <video src={showPreview.url} autoPlay loop controls className="w-full h-full object-cover" />
+                ) : (
+                  <img src={showPreview.url} alt={showPreview.name} className="w-full h-full object-cover" />
+                )}
+              </div>
+
+              {/* Info Section (Light Mode) */}
+              <div className="w-full md:w-1/2 p-8 md:p-12 overflow-y-auto custom-scrollbar-light bg-white flex flex-col">
+                <div className="flex-1 space-y-8">
+                  <div>
+                    <div className="flex items-center gap-2 mb-3">
+                      {showPreview.tags && showPreview.tags.split(',').map(tag => (
+                        <Badge key={tag} variant="secondary" className="bg-brand/10 text-brand text-[10px] uppercase font-bold border-none px-3">
                           {tag.trim()}
                         </Badge>
                       ))}
                     </div>
+                    <h3 className="text-3xl md:text-4xl font-black text-gray-900 uppercase tracking-tighter italic leading-tight mb-4">
+                      {showPreview.name}
+                    </h3>
+                    
+                    {showPreview.price && (
+                      <div className="flex items-baseline gap-3">
+                        <span className="text-brand text-2xl md:text-3xl font-black">Rp {showPreview.price.toLocaleString()}</span>
+                        {showPreview.originalPrice && (
+                          <span className="text-gray-400 line-through text-sm md:text-lg font-bold">Rp {showPreview.originalPrice.toLocaleString()}</span>
+                        )}
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="h-px bg-gray-100 w-full" />
+
+                  {showPreview.description && (
+                    <div className="space-y-3">
+                      <h4 className="text-[11px] font-black text-gray-400 uppercase tracking-[0.2em]">Deskripsi Lengkap</h4>
+                      <p className="text-gray-600 text-sm md:text-base leading-relaxed font-medium">
+                        {showPreview.description}
+                      </p>
+                    </div>
+                  )}
+
+                  {showPreview.benefits && (
+                    <div className="space-y-4">
+                      <h4 className="text-[11px] font-black text-gray-400 uppercase tracking-[0.2em]">Fasilitas & Benefit</h4>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        {(() => {
+                          try {
+                            const benefits = JSON.parse(showPreview.benefits);
+                            if (!Array.isArray(benefits)) return null;
+                            return benefits.map((b, i) => {
+                              const text = b.toLowerCase();
+                              let Icon = Ticket;
+                              if (text.includes('drink') || text.includes('minum')) Icon = Coffee;
+                              if (text.includes('photo') || text.includes('foto')) Icon = Camera;
+                              if (text.includes('meal') || text.includes('makan')) Icon = Utensils;
+                              if (text.includes('shuttle') || text.includes('wara-wiri')) Icon = Bus;
+                              if (text.includes('adrenalin') || text.includes('zip')) Icon = Zap;
+                              
+                              return (
+                                <div key={i} className="flex items-center gap-3 p-4 rounded-2xl bg-gray-50 border border-gray-100 group/item hover:bg-brand/5 transition-colors">
+                                  <div className="p-2 bg-white rounded-xl shadow-sm group-hover/item:scale-110 transition-transform">
+                                    <Icon size={18} className="text-brand" />
+                                  </div>
+                                  <span className="text-xs font-bold text-gray-700 leading-tight">{b}</span>
+                                </div>
+                              );
+                            });
+                          } catch (e) {
+                            return null;
+                          }
+                        })()}
+                      </div>
+                    </div>
                   )}
                 </div>
-              </div>
-
-              <p className="text-white/40 text-[10px] md:text-xs font-bold tracking-widest uppercase mb-6">
-                {showPreview.gallery ? `GALLERY PHOTO ${activeGalleryIndex + 1} OF ${showPreview.gallery.length}` : 'THE LODGE MARIBAYA • EXPERIENCE PREVIEW'}
-              </p>
-              
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-left">
-                {showPreview.description && (
-                  <div className="bg-white/10 backdrop-blur-xl p-6 rounded-[32px] border border-white/20 max-h-[35vh] overflow-y-auto custom-scrollbar shadow-2xl">
-                    <h4 className="text-[10px] font-black text-white/40 uppercase tracking-widest mb-3">Deskripsi Lengkap</h4>
-                    <p className="text-gray-100 text-sm md:text-base leading-relaxed font-medium">
-                      {showPreview.description}
-                    </p>
-                  </div>
-                )}
                 
-                {showPreview.benefits && (
-                  <div className="bg-white/10 backdrop-blur-xl p-6 rounded-[32px] border border-white/20 max-h-[35vh] overflow-y-auto custom-scrollbar shadow-2xl">
-                    <h4 className="text-[10px] font-black text-white/40 uppercase tracking-widest mb-3">Keuntungan & Fasilitas</h4>
-                    <div className="space-y-3">
-                      {(() => {
-                        try {
-                          const benefits = JSON.parse(showPreview.benefits);
-                          if (!Array.isArray(benefits)) return null;
-                          return benefits.map((b, i) => {
-                            const text = b.toLowerCase();
-                            let Icon = Ticket;
-                            if (text.includes('drink') || text.includes('minum')) Icon = Coffee;
-                            if (text.includes('photo') || text.includes('foto')) Icon = Camera;
-                            if (text.includes('meal') || text.includes('makan')) Icon = Utensils;
-                            if (text.includes('shuttle') || text.includes('wara-wiri')) Icon = Bus;
-                            if (text.includes('adrenalin') || text.includes('zip')) Icon = Zap;
-                            
-                            return (
-                              <div key={i} className="flex items-center gap-3 text-white">
-                                <div className="p-2 bg-white/10 rounded-xl">
-                                  <Icon size={16} className="text-brand-light" />
-                                </div>
-                                <span className="text-sm font-bold">{b}</span>
-                              </div>
-                            );
-                          });
-                        } catch (e) {
-                          return <p className="text-white/60 text-sm italic">Data fasilitas tidak tersedia</p>;
-                        }
-                      })()}
-                    </div>
-                  </div>
-                )}
+                {/* Footer Action */}
+                <div className="mt-12 pt-6 border-t border-gray-100">
+                  <Button 
+                    onClick={() => {
+                      setShowQR({ url: `https://family.thelodgegroup.id/booking/tickets`, name: showPreview.name });
+                      setShowPreview(null);
+                    }}
+                    className="w-full bg-brand hover:bg-brand/90 text-white rounded-2xl h-14 font-black uppercase tracking-widest shadow-xl shadow-brand/20"
+                  >
+                    PESAN SEKARANG
+                  </Button>
+                </div>
               </div>
             </div>
           </div>
