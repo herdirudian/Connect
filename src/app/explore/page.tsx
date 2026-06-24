@@ -75,7 +75,17 @@ export default function GreeterHubPage() {
   const [showCalculator, setShowCalculator] = useState(false);
   const [calcCategory, setCalcCategory] = useState('ALL');
   const [calcItems, setCalcItems] = useState<{ name: string, price: number, qty: number, category: string }[]>([]);
-  const [showPreview, setShowPreview] = useState<{ type: 'image' | 'video', url: string, name: string, description?: string, gallery?: string[] } | null>(null);
+  const [showPreview, setShowPreview] = useState<{ 
+    type: 'image' | 'video', 
+    url: string, 
+    name: string, 
+    description?: string, 
+    gallery?: string[],
+    benefits?: string,
+    price?: number,
+    originalPrice?: number,
+    tags?: string
+  } | null>(null);
   const [activeGalleryIndex, setActiveGalleryIndex] = useState(0);
   const [loading, setLoading] = useState(true);
   const [currentPromo, setCurrentPromo] = useState(0);
@@ -389,7 +399,8 @@ export default function GreeterHubPage() {
                     onClick={() => setShowPreview({
                       type: 'image',
                       url: promo.imageUrl,
-                      name: promo.title
+                      name: promo.title,
+                      description: promo.description || undefined
                     })}
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent flex flex-col justify-end p-8 md:p-12 text-white pointer-events-none">
@@ -443,7 +454,8 @@ export default function GreeterHubPage() {
                   onClick={() => setShowPreview({
                     type: 'image',
                     url: attr.imageUrl || '/placeholder.jpg',
-                    name: attr.name
+                    name: attr.name,
+                    description: attr.description
                   })}
                 >
                   <img src={attr.imageUrl || '/placeholder.jpg'} alt={attr.name} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
@@ -466,8 +478,32 @@ export default function GreeterHubPage() {
                     <Button 
                       className="flex-1 rounded-xl bg-gray-100 text-gray-900 hover:bg-brand hover:text-white transition-colors border-none font-bold" 
                       variant="outline"
+                      onClick={() => {
+                        let galleryImages: string[] = [];
+                        try {
+                          galleryImages = attr.images ? JSON.parse(attr.images) : [];
+                          if (typeof galleryImages === 'string') {
+                            galleryImages = (galleryImages as string).split(',').map(s => s.trim());
+                          }
+                        } catch (e) {
+                          galleryImages = attr.images ? attr.images.split(',').map(s => s.trim()) : [];
+                        }
+
+                        setShowPreview({ 
+                          type: attr.videoUrl ? 'video' : 'image', 
+                          url: attr.videoUrl || attr.imageUrl || (galleryImages.length > 0 ? galleryImages[0] : '/placeholder.jpg'),
+                          name: attr.name,
+                          description: attr.description,
+                          gallery: galleryImages.length > 0 ? galleryImages : undefined,
+                          benefits: attr.benefits || undefined,
+                          price: attr.price,
+                          originalPrice: attr.originalPrice,
+                          tags: attr.tags || undefined
+                        });
+                        setActiveGalleryIndex(0);
+                      }}
                     >
-                      Jelaskan
+                      DETAIL
                     </Button>
                     <Button 
                       onClick={() => setShowQR({ url: `https://family.thelodgegroup.id/booking/tickets`, name: attr.name })}
@@ -564,7 +600,12 @@ export default function GreeterHubPage() {
                       type: attr.videoUrl ? 'video' : 'image', 
                       url: attr.videoUrl || attr.imageUrl || '/placeholder.jpg',
                       name: attr.name,
-                      gallery: galleryImages.length > 0 ? galleryImages : undefined
+                      description: attr.description,
+                      gallery: galleryImages.length > 0 ? galleryImages : undefined,
+                      benefits: attr.benefits || undefined,
+                      price: attr.price,
+                      originalPrice: attr.originalPrice,
+                      tags: attr.tags || undefined
                     });
                     setActiveGalleryIndex(0);
                   }}
@@ -646,7 +687,11 @@ export default function GreeterHubPage() {
                         url: attr.videoUrl || attr.imageUrl || (galleryImages.length > 0 ? galleryImages[0] : '/placeholder.jpg'),
                         name: attr.name,
                         description: attr.description,
-                        gallery: galleryImages.length > 0 ? galleryImages : undefined
+                        gallery: galleryImages.length > 0 ? galleryImages : undefined,
+                        benefits: attr.benefits || undefined,
+                        price: attr.price,
+                        originalPrice: attr.originalPrice,
+                        tags: attr.tags || undefined
                       });
                       setActiveGalleryIndex(0);
                     }}
@@ -914,19 +959,78 @@ export default function GreeterHubPage() {
                 />
               )}
             </div>
-            <div className={`text-center max-w-2xl px-6 ${showPreview.gallery ? 'mt-24 md:mt-32' : 'mt-6'}`}>
-              <h3 className="text-xl md:text-4xl font-black text-white uppercase tracking-tighter italic">{showPreview.name}</h3>
-              <p className="text-gray-400 text-[10px] md:text-sm mt-2 font-bold tracking-widest uppercase">
-                {showPreview.gallery ? `PHOTO ${activeGalleryIndex + 1} OF ${showPreview.gallery.length}` : 'THE LODGE MARIBAYA • EXPERIENCE PREVIEW'}
+            <div className={`text-center max-w-3xl px-6 ${showPreview.gallery ? 'mt-24 md:mt-32' : 'mt-6'}`}>
+              <div className="flex flex-col items-center gap-2 mb-4">
+                <h3 className="text-2xl md:text-5xl font-black text-white uppercase tracking-tighter italic leading-none">{showPreview.name}</h3>
+                <div className="flex items-center gap-3">
+                  {showPreview.price && (
+                    <div className="flex items-baseline gap-2">
+                      <span className="text-brand-light text-xl md:text-3xl font-black">Rp {showPreview.price.toLocaleString()}</span>
+                      {showPreview.originalPrice && (
+                        <span className="text-white/40 line-through text-sm md:text-lg">Rp {showPreview.originalPrice.toLocaleString()}</span>
+                      )}
+                    </div>
+                  )}
+                  {showPreview.tags && (
+                    <div className="flex gap-1">
+                      {showPreview.tags.split(',').map(tag => (
+                        <Badge key={tag} variant="outline" className="text-white/60 border-white/20 text-[10px] uppercase font-bold">
+                          {tag.trim()}
+                        </Badge>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <p className="text-white/40 text-[10px] md:text-xs font-bold tracking-widest uppercase mb-6">
+                {showPreview.gallery ? `GALLERY PHOTO ${activeGalleryIndex + 1} OF ${showPreview.gallery.length}` : 'THE LODGE MARIBAYA • EXPERIENCE PREVIEW'}
               </p>
               
-              {showPreview.description && (
-                <div className="mt-4 bg-white/5 backdrop-blur-md p-4 rounded-2xl border border-white/10 max-h-32 overflow-y-auto no-scrollbar">
-                  <p className="text-gray-300 text-xs md:text-sm leading-relaxed text-center">
-                    {showPreview.description}
-                  </p>
-                </div>
-              )}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-left">
+                {showPreview.description && (
+                  <div className="bg-white/10 backdrop-blur-xl p-6 rounded-[32px] border border-white/20 max-h-[35vh] overflow-y-auto custom-scrollbar shadow-2xl">
+                    <h4 className="text-[10px] font-black text-white/40 uppercase tracking-widest mb-3">Deskripsi Lengkap</h4>
+                    <p className="text-gray-100 text-sm md:text-base leading-relaxed font-medium">
+                      {showPreview.description}
+                    </p>
+                  </div>
+                )}
+                
+                {showPreview.benefits && (
+                  <div className="bg-white/10 backdrop-blur-xl p-6 rounded-[32px] border border-white/20 max-h-[35vh] overflow-y-auto custom-scrollbar shadow-2xl">
+                    <h4 className="text-[10px] font-black text-white/40 uppercase tracking-widest mb-3">Keuntungan & Fasilitas</h4>
+                    <div className="space-y-3">
+                      {(() => {
+                        try {
+                          const benefits = JSON.parse(showPreview.benefits);
+                          if (!Array.isArray(benefits)) return null;
+                          return benefits.map((b, i) => {
+                            const text = b.toLowerCase();
+                            let Icon = Ticket;
+                            if (text.includes('drink') || text.includes('minum')) Icon = Coffee;
+                            if (text.includes('photo') || text.includes('foto')) Icon = Camera;
+                            if (text.includes('meal') || text.includes('makan')) Icon = Utensils;
+                            if (text.includes('shuttle') || text.includes('wara-wiri')) Icon = Bus;
+                            if (text.includes('adrenalin') || text.includes('zip')) Icon = Zap;
+                            
+                            return (
+                              <div key={i} className="flex items-center gap-3 text-white">
+                                <div className="p-2 bg-white/10 rounded-xl">
+                                  <Icon size={16} className="text-brand-light" />
+                                </div>
+                                <span className="text-sm font-bold">{b}</span>
+                              </div>
+                            );
+                          });
+                        } catch (e) {
+                          return <p className="text-white/60 text-sm italic">Data fasilitas tidak tersedia</p>;
+                        }
+                      })()}
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         </div>
