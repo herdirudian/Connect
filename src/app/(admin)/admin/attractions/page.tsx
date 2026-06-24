@@ -17,7 +17,11 @@ import {
   Tent, 
   Utensils, 
   Map as MapIcon, 
-  Heart 
+  Heart,
+  Upload,
+  ChevronUp,
+  ChevronDown,
+  Image as ImageIcon
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import AdminPriceScheduleDialog from '@/components/admin/AdminPriceScheduleDialog';
@@ -148,32 +152,84 @@ export default function AdminAttractionsPage() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
-  async function handleFileUpload(e: React.ChangeEvent<HTMLInputElement>) {
+  async function handleFileUpload(e: React.ChangeEvent<HTMLInputElement>, field: 'imageUrl' | 'gallery') {
     if (!e.target.files || e.target.files.length === 0) return;
     
-    const file = e.target.files[0];
-    const uploadData = new FormData();
-    uploadData.append('file', file);
-    
+    const files = Array.from(e.target.files);
     setUploading(true);
+    
     try {
-        const res = await fetch('/api/upload', {
-            method: 'POST',
-            body: uploadData,
-        });
+        const uploadedUrls: string[] = [];
         
-        if (!res.ok) {
-            const errorData = await res.json().catch(() => ({}));
-            throw new Error(errorData.error || 'Upload failed');
+        for (const file of files) {
+            const uploadData = new FormData();
+            uploadData.append('file', file);
+            
+            const res = await fetch('/api/upload', {
+                method: 'POST',
+                body: uploadData,
+            });
+            
+            if (!res.ok) {
+                const errorData = await res.json().catch(() => ({}));
+                throw new Error(errorData.error || 'Upload failed');
+            }
+            
+            const data = await res.json();
+            uploadedUrls.push(data.url);
         }
         
-        const data = await res.json();
-        setFormData(prev => ({ ...prev, imageUrl: data.url }));
+        if (field === 'imageUrl') {
+            setFormData(prev => ({ ...prev, imageUrl: uploadedUrls[0] }));
+        } else {
+            // Append to existing gallery
+            let currentGallery: string[] = [];
+            try {
+                currentGallery = formData.images ? JSON.parse(formData.images) : [];
+                if (!Array.isArray(currentGallery)) currentGallery = [];
+            } catch (e) {
+                currentGallery = formData.images ? formData.images.split(',').map(s => s.trim()) : [];
+            }
+            
+            const updatedGallery = [...currentGallery, ...uploadedUrls];
+            setFormData(prev => ({ ...prev, images: JSON.stringify(updatedGallery) }));
+        }
     } catch (error) {
         console.error('Error uploading file:', error);
         alert(error instanceof Error ? error.message : 'Failed to upload file');
     } finally {
         setUploading(false);
+    }
+  }
+
+  function moveGalleryItem(index: number, direction: 'up' | 'down') {
+    try {
+        let currentGallery = JSON.parse(formData.images || '[]');
+        if (!Array.isArray(currentGallery)) return;
+        
+        const newIndex = direction === 'up' ? index - 1 : index + 1;
+        if (newIndex < 0 || newIndex >= currentGallery.length) return;
+        
+        const updated = [...currentGallery];
+        const temp = updated[index];
+        updated[index] = updated[newIndex];
+        updated[newIndex] = temp;
+        
+        setFormData(prev => ({ ...prev, images: JSON.stringify(updated) }));
+    } catch (e) {
+        console.error('Error reordering gallery:', e);
+    }
+  }
+
+  function removeGalleryItem(index: number) {
+    try {
+        let currentGallery = JSON.parse(formData.images || '[]');
+        if (!Array.isArray(currentGallery)) return;
+        
+        const updated = currentGallery.filter((_, i) => i !== index);
+        setFormData(prev => ({ ...prev, images: JSON.stringify(updated) }));
+    } catch (e) {
+        console.error('Error removing gallery item:', e);
     }
   }
 
@@ -378,7 +434,7 @@ export default function AdminAttractionsPage() {
                         <Input 
                             type="file" 
                             accept="image/*"
-                            onChange={handleFileUpload}
+                            onChange={(e) => handleFileUpload(e, 'imageUrl')}
                             disabled={uploading}
                             className="cursor-pointer"
                         />
@@ -409,15 +465,82 @@ export default function AdminAttractionsPage() {
                     placeholder="e.g. Safety gear included, 5 min ride, Photo op"
                   />
                 </div>
-                <div className="space-y-2 md:col-span-2">
-                  <label className="text-sm font-medium">Gallery Images (Comma separated URLs)</label>
-                  <textarea 
-                    value={formData.images}
-                    onChange={(e) => setFormData({...formData, images: e.target.value})}
-                    placeholder="/img1.jpg, /img2.jpg, /img3.jpg"
-                    className="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                  />
-                  <p className="text-[10px] text-gray-400 italic">Masukkan beberapa URL gambar dipisahkan koma untuk membuat galeri di halaman Explore.</p>
+                <div className="space-y-4 md:col-span-2 p-6 bg-gray-50/50 rounded-2xl border border-dashed border-gray-200">
+                  <div className="flex justify-between items-center">
+                    <div>
+                      <h4 className="text-sm font-bold flex items-center gap-2">
+                        <ImageIcon size={16} className="text-brand" />
+                        Gallery Images
+                      </h4>
+                      <p className="text-[10px] text-gray-500 italic">Upload beberapa foto untuk slider di halaman Explore (bisa diatur urutannya).</p>
+                    </div>
+                    <div className="flex gap-2">
+                      <Input 
+                          type="file" 
+                          multiple
+                          accept="image/*"
+                          onChange={(e) => handleFileUpload(e, 'gallery')}
+                          disabled={uploading}
+                          className="hidden"
+                          id="gallery-upload"
+                      />
+                      <label 
+                        htmlFor="gallery-upload" 
+                        className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold cursor-pointer transition-all ${uploading ? 'bg-gray-200 text-gray-400' : 'bg-brand text-white hover:bg-brand/90 shadow-md'}`}
+                      >
+                        {uploading ? <Loader2 size={14} className="animate-spin" /> : <Upload size={14} />}
+                        Upload Photos
+                      </label>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
+                    {(() => {
+                      try {
+                        const images = JSON.parse(formData.images || '[]');
+                        if (!Array.isArray(images)) return null;
+                        return images.map((url, idx) => (
+                          <div key={idx} className="relative group aspect-square rounded-xl overflow-hidden border border-gray-200 bg-white shadow-sm">
+                            <img src={url} alt={`Gallery ${idx}`} className="w-full h-full object-cover" />
+                            <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col justify-between p-2">
+                              <div className="flex justify-between">
+                                <button 
+                                  type="button"
+                                  onClick={() => removeGalleryItem(idx)}
+                                  className="p-1.5 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors"
+                                >
+                                  <Trash2 size={12} />
+                                </button>
+                                <div className="bg-white/90 px-1.5 py-0.5 rounded text-[10px] font-bold text-gray-900 shadow-sm">
+                                  #{idx + 1}
+                                </div>
+                              </div>
+                              <div className="flex justify-center gap-2">
+                                <button 
+                                  type="button"
+                                  disabled={idx === 0}
+                                  onClick={() => moveGalleryItem(idx, 'up')}
+                                  className="p-1.5 bg-white/90 text-gray-700 rounded-lg hover:bg-brand hover:text-white transition-all disabled:opacity-50"
+                                >
+                                  <ChevronUp size={12} />
+                                </button>
+                                <button 
+                                  type="button"
+                                  disabled={idx === images.length - 1}
+                                  onClick={() => moveGalleryItem(idx, 'down')}
+                                  className="p-1.5 bg-white/90 text-gray-700 rounded-lg hover:bg-brand hover:text-white transition-all disabled:opacity-50"
+                                >
+                                  <ChevronDown size={12} />
+                                </button>
+                              </div>
+                            </div>
+                          </div>
+                        ));
+                      } catch (e) {
+                        return null;
+                      }
+                    })()}
+                  </div>
                 </div>
 
                 <div className="flex items-center space-x-2">
