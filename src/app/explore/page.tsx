@@ -75,7 +75,7 @@ export default function GreeterHubPage() {
   const [showCalculator, setShowCalculator] = useState(false);
   const [calcCategory, setCalcCategory] = useState('ALL');
   const [calcItems, setCalcItems] = useState<{ name: string, price: number, qty: number, category: string }[]>([]);
-  const [showPreview, setShowPreview] = useState<{ type: 'image' | 'video', url: string, name: string, gallery?: string[] } | null>(null);
+  const [showPreview, setShowPreview] = useState<{ type: 'image' | 'video', url: string, name: string, description?: string, gallery?: string[] } | null>(null);
   const [activeGalleryIndex, setActiveGalleryIndex] = useState(0);
   const [loading, setLoading] = useState(true);
   const [currentPromo, setCurrentPromo] = useState(0);
@@ -645,6 +645,7 @@ export default function GreeterHubPage() {
                         type: attr.videoUrl ? 'video' : 'image', 
                         url: attr.videoUrl || attr.imageUrl || (galleryImages.length > 0 ? galleryImages[0] : '/placeholder.jpg'),
                         name: attr.name,
+                        description: attr.description,
                         gallery: galleryImages.length > 0 ? galleryImages : undefined
                       });
                       setActiveGalleryIndex(0);
@@ -913,11 +914,19 @@ export default function GreeterHubPage() {
                 />
               )}
             </div>
-            <div className={`text-center ${showPreview.gallery ? 'mt-24 md:mt-32' : 'mt-6'}`}>
+            <div className={`text-center max-w-2xl px-6 ${showPreview.gallery ? 'mt-24 md:mt-32' : 'mt-6'}`}>
               <h3 className="text-xl md:text-4xl font-black text-white uppercase tracking-tighter italic">{showPreview.name}</h3>
               <p className="text-gray-400 text-[10px] md:text-sm mt-2 font-bold tracking-widest uppercase">
                 {showPreview.gallery ? `PHOTO ${activeGalleryIndex + 1} OF ${showPreview.gallery.length}` : 'THE LODGE MARIBAYA • EXPERIENCE PREVIEW'}
               </p>
+              
+              {showPreview.description && (
+                <div className="mt-4 bg-white/5 backdrop-blur-md p-4 rounded-2xl border border-white/10 max-h-32 overflow-y-auto no-scrollbar">
+                  <p className="text-gray-300 text-xs md:text-sm leading-relaxed text-center">
+                    {showPreview.description}
+                  </p>
+                </div>
+              )}
             </div>
           </div>
         </div>
