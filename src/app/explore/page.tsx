@@ -542,12 +542,12 @@ export default function GreeterHubPage() {
             />
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6">
             {filteredAttractions.map(attr => (
-              <div key={attr.id} className="flex flex-col space-y-4 group">
+              <div key={attr.id} className="flex flex-col space-y-3 group">
                 {/* Reels Style Video Loop or Image */}
                 <div 
-                  className="relative aspect-[9/16] md:aspect-video rounded-3xl overflow-hidden shadow-xl bg-gray-200 cursor-zoom-in"
+                  className="relative aspect-[3/4] rounded-2xl overflow-hidden shadow-lg bg-gray-200 cursor-zoom-in"
                   onClick={() => {
                     let galleryImages: string[] = [];
                     try {
@@ -602,14 +602,14 @@ export default function GreeterHubPage() {
                   )}
                 </div>
 
-                <div className="px-2">
-                  <h3 className="text-lg font-black uppercase tracking-tight">{attr.name}</h3>
-                  <div className="flex gap-1 mt-1">
-                    {attr.tags?.split(',').map(tag => (
-                      <span key={tag} className="text-[10px] font-bold text-brand uppercase">{tag.trim()}</span>
+                <div className="px-1">
+                  <h3 className="text-sm md:text-base font-black uppercase tracking-tight line-clamp-1">{attr.name}</h3>
+                  <div className="flex gap-1 mt-0.5">
+                    {attr.tags?.split(',').slice(0, 2).map(tag => (
+                      <span key={tag} className="text-[8px] md:text-[10px] font-bold text-brand uppercase">{tag.trim()}</span>
                     ))}
                   </div>
-                  <p className="text-sm text-gray-500 mt-2 line-clamp-3 leading-relaxed">
+                  <p className="text-[10px] md:text-xs text-gray-500 mt-1 line-clamp-2 leading-snug">
                     {attr.description}
                   </p>
                 </div>
