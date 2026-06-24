@@ -62,9 +62,24 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const body = await req.json();
-    console.log('[Attractions API] Request body:', JSON.stringify(body));
-    const { name, description, category, price, originalPrice, points, benefits, imageUrl, videoUrl, images, status, waitTime, tags, active, rating } = body;
+    const { 
+      name, 
+      description, 
+      category, 
+      price, 
+      originalPrice, 
+      points, 
+      benefits, 
+      imageUrl, 
+      videoUrl, 
+      images, 
+      status, 
+      waitTime, 
+      tags, 
+      active, 
+      rating,
+      displayTarget 
+    } = body;
 
     console.log('[Attractions API] Creating attraction in database...');
     const attraction = await prisma.attraction.create({
@@ -84,6 +99,7 @@ export async function POST(req: Request) {
         waitTime: waitTime || null,
         tags: tags || null,
         active: active !== undefined ? active : true,
+        displayTarget: displayTarget || 'BOTH',
       },
     });
 

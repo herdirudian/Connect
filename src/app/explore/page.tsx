@@ -180,6 +180,10 @@ export default function GreeterHubPage() {
   }, [promotions]);
 
   const filteredAttractions = attractions.filter(attr => {
+    // Filter by visibility (Explore Hub should show BOTH and EXPLORE)
+    const isVisible = (attr as any).displayTarget === 'BOTH' || (attr as any).displayTarget === 'EXPLORE' || !(attr as any).displayTarget;
+    if (!isVisible) return false;
+
     const matchesSearch = attr.name.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesCategory = activeCategory === 'ALL' || attr.category === activeCategory;
     

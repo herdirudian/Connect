@@ -19,6 +19,7 @@ interface Attraction {
   active: boolean;
   originalPrice?: number;
   rating?: number;
+  displayTarget?: string;
 }
 
 export default function PublicTicketsPage() {
@@ -74,7 +75,10 @@ export default function PublicTicketsPage() {
         </div>
 
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-        {attractions.filter(item => item.active).map((item) => {
+        {attractions.filter(item => {
+          const isVisible = item.displayTarget === 'BOTH' || item.displayTarget === 'BOOKING' || !item.displayTarget;
+          return item.active && isVisible;
+        }).map((item) => {
            let benefits = [];
            try {
              benefits = JSON.parse(item.benefits || '[]');
@@ -162,7 +166,10 @@ export default function PublicTicketsPage() {
             originalPrice: selectedItem.originalPrice,
             type: 'WAHANA' 
         } : null}
-        allItems={attractions.filter(a => a.active).map(a => ({
+        allItems={attractions.filter(a => {
+            const isVisible = a.displayTarget === 'BOTH' || a.displayTarget === 'BOOKING' || !a.displayTarget;
+            return a.active && isVisible;
+        }).map(a => ({
             id: a.id,
             name: a.name,
             price: a.price,

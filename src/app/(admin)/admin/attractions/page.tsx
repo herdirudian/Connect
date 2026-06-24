@@ -24,6 +24,7 @@ interface Attraction {
   waitTime?: string;
   tags?: string;
   active: boolean;
+  displayTarget: 'BOTH' | 'BOOKING' | 'EXPLORE';
 }
 
 export default function AdminAttractionsPage() {
@@ -46,6 +47,7 @@ export default function AdminAttractionsPage() {
     waitTime: '',
     tags: '',
     active: true,
+    displayTarget: 'BOTH' as 'BOTH' | 'BOOKING' | 'EXPLORE',
   });
   const [uploading, setUploading] = useState(false);
   const [pricingFor, setPricingFor] = useState<{ id: string; name: string } | null>(null);
@@ -81,7 +83,8 @@ export default function AdminAttractionsPage() {
       status: 'OPEN',
       waitTime: '',
       tags: '',
-      active: true 
+      active: true,
+      displayTarget: 'BOTH'
     });
     setIsAdding(false);
     setEditingId(null);
@@ -113,6 +116,7 @@ export default function AdminAttractionsPage() {
       waitTime: item.waitTime || '',
       tags: item.tags || '',
       active: item.active,
+      displayTarget: item.displayTarget || 'BOTH',
     });
     setEditingId(item.id);
     setIsAdding(true); // Re-use the add form area for editing
@@ -373,6 +377,20 @@ export default function AdminAttractionsPage() {
                     />
                     <label htmlFor="active" className="text-sm font-medium text-gray-700">Active (Visible to members)</label>
                 </div>
+
+                <div className="space-y-2 md:col-span-2">
+                  <label className="text-sm font-medium">Display Visibility (Tampilkan di mana?)</label>
+                  <select 
+                    value={formData.displayTarget}
+                    onChange={(e) => setFormData({...formData, displayTarget: e.target.value as any})}
+                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    <option value="BOTH">Tampilkan di Keduanya (Explore & Booking)</option>
+                    <option value="EXPLORE">Hanya di Explore Hub (Greeter)</option>
+                    <option value="BOOKING">Hanya di Halaman Booking (Tamu)</option>
+                  </select>
+                  <p className="text-[10px] text-gray-500 italic">Gunakan "Hanya di Explore Hub" jika Anda ingin menambahkan item yang hanya untuk presentasi Greeter (misal: Galeri Foto Wahana).</p>
+                </div>
               </div>
               <Button type="submit" className="w-full bg-brand hover:bg-brand-dark text-white">
                 {editingId ? 'Update Attraction' : 'Save Attraction'}
@@ -413,6 +431,13 @@ export default function AdminAttractionsPage() {
                 {item.status === 'CROWDED' && <Badge className="bg-orange-500 text-[10px] h-5">CROWDED</Badge>}
                 {item.waitTime && <Badge variant="outline" className="text-[10px] h-5">⏳ {item.waitTime}</Badge>}
                 {item.videoUrl && <Badge variant="secondary" className="text-[10px] h-5">🎥 VIDEO</Badge>}
+                <Badge variant="outline" className={`text-[10px] h-5 ${
+                  item.displayTarget === 'BOTH' ? 'bg-blue-50 text-blue-700' :
+                  item.displayTarget === 'EXPLORE' ? 'bg-purple-50 text-purple-700' :
+                  'bg-orange-50 text-orange-700'
+                }`}>
+                  📍 {item.displayTarget}
+                </Badge>
               </div>
 
               {item.tags && (

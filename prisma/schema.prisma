@@ -245,6 +245,7 @@ model Attraction {
   benefits    String?  @db.Text // JSON string list of benefits
   active      Boolean  @default(true)
   originalPrice Float? // Price before discount (for display only)
+  displayTarget String   @default("BOTH") // "BOTH", "BOOKING", "EXPLORE"
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
   reviews     Review[]
