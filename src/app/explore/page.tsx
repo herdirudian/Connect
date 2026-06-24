@@ -87,6 +87,7 @@ export default function GreeterHubPage() {
     tags?: string
   } | null>(null);
   const [activeGalleryIndex, setActiveGalleryIndex] = useState(0);
+  const [showFullscreenGallery, setShowFullscreenGallery] = useState(false);
   const [loading, setLoading] = useState(true);
   const [currentPromo, setCurrentPromo] = useState(0);
   const [activeFilter, setActiveFilter] = useState('ALL');
@@ -803,6 +804,78 @@ export default function GreeterHubPage() {
         </div>
       )}
 
+      {/* 4. Fullscreen Gallery Slider (Dark Mode for Visual Focus) */}
+      {showFullscreenGallery && showPreview && (
+        <div className="fixed inset-0 z-[200] bg-black flex items-center justify-center animate-in fade-in duration-300">
+          {/* Close Button */}
+          <button 
+            onClick={() => setShowFullscreenGallery(false)}
+            className="absolute top-6 right-6 z-[210] p-4 bg-white/10 hover:bg-white/20 text-white rounded-full backdrop-blur-md transition-all hover:rotate-90"
+          >
+            <X size={32} />
+          </button>
+
+          <div className="relative w-full h-full flex items-center justify-center group">
+            {showPreview.gallery && showPreview.gallery.length > 0 ? (
+              <>
+                <img 
+                  src={showPreview.gallery[activeGalleryIndex]} 
+                  alt={showPreview.name}
+                  className="max-w-full max-h-full object-contain transition-all duration-500 animate-in zoom-in-95"
+                />
+
+                {/* Navigation Buttons */}
+                {showPreview.gallery.length > 1 && (
+                  <>
+                    <button 
+                      onClick={() => setActiveGalleryIndex(prev => (prev - 1 + showPreview.gallery!.length) % showPreview.gallery!.length)}
+                      className="absolute left-8 top-1/2 -translate-y-1/2 p-6 bg-white/5 hover:bg-white/20 text-white rounded-full backdrop-blur-xl transition-all"
+                    >
+                      <ChevronLeft size={48} />
+                    </button>
+                    <button 
+                      onClick={() => setActiveGalleryIndex(prev => (prev + 1) % showPreview.gallery!.length)}
+                      className="absolute right-8 top-1/2 -translate-y-1/2 p-6 bg-white/5 hover:bg-white/20 text-white rounded-full backdrop-blur-xl transition-all"
+                    >
+                      <ChevronRight size={48} />
+                    </button>
+
+                    {/* Info Overlay */}
+                    <div className="absolute bottom-12 left-1/2 -translate-x-1/2 flex flex-col items-center gap-4 w-full px-6">
+                      <div className="px-6 py-3 bg-black/40 backdrop-blur-xl rounded-2xl border border-white/10 text-center">
+                        <h3 className="text-white font-black uppercase tracking-widest text-lg mb-1">{showPreview.name}</h3>
+                        <p className="text-white/40 text-[10px] font-bold uppercase tracking-[0.3em]">
+                          Photo {activeGalleryIndex + 1} of {showPreview.gallery.length}
+                        </p>
+                      </div>
+                      
+                      {/* Thumbnails */}
+                      <div className="flex gap-2 overflow-x-auto p-2 no-scrollbar max-w-full">
+                        {showPreview.gallery.map((img, idx) => (
+                          <button
+                            key={idx}
+                            onClick={() => setActiveGalleryIndex(idx)}
+                            className={`relative w-16 h-16 rounded-xl overflow-hidden border-2 transition-all flex-shrink-0 ${activeGalleryIndex === idx ? 'border-brand scale-110 shadow-lg' : 'border-transparent opacity-40 hover:opacity-100'}`}
+                          >
+                            <img src={img} className="w-full h-full object-cover" alt="thumb" />
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  </>
+                )}
+              </>
+            ) : (
+              <img 
+                src={showPreview.url} 
+                alt={showPreview.name}
+                className="max-w-full max-h-full object-contain"
+              />
+            )}
+          </div>
+        </div>
+      )}
+
       {/* 2. Comparison Modal */}
       {showCompare && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
@@ -900,7 +973,7 @@ export default function GreeterHubPage() {
 
             <div className="flex flex-col md:flex-row h-[90vh] md:h-auto max-h-[90vh]">
               {/* Media Section */}
-              <div className="w-full md:w-1/2 relative h-[300px] md:h-[600px] bg-gray-50">
+              <div className="w-full md:w-1/2 relative h-[300px] md:h-[600px] bg-gray-50 cursor-zoom-in" onClick={() => setShowFullscreenGallery(true)}>
                 {showPreview.gallery && showPreview.gallery.length > 0 ? (
                   <div className="w-full h-full relative group">
                     <img 
@@ -913,13 +986,19 @@ export default function GreeterHubPage() {
                     {showPreview.gallery.length > 1 && (
                       <>
                         <button 
-                          onClick={() => setActiveGalleryIndex(prev => (prev - 1 + showPreview.gallery!.length) % showPreview.gallery!.length)}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setActiveGalleryIndex(prev => (prev - 1 + showPreview.gallery!.length) % showPreview.gallery!.length);
+                          }}
                           className="absolute left-4 top-1/2 -translate-y-1/2 p-2 bg-white/80 hover:bg-white text-gray-900 rounded-full shadow-lg transition-all"
                         >
                           <ChevronLeft size={24} />
                         </button>
                         <button 
-                          onClick={() => setActiveGalleryIndex(prev => (prev + 1) % showPreview.gallery!.length)}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setActiveGalleryIndex(prev => (prev + 1) % showPreview.gallery!.length);
+                          }}
                           className="absolute right-4 top-1/2 -translate-y-1/2 p-2 bg-white/80 hover:bg-white text-gray-900 rounded-full shadow-lg transition-all"
                         >
                           <ChevronRight size={24} />
@@ -930,7 +1009,10 @@ export default function GreeterHubPage() {
                           {showPreview.gallery.map((_, idx) => (
                             <button
                               key={idx}
-                              onClick={() => setActiveGalleryIndex(idx)}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setActiveGalleryIndex(idx);
+                              }}
                               className={`w-2 h-2 rounded-full transition-all ${activeGalleryIndex === idx ? 'bg-white w-5' : 'bg-white/40'}`}
                             />
                           ))}
@@ -943,6 +1025,14 @@ export default function GreeterHubPage() {
                 ) : (
                   <img src={showPreview.url} alt={showPreview.name} className="w-full h-full object-cover" />
                 )}
+                
+                {/* Hint Text */}
+                <div className="absolute top-6 left-6 pointer-events-none">
+                   <div className="px-3 py-1.5 bg-black/40 backdrop-blur-md rounded-lg text-[10px] font-bold text-white uppercase tracking-widest border border-white/10 flex items-center gap-2">
+                      <Maximize2 size={12} />
+                      Klik untuk Fullscreen
+                   </div>
+                </div>
               </div>
 
               {/* Info Section (Light Mode) */}
