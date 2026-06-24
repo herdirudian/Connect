@@ -84,7 +84,8 @@ export default function GreeterHubPage() {
     benefits?: string,
     price?: number,
     originalPrice?: number,
-    tags?: string
+    tags?: string,
+    hideAction?: boolean
   } | null>(null);
   const [activeGalleryIndex, setActiveGalleryIndex] = useState(0);
   const [showFullscreenGallery, setShowFullscreenGallery] = useState(false);
@@ -401,7 +402,8 @@ export default function GreeterHubPage() {
                       type: 'image',
                       url: promo.imageUrl,
                       name: promo.title,
-                      description: promo.description || undefined
+                      description: promo.description || undefined,
+                      hideAction: true
                     })}
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent flex flex-col justify-end p-8 md:p-12 text-white pointer-events-none">
@@ -456,7 +458,8 @@ export default function GreeterHubPage() {
                     type: 'image',
                     url: attr.imageUrl || '/placeholder.jpg',
                     name: attr.name,
-                    description: attr.description
+                    description: attr.description,
+                    hideAction: true
                   })}
                 >
                   <img src={attr.imageUrl || '/placeholder.jpg'} alt={attr.name} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
@@ -1107,17 +1110,19 @@ export default function GreeterHubPage() {
                 </div>
                 
                 {/* Footer Action */}
-                <div className="mt-12 pt-6 border-t border-gray-100">
-                  <Button 
-                    onClick={() => {
-                      setShowQR({ url: `https://family.thelodgegroup.id/booking/tickets`, name: showPreview.name });
-                      setShowPreview(null);
-                    }}
-                    className="w-full bg-brand hover:bg-brand/90 text-white rounded-2xl h-14 font-black uppercase tracking-widest shadow-xl shadow-brand/20"
-                  >
-                    PESAN SEKARANG
-                  </Button>
-                </div>
+                {!showPreview.hideAction && (
+                  <div className="mt-12 pt-6 border-t border-gray-100">
+                    <Button 
+                      onClick={() => {
+                        setShowQR({ url: `https://family.thelodgegroup.id/booking/tickets`, name: showPreview.name });
+                        setShowPreview(null);
+                      }}
+                      className="w-full bg-brand hover:bg-brand/90 text-white rounded-2xl h-14 font-black uppercase tracking-widest shadow-xl shadow-brand/20"
+                    >
+                      PESAN SEKARANG
+                    </Button>
+                  </div>
+                )}
               </div>
             </div>
           </div>
