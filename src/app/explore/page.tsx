@@ -579,7 +579,21 @@ export default function GreeterHubPage() {
                       className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
                     />
                   ) : (
-                    <img src={attr.imageUrl || '/placeholder.jpg'} alt={attr.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" />
+                    <img 
+                      src={
+                        attr.imageUrl || 
+                        (() => {
+                          try {
+                            const gallery = attr.images ? JSON.parse(attr.images) : [];
+                            return Array.isArray(gallery) && gallery.length > 0 ? gallery[0] : '/placeholder.jpg';
+                          } catch (e) {
+                            return '/placeholder.jpg';
+                          }
+                        })()
+                      } 
+                      alt={attr.name} 
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" 
+                    />
                   )}
                   
                   {/* Status Overlay */}
@@ -612,6 +626,32 @@ export default function GreeterHubPage() {
                   <p className="text-[10px] md:text-xs text-gray-500 mt-1 line-clamp-2 leading-snug">
                     {attr.description}
                   </p>
+                  <Button 
+                    size="sm" 
+                    variant="outline" 
+                    className="w-full mt-3 h-8 text-[10px] font-bold border-brand/20 text-brand hover:bg-brand hover:text-white rounded-xl transition-all"
+                    onClick={() => {
+                      let galleryImages: string[] = [];
+                      try {
+                        galleryImages = attr.images ? JSON.parse(attr.images) : [];
+                        if (typeof galleryImages === 'string') {
+                          galleryImages = (galleryImages as string).split(',').map(s => s.trim());
+                        }
+                      } catch (e) {
+                        galleryImages = attr.images ? attr.images.split(',').map(s => s.trim()) : [];
+                      }
+
+                      setShowPreview({ 
+                        type: attr.videoUrl ? 'video' : 'image', 
+                        url: attr.videoUrl || attr.imageUrl || (galleryImages.length > 0 ? galleryImages[0] : '/placeholder.jpg'),
+                        name: attr.name,
+                        gallery: galleryImages.length > 0 ? galleryImages : undefined
+                      });
+                      setActiveGalleryIndex(0);
+                    }}
+                  >
+                    DETAIL INFO
+                  </Button>
                 </div>
               </div>
             ))}
