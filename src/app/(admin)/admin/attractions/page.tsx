@@ -4,7 +4,21 @@ import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Plus, Trash2, Edit2, Ticket, CheckCircle, XCircle, Loader2 } from 'lucide-react';
+import { 
+  Plus, 
+  Trash2, 
+  Edit2, 
+  Ticket, 
+  CheckCircle, 
+  XCircle, 
+  Loader2, 
+  LayoutDashboard, 
+  Zap, 
+  Tent, 
+  Utensils, 
+  Map as MapIcon, 
+  Heart 
+} from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import AdminPriceScheduleDialog from '@/components/admin/AdminPriceScheduleDialog';
 
@@ -51,6 +65,17 @@ export default function AdminAttractionsPage() {
   });
   const [uploading, setUploading] = useState(false);
   const [pricingFor, setPricingFor] = useState<{ id: string; name: string } | null>(null);
+  const [activeCategoryFilter, setActiveCategoryFilter] = useState('ALL');
+
+  const categories = [
+    { id: 'ALL', label: 'Semua', icon: LayoutDashboard },
+    { id: 'TICKET', label: 'Tiket Masuk', icon: Ticket },
+    { id: 'RIDE', label: 'Wahana', icon: Zap },
+    { id: 'STAY', label: 'Penginapan', icon: Tent },
+    { id: 'FOOD', label: 'Cafe & Resto', icon: Utensils },
+    { id: 'TREKKING', label: 'Trekking', icon: MapIcon },
+    { id: 'PACKAGE', label: 'Paket Hemat', icon: Heart },
+  ];
 
   useEffect(() => {
     fetchAttractions();
@@ -198,6 +223,10 @@ export default function AdminAttractionsPage() {
     }
   }
 
+  const filteredAttractions = attractions.filter(item => 
+    activeCategoryFilter === 'ALL' || item.category === activeCategoryFilter
+  );
+
   return (
     <div className="space-y-8">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
@@ -217,6 +246,30 @@ export default function AdminAttractionsPage() {
         >
           {isAdding ? <><XCircle size={16} className="mr-2" /> Cancel</> : <><Plus size={16} className="mr-2" /> Add New</>}
         </Button>
+      </div>
+
+      {/* Category Tabs */}
+      <div className="flex overflow-x-auto pb-2 gap-2 no-scrollbar border-b border-gray-100">
+        {categories.map((cat) => (
+          <button
+            key={cat.id}
+            onClick={() => setActiveCategoryFilter(cat.id)}
+            className={`flex items-center gap-2 px-6 py-3 rounded-t-xl font-bold whitespace-nowrap transition-all border-b-2 ${
+              activeCategoryFilter === cat.id 
+                ? 'bg-brand/5 border-brand text-brand' 
+                : 'bg-transparent border-transparent text-gray-400 hover:text-gray-600 hover:bg-gray-50'
+            }`}
+          >
+            <cat.icon size={16} />
+            <span className="text-sm">{cat.label}</span>
+            <Badge variant="secondary" className="ml-1 h-5 min-w-[20px] px-1 bg-gray-100 text-[10px]">
+              {cat.id === 'ALL' 
+                ? attractions.length 
+                : attractions.filter(a => a.category === cat.id).length
+              }
+            </Badge>
+          </button>
+        ))}
       </div>
 
       {isAdding && (
@@ -401,7 +454,7 @@ export default function AdminAttractionsPage() {
       )}
 
       <div className="grid gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
-        {attractions.map((item) => (
+        {filteredAttractions.map((item) => (
           <Card key={item.id} className={`border-gray-200 shadow-sm hover:shadow-md transition-shadow ${!item.active ? 'opacity-60 bg-gray-50' : 'bg-white'}`}>
             <CardContent className="p-6">
               <div className="flex justify-between items-start mb-4">
@@ -477,9 +530,9 @@ export default function AdminAttractionsPage() {
             </CardContent>
           </Card>
         ))}
-        {attractions.length === 0 && !loading && (
+        {filteredAttractions.length === 0 && !loading && (
             <div className="col-span-full text-center py-12 text-gray-500">
-                No attractions found. Click "Add New" to create one.
+                No products found in this category.
             </div>
         )}
       </div>
