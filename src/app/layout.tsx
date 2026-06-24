@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import localFont from "next/font/local";
 import "./globals.css";
 
@@ -56,6 +56,20 @@ const afNeueBerlin = localFont({
 export const metadata: Metadata = {
   title: "The Lodge Connect",
   description: "Member Dashboard",
+  manifest: "/manifest.json",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "default",
+    title: "TLM Explore",
+  },
+};
+
+export const viewport: Viewport = {
+  themeColor: "#006400",
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
 };
 
 import { Toaster } from "@/components/ui/toaster";

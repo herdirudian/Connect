@@ -1,0 +1,25 @@
+{
+  "name": "The Lodge Maribaya - Explore Hub",
+  "short_name": "TLM Explore",
+  "description": "Integrated digital platform for Greeter and Visitors at The Lodge Maribaya",
+  "start_url": "/explore",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#006400",
+  "icons": [
+    {
+      "src": "/icon.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icon.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "orientation": "portrait",
+  "scope": "/"
+}

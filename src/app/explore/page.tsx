@@ -86,6 +86,7 @@ export default function GreeterHubPage() {
   const [showQR, setShowQR] = useState<{ url: string; name: string } | null>(null);
   const [showCompare, setShowCompare] = useState(false);
   const [qrImageData, setQRImageData] = useState<string>('');
+  const [isOffline, setIsOffline] = useState(false);
 
   const mapRef = useRef<HTMLDivElement>(null);
 
@@ -106,6 +107,31 @@ export default function GreeterHubPage() {
   }, [showQR]);
 
   useEffect(() => {
+    const handleOnline = () => setIsOffline(false);
+    const handleOffline = () => setIsOffline(true);
+
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+    
+    // Set initial state
+    setIsOffline(!navigator.onLine);
+
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
+  }, []);
+
+  useEffect(() => {
+    // Try to load from cache first
+    const cachedPromo = localStorage.getItem('tlm_explore_promo');
+    const cachedAttr = localStorage.getItem('tlm_explore_attr');
+    const cachedSettings = localStorage.getItem('tlm_explore_settings');
+
+    if (cachedPromo) setPromotions(JSON.parse(cachedPromo));
+    if (cachedAttr) setAttractions(JSON.parse(cachedAttr));
+    if (cachedSettings) setExploreSettings(JSON.parse(cachedSettings));
+
     Promise.all([
       fetch('/api/promotions').then(res => res.json()),
       fetch('/api/attractions').then(res => res.json()),
@@ -115,6 +141,14 @@ export default function GreeterHubPage() {
       setAttractions(attrData);
       setExploreSettings(settingsData);
       setLoading(false);
+
+      // Save to cache for offline use
+      localStorage.setItem('tlm_explore_promo', JSON.stringify(promoData));
+      localStorage.setItem('tlm_explore_attr', JSON.stringify(attrData));
+      localStorage.setItem('tlm_explore_settings', JSON.stringify(settingsData));
+    }).catch(err => {
+      console.error('Failed to fetch data, using cache if available:', err);
+      setLoading(false); // Stop loading even if it fails, so we can show cached data
     });
   }, []);
 
@@ -235,6 +269,14 @@ export default function GreeterHubPage() {
             </div>
           </div>
           <div className="hidden md:flex items-center gap-6">
+            {isOffline && (
+              <Badge className="bg-gray-500 animate-pulse text-white border-none px-3 py-1">
+                <div className="flex items-center gap-1.5">
+                  <div className="w-1.5 h-1.5 rounded-full bg-white"></div>
+                  OFFLINE MODE
+                </div>
+              </Badge>
+            )}
             <div className={`flex items-center gap-2 px-4 py-1.5 rounded-full border ${
               exploreSettings?.operationalStatus === 'WEATHER_DELAY' 
                 ? 'bg-orange-50 border-orange-100 text-orange-700' 
