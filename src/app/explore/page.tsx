@@ -41,6 +41,7 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import QRCode from 'qrcode';
+import { parseVideoUrl } from '@/lib/video-utils';
 
 interface Promotion {
   id: string;
@@ -634,7 +635,7 @@ export default function GreeterHubPage() {
                     setActiveGalleryIndex(0);
                   }}
                 >
-                  {attr.videoUrl ? (
+                  {attr.videoUrl && parseVideoUrl(attr.videoUrl).type === 'direct' ? (
                     <video 
                       src={attr.videoUrl}
                       autoPlay 
@@ -676,7 +677,8 @@ export default function GreeterHubPage() {
                   {/* Video Indicator */}
                   {attr.videoUrl && (
                     <div className="absolute bottom-4 left-4 bg-black/40 backdrop-blur-sm text-white text-[10px] px-2 py-1 rounded flex items-center gap-1">
-                      <Play size={10} fill="white" /> LIVE ACTION
+                      <Play size={10} fill="white" /> 
+                      {parseVideoUrl(attr.videoUrl).type === 'direct' ? 'LIVE ACTION' : parseVideoUrl(attr.videoUrl).type.toUpperCase()}
                     </div>
                   )}
                 </div>
@@ -1107,7 +1109,24 @@ export default function GreeterHubPage() {
                     )}
                   </div>
                 ) : showPreview.type === 'video' ? (
-                  <video src={showPreview.url} autoPlay loop controls className="w-full h-full object-cover" />
+                  <div className="w-full h-full bg-black flex items-center justify-center">
+                    {(() => {
+                      const videoInfo = parseVideoUrl(showPreview.url);
+                      if (videoInfo.type === 'direct') {
+                        return <video src={showPreview.url} autoPlay loop controls className="w-full h-full object-contain" />;
+                      } else if (videoInfo.type !== 'unknown') {
+                        return (
+                          <iframe 
+                            src={videoInfo.embedUrl} 
+                            className="w-full h-full border-none" 
+                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" 
+                            allowFullScreen
+                          ></iframe>
+                        );
+                      }
+                      return <video src={showPreview.url} autoPlay loop controls className="w-full h-full object-contain" />;
+                    })()}
+                  </div>
                 ) : (
                   <img src={showPreview.url} alt={showPreview.name} className="w-full h-full object-cover" />
                 )}

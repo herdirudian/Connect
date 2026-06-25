@@ -152,7 +152,7 @@ export default function AdminAttractionsPage() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
-  async function handleFileUpload(e: React.ChangeEvent<HTMLInputElement>, field: 'imageUrl' | 'gallery') {
+  async function handleFileUpload(e: React.ChangeEvent<HTMLInputElement>, field: 'imageUrl' | 'gallery' | 'videoUrl') {
     if (!e.target.files || e.target.files.length === 0) return;
     
     const files = Array.from(e.target.files);
@@ -181,6 +181,8 @@ export default function AdminAttractionsPage() {
         
         if (field === 'imageUrl') {
             setFormData(prev => ({ ...prev, imageUrl: uploadedUrls[0] }));
+        } else if (field === 'videoUrl') {
+            setFormData(prev => ({ ...prev, videoUrl: uploadedUrls[0] }));
         } else {
             // Append to existing gallery
             let currentGallery: string[] = [];
@@ -447,13 +449,32 @@ export default function AdminAttractionsPage() {
                       )}
                     </div>
                     <div className="space-y-2">
-                      <label className="text-sm font-medium">Short Video (URL)</label>
-                      <Input 
-                        value={formData.videoUrl}
-                        onChange={(e) => setFormData({...formData, videoUrl: e.target.value})}
-                        placeholder="https://.../video.mp4"
-                      />
-                      <p className="text-[10px] text-gray-500">Video 3-5s for Reels style loop</p>
+                      <label className="text-sm font-medium">Video (Direct File or Social Media Link)</label>
+                      <div className="flex gap-2">
+                        <Input 
+                          value={formData.videoUrl}
+                          onChange={(e) => setFormData({...formData, videoUrl: e.target.value})}
+                          placeholder="Paste TikTok, YouTube, IG, or direct link"
+                        />
+                        <div className="relative">
+                          <Input 
+                              type="file" 
+                              accept="video/*"
+                              onChange={(e) => handleFileUpload(e, 'videoUrl')}
+                              disabled={uploading}
+                              className="hidden"
+                              id="video-upload"
+                          />
+                          <label 
+                            htmlFor="video-upload" 
+                            className={`flex items-center justify-center w-10 h-10 rounded-md border border-input bg-background cursor-pointer transition-all hover:bg-gray-50 ${uploading ? 'opacity-50' : ''}`}
+                            title="Upload Video File"
+                          >
+                            {uploading ? <Loader2 size={16} className="animate-spin" /> : <Upload size={16} />}
+                          </label>
+                        </div>
+                      </div>
+                      <p className="text-[10px] text-gray-500">Mendukung link TikTok, YouTube, Instagram, atau upload video manual.</p>
                     </div>
                   </div>
                 </div>
