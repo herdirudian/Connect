@@ -97,6 +97,9 @@ export default function GreeterHubPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [showQR, setShowQR] = useState<{ url: string; name: string } | null>(null);
   const [showCompare, setShowCompare] = useState(false);
+  const [showReviewModal, setShowReviewModal] = useState(false);
+  const [googleQR, setGoogleQR] = useState<string>('');
+  const [rangerQR, setRangerQR] = useState<string>('');
   const [qrImageData, setQRImageData] = useState<string>('');
   const [isOffline, setIsOffline] = useState(false);
 
@@ -117,6 +120,15 @@ export default function GreeterHubPage() {
       QRCode.toDataURL(showQR.url, { width: 300, margin: 2 }).then(setQRImageData);
     }
   }, [showQR]);
+
+  useEffect(() => {
+    // Pre-generate Review QRs
+    const googleUrl = 'https://search.google.com/local/writereview?placeid=ChIJI9FcZuXnaC4Rypqqskb250I';
+    const rangerUrl = 'https://ranger.thelodgegroup.id/public-survey/wisata';
+    
+    QRCode.toDataURL(googleUrl, { width: 300, margin: 2 }).then(setGoogleQR);
+    QRCode.toDataURL(rangerUrl, { width: 300, margin: 2 }).then(setRangerQR);
+  }, []);
 
   useEffect(() => {
     const handleOnline = () => setIsOffline(false);
@@ -323,6 +335,14 @@ export default function GreeterHubPage() {
         
         {/* Floating Quick Actions for Greeter */}
         <div className="fixed bottom-8 right-8 z-[90] flex flex-col gap-4">
+          <Button 
+            onClick={() => setShowReviewModal(true)}
+            className="w-14 h-14 rounded-full bg-yellow-500 shadow-2xl hover:scale-110 transition-transform p-0"
+            title="Kirim Review"
+          >
+            <Star className="text-white fill-white" size={24} />
+          </Button>
+
           <Button 
             onClick={() => setShowCompare(true)}
             className="w-14 h-14 rounded-full bg-brand shadow-2xl hover:scale-110 transition-transform p-0"
@@ -781,6 +801,69 @@ export default function GreeterHubPage() {
 
       {/* MODALS */}
       
+      {/* 5. Review & Feedback Modal */}
+      {showReviewModal && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setShowReviewModal(false)} />
+          <Card className="relative w-full max-w-2xl bg-white rounded-[32px] overflow-hidden border-none shadow-2xl animate-in zoom-in-95 duration-200">
+            <button onClick={() => setShowReviewModal(false)} className="absolute top-6 right-6 p-2 bg-gray-100 rounded-full text-gray-500 hover:bg-gray-200 transition-colors z-10"><X size={20} /></button>
+            <CardContent className="p-8">
+              <div className="text-center mb-8">
+                <div className="w-16 h-16 bg-yellow-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                  <Star className="text-yellow-600 fill-yellow-600" size={32} />
+                </div>
+                <h3 className="text-2xl font-black uppercase tracking-tight text-brand">Review & Feedback</h3>
+                <p className="text-gray-500 text-sm mt-1">Ajak tamu untuk memberikan ulasan terbaik mereka</p>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {/* Google Review */}
+                <div className="flex flex-col items-center p-6 bg-gray-50 rounded-[24px] border-2 border-transparent hover:border-brand/20 transition-all group">
+                  <div className="flex items-center gap-2 mb-4">
+                    <img src="https://www.google.com/images/branding/googlelogo/2x/googlelogo_color_92x30dp.png" alt="Google" className="h-5" />
+                    <span className="font-bold text-gray-700">Review</span>
+                  </div>
+                  <div className="bg-white p-3 rounded-2xl shadow-sm mb-4 group-hover:scale-105 transition-transform">
+                    {googleQR ? (
+                      <img src={googleQR} alt="Google Review QR" className="w-32 h-32" />
+                    ) : (
+                      <div className="w-32 h-32 flex items-center justify-center"><Loader2 className="animate-spin text-brand" /></div>
+                    )}
+                  </div>
+                  <p className="text-[10px] text-center text-gray-400 font-medium mb-4 uppercase tracking-wider">Scan untuk ulasan Google</p>
+                  <Link href="https://search.google.com/local/writereview?placeid=ChIJI9FcZuXnaC4Rypqqskb250I" target="_blank" className="w-full">
+                    <Button variant="outline" className="w-full rounded-xl border-gray-200 text-gray-700 font-bold hover:bg-white">Buka Link</Button>
+                  </Link>
+                </div>
+
+                {/* Ranger Review */}
+                <div className="flex flex-col items-center p-6 bg-brand/5 rounded-[24px] border-2 border-transparent hover:border-brand/20 transition-all group">
+                  <div className="flex items-center gap-2 mb-4">
+                    <div className="bg-brand text-white px-2 py-0.5 rounded text-[10px] font-black italic">RANGER</div>
+                    <span className="font-bold text-brand">Internal Survey</span>
+                  </div>
+                  <div className="bg-white p-3 rounded-2xl shadow-sm mb-4 group-hover:scale-105 transition-transform">
+                    {rangerQR ? (
+                      <img src={rangerQR} alt="Ranger Review QR" className="w-32 h-32" />
+                    ) : (
+                      <div className="w-32 h-32 flex items-center justify-center"><Loader2 className="animate-spin text-brand" /></div>
+                    )}
+                  </div>
+                  <p className="text-[10px] text-center text-brand/60 font-medium mb-4 uppercase tracking-wider">Scan untuk survey internal</p>
+                  <Link href="https://ranger.thelodgegroup.id/public-survey/wisata" target="_blank" className="w-full">
+                    <Button className="w-full rounded-xl bg-brand hover:bg-brand/90 text-white font-bold border-none">Buka Link</Button>
+                  </Link>
+                </div>
+              </div>
+
+              <div className="mt-8 pt-6 border-t border-gray-100 text-center">
+                <p className="text-[11px] text-gray-400 font-bold uppercase tracking-widest">The Lodge Maribaya Experience</p>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
       {/* 1. QR Code Modal */}
       {showQR && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
