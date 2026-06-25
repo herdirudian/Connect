@@ -1115,14 +1115,37 @@ export default function GreeterHubPage() {
                       if (videoInfo.type === 'direct') {
                         return <video src={showPreview.url} autoPlay loop controls className="w-full h-full object-contain" />;
                       } else if (videoInfo.type !== 'unknown') {
-                        return (
-                          <iframe 
-                            src={videoInfo.embedUrl} 
-                            className="w-full h-full border-none" 
-                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" 
-                            allowFullScreen
-                          ></iframe>
-                        );
+                        // Check if we have a valid embed URL (different from original for social media)
+                        const canEmbed = videoInfo.embedUrl && videoInfo.embedUrl !== videoInfo.originalUrl;
+                        
+                        if (canEmbed) {
+                          return (
+                            <iframe 
+                              src={videoInfo.embedUrl} 
+                              className="w-full h-full border-none" 
+                              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" 
+                              allowFullScreen
+                            ></iframe>
+                          );
+                        } else {
+                          // Fallback for short links that can't be embedded easily
+                          return (
+                            <div className="flex flex-col items-center justify-center p-8 text-center space-y-4">
+                              <div className="w-16 h-16 bg-white/10 rounded-full flex items-center justify-center">
+                                <Play size={32} className="text-white" />
+                              </div>
+                              <div>
+                                <h4 className="text-white font-bold uppercase tracking-wider">{videoInfo.type} Video</h4>
+                                <p className="text-white/60 text-xs mt-1">Link ini adalah link pendek (mobile share). Klik tombol di bawah untuk melihat video.</p>
+                              </div>
+                              <Link href={videoInfo.originalUrl} target="_blank">
+                                <Button className="bg-brand hover:bg-brand/90 text-white rounded-full px-8">
+                                  Lihat Video di {videoInfo.type.charAt(0).toUpperCase() + videoInfo.type.slice(1)}
+                                </Button>
+                              </Link>
+                            </div>
+                          );
+                        }
                       }
                       return <video src={showPreview.url} autoPlay loop controls className="w-full h-full object-contain" />;
                     })()}
