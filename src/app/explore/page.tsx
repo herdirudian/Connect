@@ -90,6 +90,7 @@ export default function GreeterHubPage() {
   } | null>(null);
   const [activeGalleryIndex, setActiveGalleryIndex] = useState(0);
   const [showFullscreenGallery, setShowFullscreenGallery] = useState(false);
+  const [previewTab, setPreviewTab] = useState<'video' | 'gallery'>('video');
   const [loading, setLoading] = useState(true);
   const [currentPromo, setCurrentPromo] = useState(0);
   const [activeFilter, setActiveFilter] = useState('ALL');
@@ -526,6 +527,7 @@ export default function GreeterHubPage() {
                           tags: attr.tags || undefined
                         });
                         setActiveGalleryIndex(0);
+                        setPreviewTab(attr.videoUrl ? 'video' : 'gallery');
                       }}
                     >
                       DETAIL
@@ -633,6 +635,7 @@ export default function GreeterHubPage() {
                       tags: attr.tags || undefined
                     });
                     setActiveGalleryIndex(0);
+                    setPreviewTab(attr.videoUrl ? 'video' : 'gallery');
                   }}
                 >
                   {attr.videoUrl && parseVideoUrl(attr.videoUrl).type === 'direct' ? (
@@ -719,11 +722,12 @@ export default function GreeterHubPage() {
                         originalPrice: attr.originalPrice,
                         tags: attr.tags || undefined
                       });
-                      setActiveGalleryIndex(0);
-                    }}
-                  >
-                    DETAIL INFO
-                  </Button>
+                        setActiveGalleryIndex(0);
+                        setPreviewTab(attr.videoUrl ? 'video' : 'gallery');
+                      }}
+                    >
+                      DETAIL INFO
+                    </Button>
                 </div>
               </div>
             ))}
@@ -1061,9 +1065,61 @@ export default function GreeterHubPage() {
 
             <div className="flex flex-col md:flex-row h-[90vh] md:h-auto max-h-[90vh]">
               {/* Media Section */}
-              <div className="w-full md:w-1/2 relative h-[300px] md:h-[600px] bg-gray-50 cursor-zoom-in" onClick={() => setShowFullscreenGallery(true)}>
-                {showPreview.gallery && showPreview.gallery.length > 0 ? (
-                  <div className="w-full h-full relative group">
+              <div className="w-full md:w-1/2 relative h-[300px] md:h-[600px] bg-gray-50">
+                {showPreview.type === 'video' && previewTab === 'video' ? (
+                  <div className="w-full h-full bg-black flex items-center justify-center relative">
+                    {(() => {
+                      const videoInfo = parseVideoUrl(showPreview.url);
+                      if (videoInfo.type === 'direct') {
+                        return <video src={showPreview.url} autoPlay loop controls className="w-full h-full object-contain" />;
+                      } else if (videoInfo.type !== 'unknown') {
+                        // Check if we have a valid embed URL (different from original for social media)
+                        const canEmbed = videoInfo.embedUrl && videoInfo.embedUrl !== videoInfo.originalUrl;
+                        
+                        if (canEmbed) {
+                          return (
+                            <iframe 
+                              src={videoInfo.embedUrl} 
+                              className="w-full h-full border-none" 
+                              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" 
+                              allowFullScreen
+                            ></iframe>
+                          );
+                        } else {
+                          // Fallback for short links that can't be embedded easily
+                          return (
+                            <div className="flex flex-col items-center justify-center p-8 text-center space-y-4">
+                              <div className="w-16 h-16 bg-white/10 rounded-full flex items-center justify-center">
+                                <Play size={32} className="text-white" />
+                              </div>
+                              <div>
+                                <h4 className="text-white font-bold uppercase tracking-wider">{videoInfo.type} Video</h4>
+                                <p className="text-white/60 text-xs mt-1">Link ini adalah link pendek (mobile share). Klik tombol di bawah untuk melihat video.</p>
+                              </div>
+                              <Link href={videoInfo.originalUrl} target="_blank">
+                                <Button className="bg-brand hover:bg-brand/90 text-white rounded-full px-8">
+                                  Lihat Video di {videoInfo.type.charAt(0).toUpperCase() + videoInfo.type.slice(1)}
+                                </Button>
+                              </Link>
+                            </div>
+                          );
+                        }
+                      }
+                      return <video src={showPreview.url} autoPlay loop controls className="w-full h-full object-contain" />;
+                    })()}
+
+                    {/* Switch to Gallery Button */}
+                    {showPreview.gallery && showPreview.gallery.length > 0 && (
+                      <button 
+                        onClick={() => setPreviewTab('gallery')}
+                        className="absolute bottom-6 right-6 px-4 py-2 bg-white/20 backdrop-blur-md border border-white/30 rounded-full text-white text-[10px] font-bold uppercase tracking-widest hover:bg-white/40 transition-all flex items-center gap-2"
+                      >
+                        <ImageIcon size={14} /> Lihat Galeri Foto
+                      </button>
+                    )}
+                  </div>
+                ) : showPreview.gallery && showPreview.gallery.length > 0 ? (
+                  <div className="w-full h-full relative group cursor-zoom-in" onClick={() => setShowFullscreenGallery(true)}>
                     <img 
                       src={showPreview.gallery[activeGalleryIndex]} 
                       alt={`${showPreview.name} ${activeGalleryIndex + 1}`}
@@ -1107,60 +1163,43 @@ export default function GreeterHubPage() {
                         </div>
                       </>
                     )}
-                  </div>
-                ) : showPreview.type === 'video' ? (
-                  <div className="w-full h-full bg-black flex items-center justify-center">
-                    {(() => {
-                      const videoInfo = parseVideoUrl(showPreview.url);
-                      if (videoInfo.type === 'direct') {
-                        return <video src={showPreview.url} autoPlay loop controls className="w-full h-full object-contain" />;
-                      } else if (videoInfo.type !== 'unknown') {
-                        // Check if we have a valid embed URL (different from original for social media)
-                        const canEmbed = videoInfo.embedUrl && videoInfo.embedUrl !== videoInfo.originalUrl;
-                        
-                        if (canEmbed) {
-                          return (
-                            <iframe 
-                              src={videoInfo.embedUrl} 
-                              className="w-full h-full border-none" 
-                              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" 
-                              allowFullScreen
-                            ></iframe>
-                          );
-                        } else {
-                          // Fallback for short links that can't be embedded easily
-                          return (
-                            <div className="flex flex-col items-center justify-center p-8 text-center space-y-4">
-                              <div className="w-16 h-16 bg-white/10 rounded-full flex items-center justify-center">
-                                <Play size={32} className="text-white" />
-                              </div>
-                              <div>
-                                <h4 className="text-white font-bold uppercase tracking-wider">{videoInfo.type} Video</h4>
-                                <p className="text-white/60 text-xs mt-1">Link ini adalah link pendek (mobile share). Klik tombol di bawah untuk melihat video.</p>
-                              </div>
-                              <Link href={videoInfo.originalUrl} target="_blank">
-                                <Button className="bg-brand hover:bg-brand/90 text-white rounded-full px-8">
-                                  Lihat Video di {videoInfo.type.charAt(0).toUpperCase() + videoInfo.type.slice(1)}
-                                </Button>
-                              </Link>
-                            </div>
-                          );
-                        }
-                      }
-                      return <video src={showPreview.url} autoPlay loop controls className="w-full h-full object-contain" />;
-                    })()}
+
+                    {/* Switch to Video Button */}
+                    {showPreview.type === 'video' && (
+                      <button 
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setPreviewTab('video');
+                        }}
+                        className="absolute bottom-6 right-6 px-4 py-2 bg-black/40 backdrop-blur-md border border-white/10 rounded-full text-white text-[10px] font-bold uppercase tracking-widest hover:bg-black/60 transition-all flex items-center gap-2"
+                      >
+                        <Play size={14} /> Lihat Video
+                      </button>
+                    )}
                   </div>
                 ) : (
-                  <img src={showPreview.url} alt={showPreview.name} className="w-full h-full object-cover" />
+                  <div className="w-full h-full relative group">
+                    <img src={showPreview.url} alt={showPreview.name} className="w-full h-full object-cover" />
+                    {showPreview.type === 'video' && (
+                      <button 
+                        onClick={() => setPreviewTab('video')}
+                        className="absolute bottom-6 right-6 px-4 py-2 bg-black/40 backdrop-blur-md border border-white/10 rounded-full text-white text-[10px] font-bold uppercase tracking-widest hover:bg-black/60 transition-all flex items-center gap-2"
+                      >
+                        <Play size={14} /> Lihat Video
+                      </button>
+                    )}
+                  </div>
                 )}
                 
                 {/* Hint Text */}
-                <div className="absolute top-6 left-6 pointer-events-none">
-                   <div className="px-3 py-1.5 bg-black/40 backdrop-blur-md rounded-lg text-[10px] font-bold text-white uppercase tracking-widest border border-white/10 flex items-center gap-2">
-                      <Maximize2 size={12} />
-                      Klik untuk Fullscreen
-                   </div>
-                </div>
+                {previewTab === 'gallery' && (
+                  <div className="absolute top-6 left-6 pointer-events-none">
+                    <div className="px-3 py-1.5 bg-black/40 backdrop-blur-md rounded-lg text-[10px] font-bold text-white uppercase tracking-widest border border-white/10 flex items-center gap-2">
+                        <Maximize2 size={12} />
+                        Klik untuk Fullscreen
+                    </div>
+                  </div>
+                )}
               </div>
 
               {/* Info Section (Light Mode) */}
