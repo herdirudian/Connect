@@ -37,7 +37,8 @@ import {
   Baby,
   Calculator,
   Plus,
-  Minus
+  Minus,
+  Image as ImageIcon
 } from 'lucide-react';
 import Link from 'next/link';
 import QRCode from 'qrcode';
