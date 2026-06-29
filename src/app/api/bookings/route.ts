@@ -114,6 +114,8 @@ export async function POST(req: Request) {
 
     if (promoCode) {
       const normalizedCode = String(promoCode).trim().toUpperCase();
+      
+      // 1. Check in regular PromoCode
       const promo = await prisma.promoCode.findUnique({
         where: { code: normalizedCode },
       });
@@ -148,8 +150,46 @@ export async function POST(req: Request) {
               discountType: promo.discountType,
               value: promo.value,
             };
-          } else {
-            discount = 0;
+          }
+        }
+      } 
+      // 2. If not found in PromoCode, check in VoucherClaim
+      else if (!promo) {
+        const voucherClaim = await prisma.voucherClaim.findUnique({
+          where: { voucherCode: normalizedCode },
+        });
+
+        if (voucherClaim && !voucherClaim.isUsed) {
+          const expiryDate = new Date('2026-07-31T23:59:59');
+          if (new Date() <= expiryDate) {
+            // Validate items in cart for 20% discount
+            let totalVoucherDiscount = 0;
+            
+            for (const item of effectiveItems) {
+              const attraction = await prisma.attraction.findUnique({
+                where: { id: item.id }
+              });
+
+              if (attraction && attraction.allowVoucherClaim) {
+                // Limit by maxVoucherPax
+                if (item.qty > (attraction.maxVoucherPax || 10)) {
+                  throw new Error(`Maksimal ${attraction.maxVoucherPax || 10} pax untuk tiket ${attraction.name} per voucher`);
+                }
+                const itemTotal = attraction.price * item.qty;
+                totalVoucherDiscount += itemTotal * 0.20;
+              }
+            }
+
+            if (totalVoucherDiscount > 0) {
+              discount = totalVoucherDiscount;
+              appliedPromo = {
+                code: normalizedCode,
+                discount,
+                discountType: 'PERCENTAGE',
+                value: 20,
+                isVoucherClaim: true
+              };
+            }
           }
         }
       }
@@ -227,6 +267,14 @@ export async function POST(req: Request) {
              throw new Error(`Not enough stock for ${accommodation.name} on ${bookingDate.toLocaleDateString()}. Available: ${dailyQuota - usedStock}`);
           }
         }
+      }
+
+      // Mark VoucherClaim as used if applicable
+      if (appliedPromo?.isVoucherClaim) {
+        await tx.voucherClaim.update({
+          where: { voucherCode: appliedPromo.code },
+          data: { isUsed: true }
+        });
       }
 
       // Create Booking

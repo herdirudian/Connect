@@ -48,6 +48,8 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
         tags,
         active,
         displayTarget,
+        allowVoucherClaim: allowVoucherClaim !== undefined ? allowVoucherClaim : undefined,
+        maxVoucherPax: maxVoucherPax !== undefined ? parseInt(maxVoucherPax) : undefined
       },
     });
     return NextResponse.json(updated);

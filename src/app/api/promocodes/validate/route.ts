@@ -21,16 +21,80 @@ export async function POST(req: Request) {
 
     const normalizedCode = code.trim().toUpperCase();
 
-    const promo = await prisma.promoCode.findUnique({
-      where: { code: normalizedCode },
+    // 1. Try to find in regular PromoCode
+    let promo = await prisma.promoCode.findUnique({
+      where: { code: code.toUpperCase() },
     });
 
-    if (!promo || !promo.active) {
-      return NextResponse.json(
-        { valid: false, error: 'Kode promo tidak ditemukan atau tidak aktif' },
-        { status: 404 }
-      );
+    // 2. If not found, try to find in VoucherClaim
+    if (!promo) {
+      const voucherClaim = await prisma.voucherClaim.findUnique({
+        where: { voucherCode: code.toUpperCase() },
+      });
+
+      if (voucherClaim) {
+        if (voucherClaim.isUsed) {
+          return NextResponse.json({ error: 'Voucher sudah pernah digunakan' }, { status: 400 });
+        }
+
+        // Check validity (until 31 July 2026 as per user instruction)
+        const expiryDate = new Date('2026-07-31T23:59:59');
+        if (new Date() > expiryDate) {
+          return NextResponse.json({ error: 'Voucher sudah kedaluwarsa' }, { status: 400 });
+        }
+
+        // Validate items in cart
+        let discountAmount = 0;
+        const validatedItems = [];
+        let totalOriginalPrice = 0;
+
+        for (const item of items) {
+          const attraction = await prisma.attraction.findUnique({
+            where: { id: item.id }
+          });
+
+          if (!attraction || !attraction.allowVoucherClaim) {
+            // Item does not support voucher, skip discount for this item
+            validatedItems.push({ ...item, discount: 0 });
+            totalOriginalPrice += (attraction?.price || 0) * item.qty;
+            continue;
+          }
+
+          if (item.qty > attraction.maxVoucherPax) {
+             return NextResponse.json({ 
+               error: `Maksimal ${attraction.maxVoucherPax} pax untuk tiket ${attraction.name} per voucher` 
+             }, { status: 400 });
+          }
+
+          const itemTotal = attraction.price * item.qty;
+          const itemDiscount = itemTotal * 0.20; // 20% discount
+          
+          discountAmount += itemDiscount;
+          totalOriginalPrice += itemTotal;
+          validatedItems.push({ ...item, discount: itemDiscount });
+        }
+
+        if (discountAmount === 0) {
+          return NextResponse.json({ error: 'Voucher tidak berlaku untuk tiket yang dipilih' }, { status: 400 });
+        }
+
+        return NextResponse.json({
+          valid: true,
+          code: code.toUpperCase(),
+          type: 'PERCENTAGE',
+          value: 20,
+          discount: discountAmount,
+          isVoucherClaim: true // Flag to identify it's from VoucherClaim table
+        });
+      }
     }
+
+    if (!promo || !promo.active) {
+       return NextResponse.json(
+         { valid: false, error: 'Kode promo tidak ditemukan atau tidak aktif' },
+         { status: 404 }
+       );
+     }
 
     const now = new Date();
     if ((promo.validFrom && promo.validFrom > now) || (promo.validUntil && promo.validUntil < now)) {

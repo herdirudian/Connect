@@ -4,24 +4,26 @@ import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Checkbox } from '@/components/ui/checkbox';
 import { 
   Plus, 
+  Pencil, 
   Trash2, 
-  Edit2, 
-  Ticket, 
-  CheckCircle, 
-  XCircle, 
+  Upload, 
   Loader2, 
-  LayoutDashboard, 
-  Zap, 
-  Tent, 
-  Utensils, 
-  Map as MapIcon, 
-  Heart,
-  Upload,
-  ChevronUp,
+  Image as ImageIcon,
+  Play,
+  Star,
+  Check,
+  X,
+  Filter,
+  Search,
   ChevronDown,
-  Image as ImageIcon
+  LayoutGrid,
+  List,
+  MoreVertical,
+  Eye,
+  Maximize2
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import AdminPriceScheduleDialog from '@/components/admin/AdminPriceScheduleDialog';
@@ -43,6 +45,8 @@ interface Attraction {
   tags?: string;
   active: boolean;
   displayTarget: 'BOTH' | 'BOOKING' | 'EXPLORE';
+  allowVoucherClaim: boolean;
+  maxVoucherPax: number;
 }
 
 export default function AdminAttractionsPage() {
@@ -66,6 +70,8 @@ export default function AdminAttractionsPage() {
     tags: '',
     active: true,
     displayTarget: 'BOTH' as 'BOTH' | 'BOOKING' | 'EXPLORE',
+    allowVoucherClaim: false,
+    maxVoucherPax: 10,
   });
   const [uploading, setUploading] = useState(false);
   const [pricingFor, setPricingFor] = useState<{ id: string; name: string } | null>(null);
@@ -113,7 +119,9 @@ export default function AdminAttractionsPage() {
       waitTime: '',
       tags: '',
       active: true,
-      displayTarget: 'BOTH'
+        displayTarget: 'BOTH',
+        allowVoucherClaim: false,
+        maxVoucherPax: 10
     });
     setIsAdding(false);
     setEditingId(null);
@@ -146,6 +154,8 @@ export default function AdminAttractionsPage() {
       tags: item.tags || '',
       active: item.active,
       displayTarget: item.displayTarget || 'BOTH',
+      allowVoucherClaim: item.allowVoucherClaim || false,
+      maxVoucherPax: item.maxVoucherPax || 10
     });
     setEditingId(item.id);
     setIsAdding(true); // Re-use the add form area for editing
@@ -564,16 +574,45 @@ export default function AdminAttractionsPage() {
                   </div>
                 </div>
 
-                <div className="flex items-center space-x-2">
-                    <input 
-                        type="checkbox" 
-                        id="active" 
-                        checked={formData.active} 
-                        onChange={(e) => setFormData({...formData, active: e.target.checked})}
-                        className="h-4 w-4 rounded border-gray-300 text-brand focus:ring-brand"
+                <div className="flex flex-col gap-4 p-4 bg-gray-50 rounded-lg border border-gray-200">
+                   <div className="flex items-center justify-between">
+                     <div className="space-y-0.5">
+                       <label className="text-sm font-bold uppercase tracking-wider text-brand">Voucher Claim</label>
+                       <p className="text-xs text-gray-500">Izinkan tiket ini diklaim menggunakan voucher diskon 20%</p>
+                     </div>
+                     <Checkbox 
+                        checked={formData.allowVoucherClaim}
+                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData({...formData, allowVoucherClaim: e.target.checked})}
+                      />
+                    </div>
+                    
+                    {formData.allowVoucherClaim && (
+                      <div className="space-y-2 animate-in fade-in slide-in-from-top-2 duration-200">
+                        <label className="text-xs font-bold text-gray-600 uppercase">Maksimal Pax per Voucher</label>
+                        <Input 
+                          type="number"
+                          min={1}
+                          max={100}
+                          value={formData.maxVoucherPax}
+                          onChange={(e) => setFormData({...formData, maxVoucherPax: parseInt(e.target.value) || 10})}
+                          placeholder="Contoh: 10"
+                          className="bg-white"
+                        />
+                        <p className="text-[10px] text-brand/60 italic font-medium">* Satu kode voucher dapat memotong hingga {formData.maxVoucherPax} tiket ini.</p>
+                      </div>
+                    )}
+                  </div>
+  
+                  <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg border border-gray-200">
+                    <div className="space-y-0.5">
+                      <label className="text-sm font-bold uppercase tracking-wider text-brand">Active Status</label>
+                      <p className="text-xs text-gray-500">Tampilkan produk ini ke member</p>
+                    </div>
+                    <Checkbox 
+                      checked={formData.active}
+                      onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData({...formData, active: e.target.checked})}
                     />
-                    <label htmlFor="active" className="text-sm font-medium text-gray-700">Active (Visible to members)</label>
-                </div>
+                  </div>
 
                 <div className="space-y-2 md:col-span-2">
                   <label className="text-sm font-medium">Display Visibility (Tampilkan di mana?)</label>
