@@ -32,19 +32,19 @@ export async function POST(req: Request) {
 
     // 3. Prepare Notification Content
     const waMessage = `Halo ${fullName},
-
-Terima kasih telah mengisi form kunjungan The Lodge Maribaya. Berikut adalah E-Voucher Diskon 20% Anda:
-
-KODE: *${voucherCode}*
-
-*Syarat & Ketentuan:*
-- Diskon 20% untuk kunjungan berikutnya.
-- Berlaku untuk Tiket Basic, Regular, & Terusan.
-- Berlaku hingga 31 Juli 2026.
-- Maksimal 10 tiket per transaksi.
-- Gunakan di: family.thelodgegroup.id/booking
-
-Sampai jumpa di The Lodge Maribaya!`;
+ 
+ Terima kasih telah berkunjung ke The Lodge Maribaya. Berikut adalah E-Voucher Diskon 20% Anda:
+ 
+ KODE: *${voucherCode}*
+ 
+ *Syarat & Ketentuan:*
+ - Diskon 20% untuk kunjungan berikutnya.
+ - Berlaku untuk Tiket Basic, Regular, & Terusan.
+ - Berlaku hingga 31 Juli 2026.
+ - Maksimal 10 tiket per transaksi.
+ - Gunakan di: family.thelodgegroup.id/booking atau bisa diklaim pada saat kunjungan langsung di loket tiket masuk.
+ 
+ Sampai jumpa di The Lodge Maribaya!`;
 
     // 4. Send Email & WhatsApp (Async)
     try {

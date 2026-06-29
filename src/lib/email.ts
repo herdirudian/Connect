@@ -539,7 +539,7 @@ export async function sendVoucherClaimEmail(to: string, fullName: string, vouche
             <li>Voucher berlaku hingga <strong>31 Juli 2026</strong>.</li>
             <li>Satu voucher dapat digunakan untuk pembelian maksimal 10 tiket dalam satu transaksi.</li>
             <li>Voucher tidak dapat diuangkan atau ditukar dengan produk lainnya.</li>
-            <li>Gunakan kode ini di halaman: <a href="https://family.thelodgegroup.id/booking">family.thelodgegroup.id/booking</a></li>
+            <li>Gunakan kode ini di: <a href="https://family.thelodgegroup.id/booking">family.thelodgegroup.id/booking</a> atau bisa diklaim pada saat kunjungan langsung di loket tiket masuk.</li>
           </ul>
         </div>
 

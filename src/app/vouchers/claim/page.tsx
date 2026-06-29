@@ -96,6 +96,7 @@ export default function PublicVoucherClaimPage() {
                         'Voucher berlaku hingga 31 Juli 2026.',
                         'Berlaku untuk Tiket Basic, Regular, dan Terusan.',
                         'Satu voucher untuk maksimal 10 tiket.',
+                        'Gunakan di family.thelodgegroup.id/booking atau claim langsung di loket.',
                         'Wajib ditunjukkan saat pembelian tiket.',
                         'Tidak dapat digabungkan dengan promo lain.'
                       ].map((tc, idx) => (
