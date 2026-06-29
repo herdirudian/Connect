@@ -60,6 +60,12 @@ export async function POST(req: Request) {
             continue;
           }
 
+          // Check dynamic expiry from attraction settings
+          const itemExpiry = attraction.voucherExpiry ? new Date(attraction.voucherExpiry) : new Date('2026-07-31T23:59:59');
+          if (new Date() > itemExpiry) {
+            return NextResponse.json({ error: `Voucher untuk ${attraction.name} sudah kedaluwarsa` }, { status: 400 });
+          }
+
           if (item.qty > attraction.maxVoucherPax) {
              return NextResponse.json({ 
                error: `Maksimal ${attraction.maxVoucherPax} pax untuk tiket ${attraction.name} per voucher` 

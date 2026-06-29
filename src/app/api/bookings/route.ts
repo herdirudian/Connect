@@ -171,6 +171,12 @@ export async function POST(req: Request) {
               });
 
               if (attraction && attraction.allowVoucherClaim) {
+                // Check dynamic expiry
+                const itemExpiry = attraction.voucherExpiry ? new Date(attraction.voucherExpiry) : new Date('2026-07-31T23:59:59');
+                if (new Date() > itemExpiry) {
+                  throw new Error(`Voucher untuk ${attraction.name} sudah kedaluwarsa`);
+                }
+
                 // Limit by maxVoucherPax
                 if (item.qty > (attraction.maxVoucherPax || 10)) {
                   throw new Error(`Maksimal ${attraction.maxVoucherPax || 10} pax untuk tiket ${attraction.name} per voucher`);

@@ -49,7 +49,8 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
         active,
         displayTarget,
         allowVoucherClaim: allowVoucherClaim !== undefined ? allowVoucherClaim : undefined,
-        maxVoucherPax: maxVoucherPax !== undefined ? parseInt(maxVoucherPax) : undefined
+        maxVoucherPax: maxVoucherPax !== undefined ? parseInt(maxVoucherPax) : undefined,
+        voucherExpiry: voucherExpiry !== undefined ? (voucherExpiry ? new Date(voucherExpiry) : null) : undefined
       },
     });
     return NextResponse.json(updated);

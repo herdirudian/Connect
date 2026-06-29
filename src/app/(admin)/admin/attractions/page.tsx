@@ -8,23 +8,30 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { 
   Plus, 
   Pencil, 
-  Trash2, 
-  Upload, 
-  Loader2, 
-  Image as ImageIcon,
-  Play,
-  Star,
-  Check,
-  X,
-  Filter,
-  Search,
-  ChevronDown,
-  LayoutGrid,
-  List,
-  MoreVertical,
-  Eye,
-  Maximize2
-} from 'lucide-react';
+    Trash2, 
+    Upload, 
+    Loader2, 
+    Image as ImageIcon,
+    Play,
+    Star,
+    Check,
+    X,
+    Filter,
+    Search,
+    ChevronDown,
+    LayoutGrid,
+    List,
+    MoreVertical,
+    Eye,
+    Maximize2,
+    LayoutDashboard,
+    Ticket,
+    Zap,
+    Tent,
+    Utensils,
+    Map as MapIcon,
+    Heart
+  } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import AdminPriceScheduleDialog from '@/components/admin/AdminPriceScheduleDialog';
 
@@ -47,6 +54,7 @@ interface Attraction {
   displayTarget: 'BOTH' | 'BOOKING' | 'EXPLORE';
   allowVoucherClaim: boolean;
   maxVoucherPax: number;
+  voucherExpiry: string | null;
 }
 
 export default function AdminAttractionsPage() {
@@ -70,9 +78,10 @@ export default function AdminAttractionsPage() {
     tags: '',
     active: true,
     displayTarget: 'BOTH' as 'BOTH' | 'BOOKING' | 'EXPLORE',
-    allowVoucherClaim: false,
-    maxVoucherPax: 10,
-  });
+      allowVoucherClaim: false,
+      maxVoucherPax: 10,
+      voucherExpiry: '2026-07-31',
+    });
   const [uploading, setUploading] = useState(false);
   const [pricingFor, setPricingFor] = useState<{ id: string; name: string } | null>(null);
   const [activeCategoryFilter, setActiveCategoryFilter] = useState('ALL');
@@ -121,7 +130,8 @@ export default function AdminAttractionsPage() {
       active: true,
         displayTarget: 'BOTH',
         allowVoucherClaim: false,
-        maxVoucherPax: 10
+        maxVoucherPax: 10,
+        voucherExpiry: '2026-07-31'
     });
     setIsAdding(false);
     setEditingId(null);
@@ -155,8 +165,9 @@ export default function AdminAttractionsPage() {
       active: item.active,
       displayTarget: item.displayTarget || 'BOTH',
       allowVoucherClaim: item.allowVoucherClaim || false,
-      maxVoucherPax: item.maxVoucherPax || 10
-    });
+        maxVoucherPax: item.maxVoucherPax || 10,
+        voucherExpiry: item.voucherExpiry ? new Date(item.voucherExpiry).toISOString().split('T')[0] : '2026-07-31'
+      });
     setEditingId(item.id);
     setIsAdding(true); // Re-use the add form area for editing
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -587,20 +598,32 @@ export default function AdminAttractionsPage() {
                     </div>
                     
                     {formData.allowVoucherClaim && (
-                      <div className="space-y-2 animate-in fade-in slide-in-from-top-2 duration-200">
-                        <label className="text-xs font-bold text-gray-600 uppercase">Maksimal Pax per Voucher</label>
-                        <Input 
-                          type="number"
-                          min={1}
-                          max={100}
-                          value={formData.maxVoucherPax}
-                          onChange={(e) => setFormData({...formData, maxVoucherPax: parseInt(e.target.value) || 10})}
-                          placeholder="Contoh: 10"
-                          className="bg-white"
-                        />
-                        <p className="text-[10px] text-brand/60 italic font-medium">* Satu kode voucher dapat memotong hingga {formData.maxVoucherPax} tiket ini.</p>
-                      </div>
-                    )}
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 animate-in fade-in slide-in-from-top-2 duration-200">
+                          <div className="space-y-2">
+                            <label className="text-xs font-bold text-gray-600 uppercase">Maksimal Pax per Voucher</label>
+                            <Input 
+                              type="number"
+                              min={1}
+                              max={100}
+                              value={formData.maxVoucherPax}
+                              onChange={(e) => setFormData({...formData, maxVoucherPax: parseInt(e.target.value) || 10})}
+                              placeholder="Contoh: 10"
+                              className="bg-white"
+                            />
+                            <p className="text-[10px] text-brand/60 italic font-medium">* Maksimal {formData.maxVoucherPax} pax.</p>
+                          </div>
+                          <div className="space-y-2">
+                            <label className="text-xs font-bold text-gray-600 uppercase">Maksimal Tanggal Klaim</label>
+                            <Input 
+                              type="date"
+                              value={formData.voucherExpiry || ''}
+                              onChange={(e) => setFormData({...formData, voucherExpiry: e.target.value})}
+                              className="bg-white"
+                            />
+                            <p className="text-[10px] text-brand/60 italic font-medium">* Voucher valid s/d tgl ini.</p>
+                          </div>
+                        </div>
+                      )}
                   </div>
   
                   <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg border border-gray-200">

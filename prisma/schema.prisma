@@ -248,6 +248,7 @@ model Attraction {
   displayTarget String   @default("BOTH") // "BOTH", "BOOKING", "EXPLORE"
   allowVoucherClaim Boolean @default(false)
   maxVoucherPax     Int     @default(10)
+  voucherExpiry     DateTime? @default("2026-07-31T23:59:59.000Z")
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
   reviews     Review[]

@@ -82,7 +82,8 @@ export async function POST(req: Request) {
       rating,
       displayTarget,
       allowVoucherClaim,
-      maxVoucherPax
+      maxVoucherPax,
+      voucherExpiry
     } = body;
 
     console.log('[Attractions API] Creating attraction in database...');
@@ -105,8 +106,9 @@ export async function POST(req: Request) {
         active: active !== undefined ? active : true,
         displayTarget: displayTarget || 'BOTH',
         allowVoucherClaim: allowVoucherClaim !== undefined ? allowVoucherClaim : false,
-          maxVoucherPax: maxVoucherPax ? parseInt(maxVoucherPax) : 10,
-        },
+        maxVoucherPax: maxVoucherPax ? parseInt(maxVoucherPax) : 10,
+        voucherExpiry: voucherExpiry ? new Date(voucherExpiry) : null,
+      }
     });
 
     console.log('[Attractions API] Attraction created successfully:', attraction.id);
