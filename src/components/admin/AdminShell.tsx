@@ -87,6 +87,7 @@ export function AdminShell({ children, userPermissions }: AdminShellProps) {
                   {can(PERMISSIONS.MANAGE_PROMOS) && <NavLink href="/admin/promos" icon={Megaphone} active={pathname.startsWith('/admin/promos')}>Partner Promos</NavLink>}
                   {can(PERMISSIONS.MANAGE_PROMOS) && <NavLink href="/admin/promocodes" icon={Percent} active={pathname.startsWith('/admin/promocodes')}>Promo Codes</NavLink>}
                   {can(PERMISSIONS.MANAGE_PROMOS) && <NavLink href="/admin/ktp-promo" icon={BadgePercent} active={pathname.startsWith('/admin/ktp-promo')}>Promo KTP</NavLink>}
+                  {can(PERMISSIONS.MANAGE_PROMOS) && <NavLink href="/admin/vouchers" icon={Ticket} active={pathname.startsWith('/admin/vouchers')}>Voucher Klaim</NavLink>}
                   {can(PERMISSIONS.VIEW_REPORTS) && <NavLink href="/admin/reports/daily-sales" icon={LayoutDashboard} active={pathname.startsWith('/admin/reports')}>Reports System</NavLink>}
                 </nav>
             </div>
