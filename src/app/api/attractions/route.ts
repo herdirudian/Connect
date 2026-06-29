@@ -36,8 +36,13 @@ export async function GET(req: Request) {
     } else {
       return NextResponse.json(attractions);
     }
-  } catch (error) {
-    return NextResponse.json({ error: 'Failed to fetch attractions' }, { status: 500 });
+  } catch (error: any) {
+    console.error('[Attractions API] Error fetching attractions:', error);
+    return NextResponse.json({ 
+      error: 'Failed to fetch attractions',
+      message: error.message,
+      prismaError: error.code 
+    }, { status: 500 });
   }
 }
 

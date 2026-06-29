@@ -101,18 +101,34 @@ export default function AdminAttractionsPage() {
   ];
 
   useEffect(() => {
-    fetchAttractions();
+    fetchItems();
   }, []);
 
-  async function fetchAttractions() {
+  async function fetchItems() {
     try {
-      const res = await fetch('/api/attractions');
-      const data = await res.json();
-      setAttractions(data);
+        const res = await fetch('/api/attractions');
+        const data = await res.json();
+        if (Array.isArray(data)) {
+            setItems(data);
+        } else {
+            console.error('API returned non-array data:', data);
+            toast({
+                title: 'Error',
+                description: data.message || 'Gagal memuat data: Format tidak valid',
+                variant: 'destructive',
+            });
+            setItems([]);
+        }
     } catch (error) {
-      console.error('Error fetching attractions:', error);
+        console.error('Error fetching items:', error);
+        toast({
+            title: 'Error',
+            description: 'Gagal memuat data produk',
+            variant: 'destructive',
+        });
+        setItems([]);
     } finally {
-      setLoading(false);
+        setLoading(false);
     }
   }
 
