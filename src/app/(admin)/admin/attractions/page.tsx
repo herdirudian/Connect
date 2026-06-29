@@ -318,7 +318,7 @@ export default function AdminAttractionsPage() {
     if (!confirm('Are you sure you want to delete this attraction?')) return;
     try {
       const res = await fetch(`/api/attractions/${id}`, { method: 'DELETE' });
-      if (res.ok) fetchAttractions();
+      if (res.ok) fetchItems();
     } catch (error) {
       console.error('Error deleting attraction:', error);
     }
