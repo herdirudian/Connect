@@ -15,6 +15,7 @@ import {
     Play,
     Star,
     Check,
+    CheckCircle,
     X,
     XCircle,
     Filter,
@@ -32,7 +33,8 @@ import {
     Tent,
     Utensils,
     Map as MapIcon,
-    Heart
+    Heart,
+    Edit2
   } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import AdminPriceScheduleDialog from '@/components/admin/AdminPriceScheduleDialog';
