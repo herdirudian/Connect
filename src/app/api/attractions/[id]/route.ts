@@ -24,7 +24,7 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
     }
 
     const body = await req.json();
-    const { name, description, category, price, originalPrice, points, benefits, imageUrl, videoUrl, images, status, waitTime, tags, active, rating, displayTarget } = body;
+    const { name, description, category, price, originalPrice, points, benefits, imageUrl, videoUrl, images, status, waitTime, tags, active, rating, displayTarget, allowVoucherClaim, maxVoucherPax, voucherExpiry } = body;
     const { id } = await params;
 
     console.log(`[Attractions API] Updating attraction ${id}:`, JSON.stringify(body));
