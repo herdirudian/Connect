@@ -523,7 +523,7 @@ export async function sendVoucherClaimEmail(to: string, fullName: string, vouche
         </div>
         
         <p>Halo <strong>${fullName}</strong>,</p>
-        <p>Terima kasih telah mengisi form kunjungan. Berikut adalah kode voucher diskon 20% untuk kunjungan Anda berikutnya ke The Lodge Maribaya:</p>
+        <p>Terima kasih telah berkunjung. Berikut adalah kode voucher diskon 20% untuk kunjungan Anda berikutnya ke The Lodge Maribaya:</p>
         
         <div style="background-color: #f9f9f9; padding: 30px; border-radius: 15px; text-align: center; border: 2px dashed #1b5e20; margin: 20px 0;">
           <p style="margin-top: 0; font-size: 14px; color: #666;">KODE VOUCHER ANDA:</p>

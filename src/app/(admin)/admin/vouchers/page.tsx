@@ -227,7 +227,7 @@ export default function AdminVouchersPage() {
                       </div>
                     </div>
                     <div>
-                      <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Tgl Rencana</p>
+                      <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Tgl Kunjungan</p>
                       <div className="flex items-center gap-1">
                         <Calendar size={12} className="text-brand" />
                         <p className="text-xs font-bold">{formatDate(v.visitDate)}</p>
