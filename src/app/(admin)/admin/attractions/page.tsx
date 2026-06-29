@@ -20,6 +20,7 @@ import {
     Filter,
     Search,
     ChevronDown,
+    ChevronUp,
     LayoutGrid,
     List,
     MoreVertical,
