@@ -307,7 +307,7 @@ export default function AdminAttractionsPage() {
 
       if (res.ok) {
         resetForm();
-        fetchAttractions();
+        fetchItems();
       }
     } catch (error) {
       console.error('Error saving attraction:', error);
