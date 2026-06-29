@@ -13,6 +13,22 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Semua field wajib diisi' }, { status: 400 });
     }
 
+    // 0. Check if this phone number OR email has already claimed a voucher
+    const existingClaim = await prisma.voucherClaim.findFirst({
+      where: {
+        OR: [
+          { email: email },
+          { phoneNumber: phoneNumber }
+        ]
+      }
+    });
+
+    if (existingClaim) {
+      return NextResponse.json({ 
+        error: 'Email atau Nomor WhatsApp ini sudah pernah digunakan untuk klaim voucher diskon 20%. Satu orang hanya dapat mengklaim satu kali.' 
+      }, { status: 400 });
+    }
+
     // 1. Generate Unique Voucher Code (e.g., TLM20-XXXXX)
     const randomStr = crypto.randomBytes(3).toString('hex').toUpperCase();
     const voucherCode = `TLM20-${randomStr}`;
