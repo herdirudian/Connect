@@ -173,7 +173,7 @@ export default function AdminVouchersPage() {
           {(['ALL', 'AVAILABLE', 'USED'] as const).map((status) => (
             <Button
               key={status}
-              variant={filterStatus === status ? 'default' : 'outline'}
+              variant={filterStatus === status ? 'primary' : 'outline'}
               onClick={() => setFilterStatus(status)}
               className="h-12 rounded-xl px-6 font-bold"
             >
