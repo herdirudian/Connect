@@ -101,12 +101,53 @@ export default function GreeterHubPage() {
   const [showQR, setShowQR] = useState<{ url: string; name: string } | null>(null);
   const [showCompare, setShowCompare] = useState(false);
   const [showReviewModal, setShowReviewModal] = useState(false);
+  const [showVoucherModal, setShowVoucherModal] = useState(false);
+  const [claimLoading, setClaimLoading] = useState(false);
+  const [claimSuccess, setClaimSuccess] = useState<string | null>(null);
+  const [voucherForm, setVoucherForm] = useState({
+    fullName: '',
+    phoneNumber: '',
+    email: '',
+    city: '',
+    visitDate: '',
+    visitorCount: '1 org'
+  });
   const [googleQR, setGoogleQR] = useState<string>('');
   const [rangerQR, setRangerQR] = useState<string>('');
   const [qrImageData, setQRImageData] = useState<string>('');
   const [isOffline, setIsOffline] = useState(false);
 
   const mapRef = useRef<HTMLDivElement>(null);
+
+  const handleVoucherSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setClaimLoading(true);
+    try {
+      const res = await fetch('/api/vouchers/claim', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(voucherForm)
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setClaimSuccess(data.voucherCode);
+        setVoucherForm({
+          fullName: '',
+          phoneNumber: '',
+          email: '',
+          city: '',
+          visitDate: '',
+          visitorCount: '1 org'
+        });
+      } else {
+        alert(data.error || 'Gagal klaim voucher');
+      }
+    } catch (err) {
+      alert('Terjadi kesalahan koneksi');
+    } finally {
+      setClaimLoading(false);
+    }
+  };
 
   const categories = [
     { id: 'ALL', label: 'Semua', icon: LayoutDashboard },
@@ -338,6 +379,17 @@ export default function GreeterHubPage() {
         
         {/* Floating Quick Actions for Greeter */}
         <div className="fixed bottom-8 right-8 z-[90] flex flex-col gap-4">
+          <Button 
+            onClick={() => {
+              setClaimSuccess(null);
+              setShowVoucherModal(true);
+            }}
+            className="w-14 h-14 rounded-full bg-green-600 shadow-2xl hover:scale-110 transition-transform p-0"
+            title="Klaim Diskon 20%"
+          >
+            <Zap className="text-white fill-white" size={24} />
+          </Button>
+
           <Button 
             onClick={() => setShowReviewModal(true)}
             className="w-14 h-14 rounded-full bg-yellow-500 shadow-2xl hover:scale-110 transition-transform p-0"
@@ -865,6 +917,163 @@ export default function GreeterHubPage() {
 
               <div className="mt-8 pt-6 border-t border-gray-100 text-center">
                 <p className="text-[11px] text-gray-400 font-bold uppercase tracking-widest">The Lodge Maribaya Experience</p>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
+      {/* 6. Voucher Discount Modal */}
+      {showVoucherModal && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setShowVoucherModal(false)} />
+          <Card className="relative w-full max-w-2xl bg-white rounded-[32px] overflow-hidden border-none shadow-2xl animate-in zoom-in-95 duration-200">
+            <button onClick={() => setShowVoucherModal(false)} className="absolute top-6 right-6 p-2 bg-gray-100 rounded-full text-gray-500 hover:bg-gray-200 transition-colors z-10"><X size={20} /></button>
+            <CardContent className="p-0">
+              <div className="flex flex-col md:flex-row h-full max-h-[90vh]">
+                {/* Left Side: T&C */}
+                <div className="w-full md:w-5/12 bg-brand p-8 text-white overflow-y-auto">
+                  <div className="w-12 h-12 bg-white/20 rounded-2xl flex items-center justify-center mb-6">
+                    <Zap className="text-white fill-white" size={24} />
+                  </div>
+                  <h3 className="text-2xl font-black italic uppercase tracking-tighter leading-tight mb-4">Voucher Diskon 20%</h3>
+                  <p className="text-xs text-brand-50 font-bold mb-6">Klaim voucher Anda untuk kunjungan berikutnya!</p>
+                  
+                  <div className="space-y-4">
+                    <h4 className="text-[10px] font-black uppercase tracking-widest text-brand-100">Syarat & Ketentuan:</h4>
+                    <ul className="space-y-2">
+                      {[
+                        'Diskon 20% untuk kunjungan berikutnya.',
+                        'Berlaku untuk Tiket Basic, Regular, dan Terusan.',
+                        'Voucher berlaku hingga 31 Juli 2026.',
+                        'Maksimal 10 tiket dalam satu transaksi.',
+                        'Wajib ditunjukkan saat pembelian tiket.',
+                        'Tidak dapat digabungkan dengan promo lain.'
+                      ].map((tc, idx) => (
+                        <li key={idx} className="flex gap-2 text-[10px] leading-relaxed font-medium">
+                          <div className="w-1.5 h-1.5 bg-brand-200 rounded-full mt-1 flex-shrink-0" />
+                          {tc}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                </div>
+
+                {/* Right Side: Form or Success */}
+                <div className="w-full md:w-7/12 p-8 bg-white overflow-y-auto custom-scrollbar-light">
+                  {claimSuccess ? (
+                    <div className="h-full flex flex-col items-center justify-center text-center py-8 animate-in fade-in zoom-in duration-500">
+                      <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mb-6">
+                        <CheckCircle2 className="text-green-600" size={48} />
+                      </div>
+                      <h3 className="text-2xl font-black text-gray-900 uppercase tracking-tight mb-2">Berhasil!</h3>
+                      <p className="text-gray-500 text-sm mb-8">E-Voucher Anda telah dikirim ke Email & WhatsApp.</p>
+                      
+                      <div className="w-full bg-gray-50 border-2 border-dashed border-gray-200 rounded-2xl p-6 mb-8">
+                        <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest mb-2">Kode Voucher Anda:</p>
+                        <p className="text-3xl font-black text-brand tracking-[0.2em]">{claimSuccess}</p>
+                      </div>
+
+                      <Button 
+                        onClick={() => setShowVoucherModal(false)}
+                        className="w-full bg-brand hover:bg-brand/90 text-white rounded-xl font-bold h-12"
+                      >
+                        Selesai, Tutup
+                      </Button>
+                    </div>
+                  ) : (
+                    <form onSubmit={handleVoucherSubmit} className="space-y-4">
+                      <div className="mb-6">
+                        <h3 className="text-xl font-black text-gray-900 uppercase tracking-tight">Data Pengunjung</h3>
+                        <p className="text-gray-500 text-xs">Isi data di bawah ini untuk mendapatkan kode voucher.</p>
+                      </div>
+
+                      <div className="space-y-3">
+                        <div className="space-y-1">
+                          <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Nama Lengkap</label>
+                          <Input 
+                            required
+                            placeholder="Contoh: Hendra Rusli"
+                            value={voucherForm.fullName}
+                            onChange={e => setVoucherForm({...voucherForm, fullName: e.target.value})}
+                            className="rounded-xl bg-gray-50 border-transparent focus:bg-white transition-all h-11 text-sm font-medium"
+                          />
+                        </div>
+                        <div className="grid grid-cols-2 gap-3">
+                          <div className="space-y-1">
+                            <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Nomor WhatsApp</label>
+                            <Input 
+                              required
+                              type="tel"
+                              placeholder="081234567xxx"
+                              value={voucherForm.phoneNumber}
+                              onChange={e => setVoucherForm({...voucherForm, phoneNumber: e.target.value})}
+                              className="rounded-xl bg-gray-50 border-transparent focus:bg-white transition-all h-11 text-sm font-medium"
+                            />
+                          </div>
+                          <div className="space-y-1">
+                            <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Email</label>
+                            <Input 
+                              required
+                              type="email"
+                              placeholder="email@tamu.com"
+                              value={voucherForm.email}
+                              onChange={e => setVoucherForm({...voucherForm, email: e.target.value})}
+                              className="rounded-xl bg-gray-50 border-transparent focus:bg-white transition-all h-11 text-sm font-medium"
+                            />
+                          </div>
+                        </div>
+                        <div className="grid grid-cols-2 gap-3">
+                          <div className="space-y-1">
+                            <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Kota Asal</label>
+                            <Input 
+                              required
+                              placeholder="Contoh: Bandung"
+                              value={voucherForm.city}
+                              onChange={e => setVoucherForm({...voucherForm, city: e.target.value})}
+                              className="rounded-xl bg-gray-50 border-transparent focus:bg-white transition-all h-11 text-sm font-medium"
+                            />
+                          </div>
+                          <div className="space-y-1">
+                            <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Tanggal Kunjungan</label>
+                            <Input 
+                              required
+                              type="date"
+                              value={voucherForm.visitDate}
+                              onChange={e => setVoucherForm({...voucherForm, visitDate: e.target.value})}
+                              className="rounded-xl bg-gray-50 border-transparent focus:bg-white transition-all h-11 text-sm font-medium"
+                            />
+                          </div>
+                        </div>
+                        <div className="space-y-1">
+                          <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Jumlah Pengunjung</label>
+                          <select 
+                            value={voucherForm.visitorCount}
+                            onChange={e => setVoucherForm({...voucherForm, visitorCount: e.target.value})}
+                            className="w-full h-11 rounded-xl bg-gray-50 border-transparent px-3 text-sm font-medium focus:bg-white focus:ring-2 focus:ring-brand outline-none transition-all"
+                          >
+                            <option value="1 org">1 Orang</option>
+                            <option value="2 org">2 Orang</option>
+                            <option value="3-5 org">3-5 Orang</option>
+                            <option value=">5 org">Lebih dari 5 Orang</option>
+                          </select>
+                        </div>
+                      </div>
+
+                      <Button 
+                        type="submit"
+                        disabled={claimLoading}
+                        className="w-full bg-brand hover:bg-brand/90 text-white rounded-xl font-bold h-12 mt-6"
+                      >
+                        {claimLoading ? (
+                          <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Memproses...</>
+                        ) : (
+                          'Klaim Voucher Sekarang'
+                        )}
+                      </Button>
+                    </form>
+                  )}
+                </div>
               </div>
             </CardContent>
           </Card>

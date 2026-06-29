@@ -183,6 +183,11 @@ async function sendWhatsAppMessageRaw(config: WhatsAppConfig, to: string, messag
   }
 }
 
+export async function sendWhatsAppMessage(to: string, message: string) {
+  const config = await getConfig();
+  return sendWhatsAppMessageRaw(config, to, message);
+}
+
 function formatMoneyIDR(amount: number) {
   return new Intl.NumberFormat('id-ID', {
     style: 'currency',

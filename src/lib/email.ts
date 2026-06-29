@@ -509,3 +509,56 @@ export async function sendBookingNotificationToReception(
     console.error('Error sending reception notification email:', error);
   }
 }
+
+export async function sendVoucherClaimEmail(to: string, fullName: string, voucherCode: string) {
+  const mailOptions = {
+    from: process.env.FROM_EMAIL,
+    to,
+    subject: 'E-Voucher Diskon 20% - The Lodge Maribaya',
+    html: `
+      <div style="font-family: Arial, sans-serif; padding: 20px; color: #333; max-width: 600px; margin: 0 auto; border: 1px solid #eee; border-radius: 10px;">
+        <div style="text-align: center; margin-bottom: 20px;">
+          <img src="${APP_URL}/logotlm.png" alt="The Lodge Maribaya" style="height: 48px; margin-bottom: 8px;" />
+          <h2 style="color: #1b5e20; margin: 0;">E-Voucher Klaim Berhasil!</h2>
+        </div>
+        
+        <p>Halo <strong>${fullName}</strong>,</p>
+        <p>Terima kasih telah mengisi form kunjungan. Berikut adalah kode voucher diskon 20% untuk kunjungan Anda berikutnya ke The Lodge Maribaya:</p>
+        
+        <div style="background-color: #f9f9f9; padding: 30px; border-radius: 15px; text-align: center; border: 2px dashed #1b5e20; margin: 20px 0;">
+          <p style="margin-top: 0; font-size: 14px; color: #666;">KODE VOUCHER ANDA:</p>
+          <h1 style="letter-spacing: 5px; color: #1b5e20; font-size: 36px; margin: 10px 0;">${voucherCode}</h1>
+          <p style="color: #c62828; font-size: 14px; font-weight: bold;">DISKON 20%</p>
+        </div>
+
+        <div style="margin-top: 30px; padding: 20px; background-color: #fff8e1; border-radius: 10px; font-size: 13px;">
+          <h3 style="margin-top: 0; color: #f57f17;">Syarat & Ketentuan:</h3>
+          <ul style="padding-left: 20px; margin-bottom: 0;">
+            <li>Voucher memberikan diskon 20% untuk kunjungan berikutnya ke The Lodge Maribaya.</li>
+            <li>Diskon berlaku untuk pembelian Tiket Basic, Tiket Regular, dan Tiket Terusan.</li>
+            <li>Voucher berlaku hingga <strong>31 Juli 2026</strong>.</li>
+            <li>Satu voucher dapat digunakan untuk pembelian maksimal 10 tiket dalam satu transaksi.</li>
+            <li>Voucher tidak dapat diuangkan atau ditukar dengan produk lainnya.</li>
+            <li>Gunakan kode ini di halaman: <a href="https://family.thelodgegroup.id/booking">family.thelodgegroup.id/booking</a></li>
+          </ul>
+        </div>
+
+        <p style="margin-top: 30px; text-align: center;">
+          <a href="https://family.thelodgegroup.id/booking" style="display: inline-block; background-color: #1b5e20; color: white; padding: 12px 30px; text-decoration: none; border-radius: 30px; font-weight: bold;">Gunakan Voucher Sekarang</a>
+        </p>
+
+        <p style="margin-top: 40px; font-size: 12px; color: #888; text-align: center; border-top: 1px solid #eee; pt-20px;">
+          &copy; 2024 The Lodge Maribaya. All rights reserved.
+        </p>
+      </div>
+    `,
+  };
+
+  try {
+    await transporter.sendMail(mailOptions);
+    console.log(`Voucher claim email sent to ${to}`);
+  } catch (error) {
+    console.error('Error sending voucher claim email:', error);
+    throw new Error('Gagal mengirim email voucher');
+  }
+}
