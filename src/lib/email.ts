@@ -548,7 +548,7 @@ export async function sendVoucherClaimEmail(to: string, fullName: string, vouche
         </p>
 
         <p style="margin-top: 40px; font-size: 12px; color: #888; text-align: center; border-top: 1px solid #eee; pt-20px;">
-          &copy; 2024 The Lodge Maribaya. All rights reserved.
+          &copy; 2026 The Lodge Maribaya. All rights reserved.
         </p>
       </div>
     `,
