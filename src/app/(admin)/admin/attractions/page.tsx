@@ -38,6 +38,7 @@ import {
   } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import AdminPriceScheduleDialog from '@/components/admin/AdminPriceScheduleDialog';
+import { useToast } from '@/hooks/use-toast';
 
 interface Attraction {
   id: string;
@@ -62,6 +63,7 @@ interface Attraction {
 }
 
 export default function AdminAttractionsPage() {
+  const { toast } = useToast();
   const [attractions, setAttractions] = useState<Attraction[]>([]);
   const [loading, setLoading] = useState(true);
   const [isAdding, setIsAdding] = useState(false);
