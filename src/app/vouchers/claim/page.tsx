@@ -119,33 +119,20 @@ export default function PublicVoucherClaimPage() {
               {/* Right Side: Form or Success */}
               <div className="w-full md:w-7/12 p-8 md:p-12 bg-white flex flex-col justify-center">
                 {claimSuccess ? (
-                  <div className="text-center animate-in fade-in zoom-in duration-500">
+                  <div className="text-center animate-in fade-in zoom-in duration-500 py-12">
                     <div className="w-24 h-24 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-8">
                       <CheckCircle2 className="text-green-600" size={56} />
                     </div>
                     <h3 className="text-3xl font-black text-gray-900 uppercase tracking-tight mb-3">Berhasil!</h3>
-                    <p className="text-gray-500 text-sm mb-10 leading-relaxed">
-                      Kode voucher Anda telah dikirim melalui <span className="font-bold text-gray-900">Email</span> & <span className="font-bold text-gray-900">WhatsApp</span>.
+                    <p className="text-gray-500 text-sm mb-10 leading-relaxed px-4">
+                      E-Voucher Anda telah dikirimkan ke <span className="font-bold text-gray-900">Email</span> dan <span className="font-bold text-gray-900">WhatsApp</span> Anda. Silakan cek pesan masuk untuk melihat detail voucher.
                     </p>
                     
-                    <div className="bg-gray-50 border-4 border-dashed border-gray-100 rounded-[32px] p-8 mb-10 relative overflow-hidden group">
+                    <div className="bg-gray-50 border-4 border-dashed border-gray-100 rounded-[32px] p-8 mb-4 relative overflow-hidden group">
                       <div className="absolute -top-4 -right-4 w-16 h-16 bg-brand/5 rounded-full" />
                       <p className="text-[10px] text-gray-400 font-black uppercase tracking-widest mb-3">Kode Voucher Anda:</p>
                       <p className="text-4xl font-black text-brand tracking-[0.2em]">{claimSuccess}</p>
                     </div>
-
-                    <Link href="https://family.thelodgegroup.id/booking">
-                      <Button className="w-full bg-brand hover:bg-brand/90 text-white rounded-2xl font-black uppercase tracking-widest h-14 shadow-xl shadow-brand/20 flex items-center justify-center gap-2">
-                        Gunakan Sekarang <ChevronRight size={18} />
-                      </Button>
-                    </Link>
-                    
-                    <button 
-                      onClick={() => setClaimSuccess(null)}
-                      className="mt-6 text-xs font-bold text-gray-400 hover:text-gray-600 uppercase tracking-widest transition-colors"
-                    >
-                      Kembali ke Form
-                    </button>
                   </div>
                 ) : (
                   <form onSubmit={handleVoucherSubmit} className="space-y-6">
