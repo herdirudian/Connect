@@ -16,6 +16,7 @@ import {
     Star,
     Check,
     X,
+    XCircle,
     Filter,
     Search,
     ChevronDown,
