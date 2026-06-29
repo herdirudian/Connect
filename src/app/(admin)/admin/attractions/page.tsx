@@ -109,7 +109,7 @@ export default function AdminAttractionsPage() {
         const res = await fetch('/api/attractions');
         const data = await res.json();
         if (Array.isArray(data)) {
-            setItems(data);
+            setAttractions(data);
         } else {
             console.error('API returned non-array data:', data);
             toast({
@@ -117,7 +117,7 @@ export default function AdminAttractionsPage() {
                 description: data.message || 'Gagal memuat data: Format tidak valid',
                 variant: 'destructive',
             });
-            setItems([]);
+            setAttractions([]);
         }
     } catch (error) {
         console.error('Error fetching items:', error);
@@ -126,7 +126,7 @@ export default function AdminAttractionsPage() {
             description: 'Gagal memuat data produk',
             variant: 'destructive',
         });
-        setItems([]);
+        setAttractions([]);
     } finally {
         setLoading(false);
     }
