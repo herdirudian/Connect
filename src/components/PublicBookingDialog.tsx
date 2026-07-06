@@ -42,6 +42,7 @@ export function PublicBookingDialog({ item, allItems = [], open, onOpenChange, i
   const [guestName, setGuestName] = useState('');
   const [guestEmail, setGuestEmail] = useState('');
   const [guestPhone, setGuestPhone] = useState('');
+  const [guestCity, setGuestCity] = useState('');
 
   const [promoCode, setPromoCode] = useState('');
   const [promoApplying, setPromoApplying] = useState(false);
@@ -296,10 +297,10 @@ export function PublicBookingDialog({ item, allItems = [], open, onOpenChange, i
       return;
     }
 
-    if (!guestName || !guestEmail || !guestPhone) {
+    if (!guestName || !guestEmail || !guestPhone || !guestCity) {
         toast({
             title: "Guest Info Required",
-            description: "Please fill in all guest details (Name, Email, WhatsApp).",
+            description: "Please fill in all guest details (Name, Email, WhatsApp, Domisili).",
             variant: "destructive"
         });
         return;
@@ -339,6 +340,7 @@ export function PublicBookingDialog({ item, allItems = [], open, onOpenChange, i
             guestName,
             guestEmail,
             guestPhone,
+            guestCity,
             paymentMethodName: PAYMENT_METHODS.find(m => m.id === paymentMethod)?.label,
             adminFee: adminFee,
             items: cartPayloadItems
@@ -421,6 +423,17 @@ export function PublicBookingDialog({ item, allItems = [], open, onOpenChange, i
                     value={guestPhone} 
                     onChange={e => setGuestPhone(e.target.value)} 
                     placeholder="0812..." 
+                    className="bg-white"
+                />
+            </div>
+            <div className="space-y-2">
+                <Label htmlFor="guestCity" className="text-xs font-semibold uppercase text-gray-500">Domisili (Kota)</Label>
+                <Input 
+                    id="guestCity" 
+                    type="text" 
+                    value={guestCity} 
+                    onChange={e => setGuestCity(e.target.value)} 
+                    placeholder="Contoh: Bandung, Jakarta..." 
                     className="bg-white"
                 />
             </div>
