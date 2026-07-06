@@ -23,6 +23,9 @@ interface Attraction {
   displayTarget?: string;
   isEvent?: boolean;
   eventDate?: string | null;
+  eventPromoPrice?: number | null;
+  eventPromoQuota?: number | null;
+  eventSoldQuota?: number | null;
 }
 
 export default function PublicTicketsPage() {
@@ -98,9 +101,13 @@ export default function PublicTicketsPage() {
            }
 
            const isItemEvent = item.category === 'EVENT' || item.isEvent;
+           const hasEarlyBird = isItemEvent && item.eventPromoQuota && item.eventPromoQuota > 0 && (item.eventSoldQuota || 0) < item.eventPromoQuota;
+           const earlyBirdLeft = hasEarlyBird ? item.eventPromoQuota! - (item.eventSoldQuota || 0) : 0;
+           const currentPrice = hasEarlyBird && item.eventPromoPrice ? item.eventPromoPrice : item.price;
+           const currentOriginalPrice = hasEarlyBird && item.eventPromoPrice ? item.price : item.originalPrice;
 
            return (
-            <Card key={item.id} className="group hover:shadow-xl transition-all duration-300 border-gray-100 shadow-md overflow-hidden flex flex-col h-full rounded-2xl bg-white">
+            <Card key={item.id} className="group hover:shadow-xl transition-all duration-300 border-gray-100 shadow-md overflow-hidden flex flex-col h-full rounded-2xl bg-white relative">
               <div className="h-56 bg-gray-100 relative overflow-hidden flex items-center justify-center group-hover:bg-brand-50/50 transition-colors">
                  {item.imageUrl ? (
                     <Image src={item.imageUrl} alt={item.name} fill className="object-cover" />
@@ -112,6 +119,11 @@ export default function PublicTicketsPage() {
                  <div className="absolute top-4 right-4 bg-white/90 backdrop-blur-sm px-3 py-1 rounded-lg text-xs font-black text-brand-dark shadow-sm border border-gray-100">
                     {isItemEvent ? 'EVENT' : 'ADVENTURE'}
                  </div>
+                 {hasEarlyBird && (
+                   <div className="absolute bottom-0 left-0 right-0 bg-red-500/90 backdrop-blur-sm text-white px-4 py-2 text-xs font-bold text-center">
+                     🔥 EARLY BIRD PROMO: SISA {earlyBirdLeft} TIKET!
+                   </div>
+                 )}
               </div>
               <CardHeader className="pb-2 pt-6 px-6">
                 <div className="flex justify-between items-start gap-4">
@@ -131,18 +143,18 @@ export default function PublicTicketsPage() {
                    <span className="text-xs text-gray-500 font-medium ml-1">See Reviews</span>
                 </div>
                 <div className="mt-2">
-                  {item.originalPrice && item.originalPrice > item.price && (
+                  {currentOriginalPrice && currentOriginalPrice > currentPrice && (
                     <div className="flex items-center gap-2 mb-1">
                       <span className="text-sm text-gray-400 line-through font-semibold">
-                         {new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(item.originalPrice)}
+                         {new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(currentOriginalPrice)}
                       </span>
                       <span className="text-xs bg-red-100 text-red-600 font-bold px-2 py-0.5 rounded-full">
-                         {Math.round(((item.originalPrice - item.price) / item.originalPrice) * 100)}% OFF
+                         {Math.round(((currentOriginalPrice - currentPrice) / currentOriginalPrice) * 100)}% OFF
                       </span>
                     </div>
                   )}
                   <span className="text-2xl font-black text-brand-dark">
-                    {new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(item.price)}
+                    {new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(currentPrice)}
                   </span>
                   <span className="text-xs text-gray-400 font-bold uppercase ml-1">/ Person</span>
                 </div>
@@ -166,7 +178,11 @@ export default function PublicTicketsPage() {
 
                 <Button 
                   className="w-full mt-auto bg-brand-dark hover:bg-brand text-white font-bold uppercase tracking-wider h-12 rounded-xl shadow-lg shadow-brand/10"
-                  onClick={() => handleBook(item)}
+                  onClick={() => handleBook({
+                    ...item,
+                    price: currentPrice,
+                    originalPrice: currentOriginalPrice
+                  })}
                 >
                   Book Now
                 </Button>
@@ -189,15 +205,19 @@ export default function PublicTicketsPage() {
         allItems={attractions.filter(a => {
             const isVisible = a.displayTarget === 'BOTH' || a.displayTarget === 'BOOKING' || !a.displayTarget;
             return a.active && isVisible;
-        }).map(a => ({
-            id: a.id,
-            name: a.name,
-            price: a.price,
-            originalPrice: a.originalPrice,
-            type: 'WAHANA',
-            isEvent: a.isEvent,
-            eventDate: a.eventDate
-        }))}
+        }).map(a => {
+            const isEvent = a.category === 'EVENT' || a.isEvent;
+            const hasEB = isEvent && a.eventPromoQuota && a.eventPromoQuota > 0 && (a.eventSoldQuota || 0) < a.eventPromoQuota;
+            return {
+                id: a.id,
+                name: a.name,
+                price: hasEB && a.eventPromoPrice ? a.eventPromoPrice : a.price,
+                originalPrice: hasEB && a.eventPromoPrice ? a.price : a.originalPrice,
+                type: 'WAHANA',
+                isEvent: a.isEvent,
+                eventDate: a.eventDate
+            };
+        })}
         open={isBookingOpen}
         onOpenChange={setIsBookingOpen}
       />
