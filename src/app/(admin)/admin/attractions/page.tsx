@@ -34,7 +34,8 @@ import {
     Utensils,
     Map as MapIcon,
     Heart,
-    Edit2
+    Edit2,
+    Calendar
   } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import AdminPriceScheduleDialog from '@/components/admin/AdminPriceScheduleDialog';
@@ -106,6 +107,7 @@ export default function AdminAttractionsPage() {
   const categories = [
     { id: 'ALL', label: 'Semua', icon: LayoutDashboard },
     { id: 'TICKET', label: 'Tiket Masuk', icon: Ticket },
+    { id: 'EVENT', label: 'Event', icon: Calendar },
     { id: 'RIDE', label: 'Wahana', icon: Zap },
     { id: 'STAY', label: 'Penginapan', icon: Tent },
     { id: 'FOOD', label: 'Cafe & Resto', icon: Utensils },
@@ -425,6 +427,7 @@ export default function AdminAttractionsPage() {
                     className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                   >
                     <option value="TICKET">Tiket Masuk</option>
+                    <option value="EVENT">Event Khusus</option>
                     <option value="RIDE">Wahana</option>
                     <option value="STAY">Penginapan</option>
                     <option value="FOOD">Cafe & Resto</option>

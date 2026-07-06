@@ -80,13 +80,23 @@ export default function PublicTicketsPage() {
         {attractions.filter(item => {
           const isVisible = item.displayTarget === 'BOTH' || item.displayTarget === 'BOOKING' || !item.displayTarget;
           return item.active && isVisible;
-        }).map((item) => {
+        })
+        .sort((a, b) => {
+            const aIsEvent = a.category === 'EVENT' || a.isEvent;
+            const bIsEvent = b.category === 'EVENT' || b.isEvent;
+            if (aIsEvent && !bIsEvent) return -1;
+            if (!aIsEvent && bIsEvent) return 1;
+            return 0;
+        })
+        .map((item) => {
            let benefits = [];
            try {
              benefits = JSON.parse(item.benefits || '[]');
            } catch (e) {
              benefits = [];
            }
+
+           const isItemEvent = item.category === 'EVENT' || item.isEvent;
 
            return (
             <Card key={item.id} className="group hover:shadow-xl transition-all duration-300 border-gray-100 shadow-md overflow-hidden flex flex-col h-full rounded-2xl bg-white">
@@ -99,14 +109,14 @@ export default function PublicTicketsPage() {
                      </div>
                  )}
                  <div className="absolute top-4 right-4 bg-white/90 backdrop-blur-sm px-3 py-1 rounded-lg text-xs font-black text-brand-dark shadow-sm border border-gray-100">
-                    {item.isEvent ? 'EVENT KHUSUS' : 'ADVENTURE'}
+                    {isItemEvent ? 'EVENT' : 'ADVENTURE'}
                  </div>
               </div>
               <CardHeader className="pb-2 pt-6 px-6">
                 <div className="flex justify-between items-start gap-4">
                   <CardTitle className="text-xl font-black text-gray-900 leading-tight uppercase tracking-tight">{item.name}</CardTitle>
                 </div>
-                {item.isEvent && item.eventDate && (
+                {isItemEvent && item.eventDate && (
                    <div className="mt-1 flex items-center gap-1 text-sm font-bold text-brand bg-brand/5 w-fit px-2 py-0.5 rounded border border-brand/10">
                      📅 {new Date(item.eventDate).toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
                    </div>
