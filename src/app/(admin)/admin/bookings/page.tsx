@@ -25,6 +25,7 @@ interface Booking {
   items?: string;
   discount?: number;
   promoCode?: string;
+  domisili?: string;
 }
 
 export default function AdminBookingsPage() {
@@ -189,6 +190,7 @@ export default function AdminBookingsPage() {
                         <tr>
                             <th scope="col" className="px-4 md:px-6 py-3 tracking-wider text-left">ID / Date</th>
                             <th scope="col" className="px-4 md:px-6 py-3 tracking-wider text-left">User</th>
+                            <th scope="col" className="px-4 md:px-6 py-3 tracking-wider text-left">Domisili</th>
                             <th scope="col" className="px-4 md:px-6 py-3 tracking-wider text-left">Type</th>
                             <th scope="col" className="px-4 md:px-6 py-3 tracking-wider text-left">Item (Qty)</th>
                             <th scope="col" className="px-4 md:px-6 py-3 tracking-wider text-left">Amount</th>
@@ -199,7 +201,7 @@ export default function AdminBookingsPage() {
                     <tbody className="bg-white divide-y divide-gray-200 text-sm">
                         {loading ? (
                             <tr>
-                                <td colSpan={7} className="px-6 py-12 text-center">
+                                <td colSpan={8} className="px-6 py-12 text-center">
                                     <div className="flex flex-col items-center justify-center space-y-3">
                                         <Loader2 className="h-8 w-8 animate-spin text-brand" />
                                         <p className="text-gray-500 font-medium">Loading bookings...</p>
@@ -208,7 +210,7 @@ export default function AdminBookingsPage() {
                             </tr>
                         ) : bookings.length === 0 ? (
                             <tr>
-                                <td colSpan={7} className="px-6 py-12 text-center text-gray-500">
+                                <td colSpan={8} className="px-6 py-12 text-center text-gray-500">
                                     No bookings found.
                                 </td>
                             </tr>
@@ -227,6 +229,11 @@ export default function AdminBookingsPage() {
                                         {booking.user.phoneNumber && (
                                             <div className="text-gray-400 text-xs">{booking.user.phoneNumber}</div>
                                         )}
+                                    </td>
+                                    <td className="px-4 md:px-6 py-4">
+                                        <div className="text-sm text-gray-700 font-medium capitalize">
+                                            {booking.domisili || '-'}
+                                        </div>
                                     </td>
                                     <td className="px-4 md:px-6 py-4">
                                         <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-50 text-blue-700 whitespace-nowrap">
