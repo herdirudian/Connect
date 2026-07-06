@@ -208,12 +208,14 @@ export async function GET(request: Request) {
       const itemNames = items.map((i: any) => `${i.name} (x${i.qty || 1})`).join(', ');
       const discount = details.promo?.discount || 0;
       const promoCode = details.promo?.code || '';
+      const domisili = details.guestCity || (details.ktpPromo ? details.ktpPromo.regency : '');
 
       return {
         ...b,
         items: itemNames,
         discount: discount,
         promoCode: promoCode,
+        domisili: domisili,
       };
     });
 
