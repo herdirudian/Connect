@@ -20,6 +20,8 @@ interface Attraction {
   originalPrice?: number;
   rating?: number;
   displayTarget?: string;
+  isEvent?: boolean;
+  eventDate?: string | null;
 }
 
 export default function PublicTicketsPage() {
@@ -97,13 +99,18 @@ export default function PublicTicketsPage() {
                      </div>
                  )}
                  <div className="absolute top-4 right-4 bg-white/90 backdrop-blur-sm px-3 py-1 rounded-lg text-xs font-black text-brand-dark shadow-sm border border-gray-100">
-                    ADVENTURE
+                    {item.isEvent ? 'EVENT KHUSUS' : 'ADVENTURE'}
                  </div>
               </div>
               <CardHeader className="pb-2 pt-6 px-6">
                 <div className="flex justify-between items-start gap-4">
                   <CardTitle className="text-xl font-black text-gray-900 leading-tight uppercase tracking-tight">{item.name}</CardTitle>
                 </div>
+                {item.isEvent && item.eventDate && (
+                   <div className="mt-1 flex items-center gap-1 text-sm font-bold text-brand bg-brand/5 w-fit px-2 py-0.5 rounded border border-brand/10">
+                     📅 {new Date(item.eventDate).toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
+                   </div>
+                )}
                 <div 
                   className="flex items-center gap-1 mt-1 cursor-pointer hover:bg-gray-50 p-1 -ml-1 rounded-lg w-fit transition-colors"
                   onClick={() => handleShowReviews(item)}
@@ -164,7 +171,9 @@ export default function PublicTicketsPage() {
             name: selectedItem.name, 
             price: selectedItem.price, 
             originalPrice: selectedItem.originalPrice,
-            type: 'WAHANA' 
+            type: 'WAHANA',
+            isEvent: selectedItem.isEvent,
+            eventDate: selectedItem.eventDate
         } : null}
         allItems={attractions.filter(a => {
             const isVisible = a.displayTarget === 'BOTH' || a.displayTarget === 'BOOKING' || !a.displayTarget;
@@ -174,7 +183,9 @@ export default function PublicTicketsPage() {
             name: a.name,
             price: a.price,
             originalPrice: a.originalPrice,
-            type: 'WAHANA'
+            type: 'WAHANA',
+            isEvent: a.isEvent,
+            eventDate: a.eventDate
         }))}
         open={isBookingOpen}
         onOpenChange={setIsBookingOpen}

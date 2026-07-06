@@ -275,6 +275,34 @@ export async function POST(req: Request) {
         }
       }
 
+      // Check Availability and update quotas for WAHANA (Events)
+      if (type === 'WAHANA' && details?.items) {
+        for (const item of details.items) {
+          const attractionId = item.id;
+          const qty = item.qty || 1;
+
+          const attraction = await tx.attraction.findUnique({
+            where: { id: attractionId }
+          });
+
+          if (attraction?.isEvent) {
+            // Check quota
+            if (attraction.eventMaxQuota) {
+              const newSoldQuota = attraction.eventSoldQuota + qty;
+              if (newSoldQuota > attraction.eventMaxQuota) {
+                const available = Math.max(0, attraction.eventMaxQuota - attraction.eventSoldQuota);
+                throw new Error(`Kuota tidak mencukupi untuk tiket event ${attraction.name}. Sisa kuota: ${available}`);
+              }
+            }
+            // Increment sold quota
+            await tx.attraction.update({
+              where: { id: attractionId },
+              data: { eventSoldQuota: { increment: qty } }
+            });
+          }
+        }
+      }
+
       // Mark VoucherClaim as used if applicable
       if (appliedPromo?.isVoucherClaim) {
         await tx.voucherClaim.update({

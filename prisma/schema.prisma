@@ -249,6 +249,15 @@ model Attraction {
   allowVoucherClaim Boolean @default(false)
   maxVoucherPax     Int     @default(10)
   voucherExpiry     DateTime? @default("2026-07-31T23:59:59.000Z")
+  
+  // Event specific fields
+  isEvent           Boolean @default(false)
+  eventDate         DateTime?
+  eventMaxQuota     Int?
+  eventSoldQuota    Int     @default(0)
+  eventPromoPrice   Float?
+  eventPromoQuota   Int?
+  
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
   reviews     Review[]

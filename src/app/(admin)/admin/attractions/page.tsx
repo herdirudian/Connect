@@ -60,6 +60,12 @@ interface Attraction {
   allowVoucherClaim: boolean;
   maxVoucherPax: number;
   voucherExpiry: string | null;
+  isEvent?: boolean;
+  eventDate?: string | null;
+  eventMaxQuota?: number | null;
+  eventSoldQuota?: number;
+  eventPromoPrice?: number | null;
+  eventPromoQuota?: number | null;
 }
 
 export default function AdminAttractionsPage() {
@@ -87,6 +93,11 @@ export default function AdminAttractionsPage() {
       allowVoucherClaim: false,
       maxVoucherPax: 10,
       voucherExpiry: '2026-07-31',
+      isEvent: false,
+      eventDate: '',
+      eventMaxQuota: '',
+      eventPromoPrice: '',
+      eventPromoQuota: '',
     });
   const [uploading, setUploading] = useState(false);
   const [pricingFor, setPricingFor] = useState<{ id: string; name: string } | null>(null);
@@ -153,7 +164,12 @@ export default function AdminAttractionsPage() {
         displayTarget: 'BOTH',
         allowVoucherClaim: false,
         maxVoucherPax: 10,
-        voucherExpiry: '2026-07-31'
+        voucherExpiry: '2026-07-31',
+        isEvent: false,
+        eventDate: '',
+        eventMaxQuota: '',
+        eventPromoPrice: '',
+        eventPromoQuota: '',
     });
     setIsAdding(false);
     setEditingId(null);
@@ -188,7 +204,12 @@ export default function AdminAttractionsPage() {
       displayTarget: item.displayTarget || 'BOTH',
       allowVoucherClaim: item.allowVoucherClaim || false,
         maxVoucherPax: item.maxVoucherPax || 10,
-        voucherExpiry: item.voucherExpiry ? new Date(item.voucherExpiry).toISOString().split('T')[0] : '2026-07-31'
+        voucherExpiry: item.voucherExpiry ? new Date(item.voucherExpiry).toISOString().split('T')[0] : '2026-07-31',
+        isEvent: item.isEvent || false,
+        eventDate: item.eventDate ? new Date(item.eventDate).toISOString().split('T')[0] : '',
+        eventMaxQuota: item.eventMaxQuota ? item.eventMaxQuota.toString() : '',
+        eventPromoPrice: item.eventPromoPrice ? item.eventPromoPrice.toString() : '',
+        eventPromoQuota: item.eventPromoQuota ? item.eventPromoQuota.toString() : '',
       });
     setEditingId(item.id);
     setIsAdding(true); // Re-use the add form area for editing
@@ -663,6 +684,71 @@ export default function AdminAttractionsPage() {
                       checked={formData.active}
                       onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData({...formData, active: e.target.checked})}
                     />
+                  </div>
+
+                  <div className="flex flex-col gap-4 p-4 bg-purple-50/50 rounded-lg border border-purple-100">
+                   <div className="flex items-center justify-between">
+                     <div className="space-y-0.5">
+                       <label className="text-sm font-bold uppercase tracking-wider text-purple-700">Event Mode</label>
+                       <p className="text-xs text-purple-600/70">Jadikan produk ini sebagai tiket event khusus (Tanggal tetap, kuota, harga dinamis)</p>
+                     </div>
+                     <Checkbox 
+                        checked={formData.isEvent}
+                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData({...formData, isEvent: e.target.checked})}
+                      />
+                    </div>
+                    
+                    {formData.isEvent && (
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 animate-in fade-in slide-in-from-top-2 duration-200">
+                          <div className="space-y-2">
+                            <label className="text-xs font-bold text-gray-600 uppercase">Tanggal Event</label>
+                            <Input 
+                              type="date"
+                              value={formData.eventDate || ''}
+                              onChange={(e) => setFormData({...formData, eventDate: e.target.value})}
+                              className="bg-white"
+                              required={formData.isEvent}
+                            />
+                            <p className="text-[10px] text-gray-500 italic">* Tamu tidak bisa ubah tanggal ini.</p>
+                          </div>
+                          <div className="space-y-2">
+                            <label className="text-xs font-bold text-gray-600 uppercase">Kuota Total Event</label>
+                            <Input 
+                              type="number"
+                              min={1}
+                              value={formData.eventMaxQuota || ''}
+                              onChange={(e) => setFormData({...formData, eventMaxQuota: e.target.value})}
+                              placeholder="Contoh: 100"
+                              className="bg-white"
+                            />
+                            <p className="text-[10px] text-gray-500 italic">* Kosongkan jika tanpa batas.</p>
+                          </div>
+                          <div className="space-y-2">
+                            <label className="text-xs font-bold text-gray-600 uppercase">Harga Promo (Early Bird)</label>
+                            <Input 
+                              type="number"
+                              min={0}
+                              value={formData.eventPromoPrice || ''}
+                              onChange={(e) => setFormData({...formData, eventPromoPrice: e.target.value})}
+                              placeholder="Contoh: 99000"
+                              className="bg-white"
+                            />
+                            <p className="text-[10px] text-gray-500 italic">* Harga sebelum kuota promo habis.</p>
+                          </div>
+                          <div className="space-y-2">
+                            <label className="text-xs font-bold text-gray-600 uppercase">Kuota Promo</label>
+                            <Input 
+                              type="number"
+                              min={1}
+                              value={formData.eventPromoQuota || ''}
+                              onChange={(e) => setFormData({...formData, eventPromoQuota: e.target.value})}
+                              placeholder="Contoh: 15"
+                              className="bg-white"
+                            />
+                            <p className="text-[10px] text-gray-500 italic">* Jika terjual melebihi ini, harga kembali normal.</p>
+                          </div>
+                        </div>
+                      )}
                   </div>
 
                 <div className="space-y-2 md:col-span-2">

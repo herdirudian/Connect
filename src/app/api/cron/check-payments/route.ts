@@ -222,6 +222,25 @@ export async function GET(req: Request) {
           results.push({ id: booking.id, status: 'UPDATED_TO_PAID' });
 
         } else if (isExpired) {
+          if (booking.type === 'WAHANA') {
+            try {
+              const details = typeof booking.details === 'string' ? JSON.parse(booking.details) : booking.details;
+              if (details.items && Array.isArray(details.items)) {
+                  for (const item of details.items) {
+                      const attraction = await prisma.attraction.findUnique({ where: { id: item.id } });
+                      if (attraction?.isEvent) {
+                          await prisma.attraction.update({
+                              where: { id: item.id },
+                              data: { eventSoldQuota: { decrement: item.qty || 1 } }
+                          });
+                      }
+                  }
+              }
+            } catch(e) {
+                console.error('Error decrementing event quota in cron:', e);
+            }
+          }
+
           await prisma.booking.update({
             where: { id: booking.id },
             data: {

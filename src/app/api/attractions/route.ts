@@ -23,13 +23,20 @@ export async function GET(req: Request) {
           id: a.id,
           name: a.name,
           description: a.description,
-          price: eff ? eff.price : a.price,
-          originalPrice: eff ? a.price : a.originalPrice,
+          category: a.category,
+          price: eff ? eff.price : (a.isEvent && a.eventPromoPrice && a.eventPromoQuota && a.eventSoldQuota < a.eventPromoQuota ? a.eventPromoPrice : a.price),
+          originalPrice: eff ? a.price : (a.isEvent && a.eventPromoPrice && a.eventPromoQuota && a.eventSoldQuota < a.eventPromoQuota ? a.price : a.originalPrice),
           points: a.points,
           rating: a.rating,
           imageUrl: a.imageUrl,
           benefits: a.benefits,
           active: a.active,
+          isEvent: a.isEvent,
+          eventDate: a.eventDate,
+          eventMaxQuota: a.eventMaxQuota,
+          eventSoldQuota: a.eventSoldQuota,
+          eventPromoPrice: a.eventPromoPrice,
+          eventPromoQuota: a.eventPromoQuota,
         };
       });
       return NextResponse.json(mapped);
@@ -88,7 +95,12 @@ export async function POST(req: Request) {
       displayTarget,
       allowVoucherClaim,
       maxVoucherPax,
-      voucherExpiry
+      voucherExpiry,
+      isEvent,
+      eventDate,
+      eventMaxQuota,
+      eventPromoPrice,
+      eventPromoQuota
     } = body;
 
     console.log('[Attractions API] Creating attraction in database...');
@@ -113,6 +125,11 @@ export async function POST(req: Request) {
         allowVoucherClaim: allowVoucherClaim !== undefined ? allowVoucherClaim : false,
         maxVoucherPax: maxVoucherPax ? parseInt(maxVoucherPax) : 10,
         voucherExpiry: voucherExpiry ? new Date(voucherExpiry) : null,
+        isEvent: isEvent || false,
+        eventDate: eventDate ? new Date(eventDate) : null,
+        eventMaxQuota: eventMaxQuota ? parseInt(eventMaxQuota) : null,
+        eventPromoPrice: eventPromoPrice ? parseFloat(eventPromoPrice) : null,
+        eventPromoQuota: eventPromoQuota ? parseInt(eventPromoQuota) : null,
       }
     });
 

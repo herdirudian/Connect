@@ -382,6 +382,26 @@ export async function POST(req: Request) {
                 }
             });
        } else {
+            const booking = await prisma.booking.findUnique({ where: { id: external_id } });
+            if (booking && booking.type === 'WAHANA' && booking.status !== 'CANCELLED') {
+                try {
+                    const details = JSON.parse(booking.details);
+                    if (details.items && Array.isArray(details.items)) {
+                        for (const item of details.items) {
+                            const attraction = await prisma.attraction.findUnique({ where: { id: item.id } });
+                            if (attraction?.isEvent) {
+                                await prisma.attraction.update({
+                                    where: { id: item.id },
+                                    data: { eventSoldQuota: { decrement: item.qty || 1 } }
+                                });
+                            }
+                        }
+                    }
+                } catch(e) {
+                    console.error('Error decrementing event quota:', e);
+                }
+            }
+
             await prisma.booking.update({
                 where: { id: external_id },
                 data: {

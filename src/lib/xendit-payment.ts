@@ -70,7 +70,7 @@ export async function createXenditPaymentRequest(
           channelCode: bankCode,
           channelProperties: {
             customerName: user.name.substring(0, 250), // Limit length
-            expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(), // 24 hours
+            expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000), // 24 hours
           }
         }
       };
@@ -120,7 +120,7 @@ export async function createXenditPaymentRequest(
         qrCode: {
           channelCode: 'QRIS',
           channelProperties: {
-            expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
+            expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000),
           }
         }
       };
@@ -137,7 +137,7 @@ export async function createXenditPaymentRequest(
                 channelCode: methodId,
                 channelProperties: {
                     customerName: user.name,
-                    expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
+                    expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000),
                 }
             }
         };

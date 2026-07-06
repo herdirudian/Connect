@@ -24,7 +24,7 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
     }
 
     const body = await req.json();
-    const { name, description, category, price, originalPrice, points, benefits, imageUrl, videoUrl, images, status, waitTime, tags, active, rating, displayTarget, allowVoucherClaim, maxVoucherPax, voucherExpiry } = body;
+    const { name, description, category, price, originalPrice, points, benefits, imageUrl, videoUrl, images, status, waitTime, tags, active, rating, displayTarget, allowVoucherClaim, maxVoucherPax, voucherExpiry, isEvent, eventDate, eventMaxQuota, eventPromoPrice, eventPromoQuota } = body;
     const { id } = await params;
 
     console.log(`[Attractions API] Updating attraction ${id}:`, JSON.stringify(body));
@@ -50,7 +50,12 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
         displayTarget,
         allowVoucherClaim: allowVoucherClaim !== undefined ? allowVoucherClaim : undefined,
         maxVoucherPax: maxVoucherPax !== undefined ? parseInt(maxVoucherPax) : undefined,
-        voucherExpiry: voucherExpiry !== undefined ? (voucherExpiry ? new Date(voucherExpiry) : null) : undefined
+        voucherExpiry: voucherExpiry !== undefined ? (voucherExpiry ? new Date(voucherExpiry) : null) : undefined,
+        isEvent: isEvent !== undefined ? isEvent : undefined,
+        eventDate: eventDate !== undefined ? (eventDate ? new Date(eventDate) : null) : undefined,
+        eventMaxQuota: eventMaxQuota !== undefined ? (eventMaxQuota ? parseInt(eventMaxQuota) : null) : undefined,
+        eventPromoPrice: eventPromoPrice !== undefined ? (eventPromoPrice ? parseFloat(eventPromoPrice) : null) : undefined,
+        eventPromoQuota: eventPromoQuota !== undefined ? (eventPromoQuota ? parseInt(eventPromoQuota) : null) : undefined
       },
     });
     return NextResponse.json(updated);

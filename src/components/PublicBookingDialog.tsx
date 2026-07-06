@@ -17,6 +17,8 @@ interface BookingItem {
   originalPrice?: number;
   type: 'WAHANA' | 'GLAMPING';
   availability?: number;
+  isEvent?: boolean;
+  eventDate?: string | null;
 }
 
 interface PublicBookingDialogProps {
@@ -61,7 +63,11 @@ export function PublicBookingDialog({ item, allItems = [], open, onOpenChange, i
   // Reset state when dialog opens
   useEffect(() => {
     if (open) {
-      setDate(initialDate || getLocalDateString());
+      if (item?.isEvent && item.eventDate) {
+        setDate(item.eventDate.split('T')[0]);
+      } else {
+        setDate(initialDate || getLocalDateString());
+      }
       // Initialize cart with the primary item
       if (item) {
         setCart({ [item.id]: 1 });
@@ -92,7 +98,10 @@ export function PublicBookingDialog({ item, allItems = [], open, onOpenChange, i
               name: i.name,
               price: i.price,
               originalPrice: i.originalPrice,
-              type: 'WAHANA'
+              type: 'WAHANA',
+              isEvent: i.isEvent,
+              eventDate: i.eventDate,
+              availability: i.isEvent && i.eventMaxQuota ? Math.max(0, i.eventMaxQuota - (i.eventSoldQuota || 0)) : undefined
             })));
           }
         } catch (e) {}
@@ -426,7 +435,11 @@ export function PublicBookingDialog({ item, allItems = [], open, onOpenChange, i
               onChange={(e) => setDate(e.target.value)}
               min={new Date().toISOString().split('T')[0]}
               className="w-full"
+              disabled={item.isEvent}
             />
+            {item.isEvent && (
+                <p className="text-[10px] text-brand italic">Tanggal sudah ditetapkan untuk event ini.</p>
+            )}
           </div>
 
           <div className="space-y-4">
