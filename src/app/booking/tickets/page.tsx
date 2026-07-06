@@ -13,6 +13,7 @@ interface Attraction {
   id: string;
   name: string;
   description: string;
+  category?: string;
   price: number;
   benefits: string; // JSON string
   imageUrl?: string;
