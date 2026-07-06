@@ -106,7 +106,11 @@ export function PublicBookingDialog({ item, allItems = [], open, onOpenChange, i
               type: 'WAHANA',
               isEvent: i.isEvent,
               eventDate: i.eventDate,
-              availability: i.isEvent && i.eventMaxQuota ? Math.max(0, i.eventMaxQuota - (i.eventSoldQuota || 0)) : undefined
+              availability: i.isEvent && i.eventMaxQuota ? Math.max(0, i.eventMaxQuota - (i.eventSoldQuota || 0)) : undefined,
+              eventPromoPrice: i.eventPromoPrice,
+              eventPromoQuota: i.eventPromoQuota,
+              eventSoldQuota: i.eventSoldQuota,
+              normalPrice: i.normalPrice
             })));
           }
         } catch (e) {}
