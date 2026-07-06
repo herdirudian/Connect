@@ -37,6 +37,7 @@ export async function GET(req: Request) {
           eventSoldQuota: a.eventSoldQuota,
           eventPromoPrice: a.eventPromoPrice,
           eventPromoQuota: a.eventPromoQuota,
+          normalPrice: a.price,
         };
       });
       return NextResponse.json(mapped);

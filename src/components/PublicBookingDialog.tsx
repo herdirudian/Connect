@@ -19,6 +19,10 @@ interface BookingItem {
   availability?: number;
   isEvent?: boolean;
   eventDate?: string | null;
+  eventPromoPrice?: number | null;
+  eventPromoQuota?: number | null;
+  eventSoldQuota?: number | null;
+  normalPrice?: number; // Added to store the base price for split calculation
 }
 
 interface PublicBookingDialogProps {
@@ -203,18 +207,35 @@ export function PublicBookingDialog({ item, allItems = [], open, onOpenChange, i
     return itemDetail ? { ...itemDetail, qty } : null;
   }).filter(Boolean) as (BookingItem & { qty: number })[];
 
-  const subtotal = cartItems.reduce((sum, i) => sum + (i.price * i.qty), 0);
+  let subtotal = 0;
+  const cartPayloadItems: any[] = [];
+
+  cartItems.forEach(i => {
+    const isPromoActive = i.isEvent && i.eventPromoPrice && i.eventPromoQuota && i.normalPrice !== undefined;
+    const soldQuota = i.eventSoldQuota || 0;
+    const promoLeft = isPromoActive ? Math.max(0, i.eventPromoQuota! - soldQuota) : 0;
+
+    if (isPromoActive && promoLeft > 0) {
+      if (i.qty <= promoLeft) {
+        subtotal += i.eventPromoPrice! * i.qty;
+        cartPayloadItems.push({ id: i.id, name: `${i.name} (Early Bird)`, qty: i.qty, price: i.eventPromoPrice! });
+      } else {
+        const normalQty = i.qty - promoLeft;
+        subtotal += (i.eventPromoPrice! * promoLeft) + (i.normalPrice! * normalQty);
+        cartPayloadItems.push({ id: i.id, name: `${i.name} (Early Bird)`, qty: promoLeft, price: i.eventPromoPrice! });
+        cartPayloadItems.push({ id: i.id, name: `${i.name} (Normal)`, qty: normalQty, price: i.normalPrice! });
+      }
+    } else {
+      const priceToUse = (isPromoActive && promoLeft <= 0 && i.normalPrice !== undefined) ? i.normalPrice : i.price;
+      subtotal += priceToUse * i.qty;
+      cartPayloadItems.push({ id: i.id, name: i.name, qty: i.qty, price: priceToUse });
+    }
+  });
+
   const adminFee = calculateFee(subtotal, paymentMethod);
   const totalPrice = subtotal + adminFee - promoDiscount;
 
   const isCartInvalid = cartItems.some(i => i.availability !== undefined && i.qty > i.availability);
-
-  const cartPayloadItems = cartItems.map(i => ({
-    id: i.id,
-    name: i.name,
-    qty: i.qty,
-    price: i.price
-  }));
 
   async function handleApplyPromo() {
     if (!promoCode) {
@@ -457,19 +478,40 @@ export function PublicBookingDialog({ item, allItems = [], open, onOpenChange, i
 
           <div className="space-y-4">
              <Label>Items</Label>
-             {cartItems.map((cartItem) => (
+             {cartItems.map((cartItem) => {
+                const isPromoActive = cartItem.isEvent && cartItem.eventPromoPrice && cartItem.eventPromoQuota && cartItem.normalPrice !== undefined;
+                const soldQuota = cartItem.eventSoldQuota || 0;
+                const promoLeft = isPromoActive ? Math.max(0, cartItem.eventPromoQuota! - soldQuota) : 0;
+                const hasSplit = isPromoActive && promoLeft > 0 && cartItem.qty > promoLeft;
+
+                return (
                 <div key={cartItem.id} className="flex flex-col gap-2 p-3 border rounded-lg bg-gray-50">
                     <div className="flex justify-between items-start">
                         <span className="font-bold text-sm">{cartItem.name}</span>
                         <div className="text-right">
-                             {cartItem.originalPrice && cartItem.originalPrice > cartItem.price && (
-                                <div className="text-xs text-gray-400 line-through">
-                                    {new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(cartItem.originalPrice)}
+                             {!hasSplit ? (
+                                <>
+                                 {cartItem.originalPrice && cartItem.originalPrice > cartItem.price && (
+                                    <div className="text-xs text-gray-400 line-through">
+                                        {new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(cartItem.originalPrice)}
+                                    </div>
+                                 )}
+                                 <div className="font-medium text-sm">
+                                    {new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(isPromoActive && promoLeft <= 0 && cartItem.normalPrice ? cartItem.normalPrice : cartItem.price)}
+                                 </div>
+                                </>
+                             ) : (
+                                <div className="text-xs space-y-1 text-right mt-1">
+                                    <div className="flex justify-end gap-2">
+                                        <span className="text-brand font-medium">{promoLeft}x Early Bird:</span>
+                                        <span>{new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(cartItem.eventPromoPrice!)}</span>
+                                    </div>
+                                    <div className="flex justify-end gap-2">
+                                        <span className="text-gray-600">{cartItem.qty - promoLeft}x Normal:</span>
+                                        <span>{new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(cartItem.normalPrice!)}</span>
+                                    </div>
                                 </div>
                              )}
-                             <div className="font-medium text-sm">
-                                {new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(cartItem.price)}
-                             </div>
                         </div>
                     </div>
                     {cartItem.availability !== undefined && cartItem.qty > cartItem.availability && (
@@ -519,7 +561,7 @@ export function PublicBookingDialog({ item, allItems = [], open, onOpenChange, i
                          </div>
                     </div>
                 </div>
-             ))}
+             )})}
 
              {allItems.length > 0 && (
                 <div className="mt-2">

@@ -200,7 +200,11 @@ export default function PublicTicketsPage() {
             originalPrice: selectedItem.originalPrice,
             type: 'WAHANA',
             isEvent: selectedItem.isEvent,
-            eventDate: selectedItem.eventDate
+            eventDate: selectedItem.eventDate,
+            eventPromoPrice: selectedItem.eventPromoPrice,
+            eventPromoQuota: selectedItem.eventPromoQuota,
+            eventSoldQuota: selectedItem.eventSoldQuota,
+            normalPrice: attractions.find(a => a.id === selectedItem.id)?.price
         } : null}
         allItems={attractions.filter(a => {
             const isVisible = a.displayTarget === 'BOTH' || a.displayTarget === 'BOOKING' || !a.displayTarget;
@@ -215,7 +219,11 @@ export default function PublicTicketsPage() {
                 originalPrice: hasEB && a.eventPromoPrice ? a.price : a.originalPrice,
                 type: 'WAHANA',
                 isEvent: a.isEvent,
-                eventDate: a.eventDate
+                eventDate: a.eventDate,
+                eventPromoPrice: a.eventPromoPrice,
+                eventPromoQuota: a.eventPromoQuota,
+                eventSoldQuota: a.eventSoldQuota,
+                normalPrice: a.price
             };
         })}
         open={isBookingOpen}
