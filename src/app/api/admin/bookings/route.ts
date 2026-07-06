@@ -166,6 +166,26 @@ export async function GET(request: Request) {
               where: { id: b.id },
               data: { status: 'CANCELLED', paymentStatus: 'EXPIRED' }
             });
+            
+            // Restore event quota if applicable
+            if (b.type === 'WAHANA' && b.status !== 'CANCELLED') {
+              try {
+                const details = typeof b.details === 'string' ? JSON.parse(b.details) : b.details;
+                if (details.items && Array.isArray(details.items)) {
+                  for (const item of details.items) {
+                    const attraction = await prisma.attraction.findUnique({ where: { id: item.id } });
+                    if (attraction?.isEvent && (attraction.eventSoldQuota || 0) > 0) {
+                      await prisma.attraction.update({
+                        where: { id: item.id },
+                        data: { eventSoldQuota: { decrement: item.qty || 1 } }
+                      });
+                    }
+                  }
+                }
+              } catch (e) {
+                console.error('Failed to restore event quota on reconcile:', e);
+              }
+            }
           }
         } catch (e) {
           console.error('Recon error for', b.id, e);
@@ -253,6 +273,27 @@ export async function PATCH(request: Request) {
     // If cancelled
     if (status === 'CANCELLED') {
         data.paymentStatus = 'CANCELLED'; // Or EXPIRED/FAILED depending on logic, but CANCELLED is fine
+        
+        // Restore event quota if applicable
+        const currentBooking = await prisma.booking.findUnique({ where: { id } });
+        if (currentBooking && currentBooking.type === 'WAHANA' && currentBooking.status !== 'CANCELLED') {
+           try {
+             const details = typeof currentBooking.details === 'string' ? JSON.parse(currentBooking.details) : currentBooking.details;
+             if (details.items && Array.isArray(details.items)) {
+               for (const item of details.items) {
+                 const attraction = await prisma.attraction.findUnique({ where: { id: item.id } });
+                 if (attraction?.isEvent && (attraction.eventSoldQuota || 0) > 0) {
+                   await prisma.attraction.update({
+                     where: { id: item.id },
+                     data: { eventSoldQuota: { decrement: item.qty || 1 } }
+                   });
+                 }
+               }
+             }
+           } catch (e) {
+             console.error('Failed to restore event quota on admin manual cancel:', e);
+           }
+        }
     }
 
     const booking = await prisma.booking.update({

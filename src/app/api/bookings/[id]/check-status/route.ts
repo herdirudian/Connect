@@ -251,6 +251,27 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
                 paymentStatus: 'EXPIRED'
             }
         });
+        
+        // Restore event quota if applicable
+        if (booking.type === 'WAHANA' && booking.status !== 'CANCELLED') {
+            try {
+                const details = typeof booking.details === 'string' ? JSON.parse(booking.details) : booking.details;
+                if (details.items && Array.isArray(details.items)) {
+                    for (const item of details.items) {
+                        const attraction = await prisma.attraction.findUnique({ where: { id: item.id } });
+                        if (attraction?.isEvent && (attraction.eventSoldQuota || 0) > 0) {
+                            await prisma.attraction.update({
+                                where: { id: item.id },
+                                data: { eventSoldQuota: { decrement: item.qty || 1 } }
+                            });
+                        }
+                    }
+                }
+            } catch (e) {
+                console.error('Failed to restore event quota on check status expired:', e);
+            }
+        }
+        
         return NextResponse.json({ status: 'EXPIRED' });
     }
 
