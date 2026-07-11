@@ -1,5 +1,7 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { Invoice } from '@/lib/xendit';
+import { notifyRoomServiceOrderPaid } from '@/lib/whatsapp';
 
 export async function GET(req: Request) {
   try {
@@ -15,6 +17,7 @@ export async function GET(req: Request) {
       return NextResponse.json({ error: 'Masukkan 4 digit terakhir nomor telepon' }, { status: 400 });
     }
 
+    // 1. Fetch Food Orders
     const foodOrders = await prisma.foodOrder.findMany({
       where: {
         channel: 'ROOM_SERVICE',
@@ -32,6 +35,33 @@ export async function GET(req: Request) {
       const stored = String(o.guestPhone || '').replace(/\D/g, '');
       return stored === digits && stored.slice(-4) === l4;
     });
+
+    // Self-healing: Check Xendit for PENDING food orders
+    for (const o of filteredFood) {
+      if (o.paymentStatus === 'PENDING' && o.paymentId) {
+        try {
+          const inv = await Invoice.getInvoiceById({ invoiceId: o.paymentId });
+          if (inv && (inv.status === 'PAID' || inv.status === 'SETTLED')) {
+            await prisma.foodOrder.update({
+              where: { id: o.id },
+              data: { status: 'CONFIRMED', paymentStatus: 'PAID' }
+            });
+            o.status = 'CONFIRMED';
+            o.paymentStatus = 'PAID';
+            await notifyRoomServiceOrderPaid({ foodOrderId: o.id, hkOrderId: null });
+          } else if (inv && inv.status === 'EXPIRED') {
+            await prisma.foodOrder.update({
+              where: { id: o.id },
+              data: { status: 'CANCELLED', paymentStatus: 'EXPIRED' }
+            });
+            o.status = 'CANCELLED';
+            o.paymentStatus = 'EXPIRED';
+          }
+        } catch (e) {
+          console.error('Xendit self-heal error (Food):', e);
+        }
+      }
+    }
 
     const mappedFood = filteredFood.map(o => ({
       type: 'FOOD',
@@ -56,6 +86,7 @@ export async function GET(req: Request) {
       }))
     }));
 
+    // 2. Fetch HK Orders
     const hkOrders = await prisma.housekeepingOrder.findMany({
       where: {
         guestPhone: { contains: l4 }
@@ -71,6 +102,33 @@ export async function GET(req: Request) {
       const stored = String(o.guestPhone || '').replace(/\D/g, '');
       return stored === digits && stored.slice(-4) === l4;
     });
+
+    // Self-healing: Check Xendit for PENDING hk orders
+    for (const o of filteredHK) {
+      if (o.paymentStatus === 'PENDING' && o.paymentId) {
+        try {
+          const inv = await Invoice.getInvoiceById({ invoiceId: o.paymentId });
+          if (inv && (inv.status === 'PAID' || inv.status === 'SETTLED')) {
+            await prisma.housekeepingOrder.update({
+              where: { id: o.id },
+              data: { status: 'CONFIRMED', paymentStatus: 'PAID' }
+            });
+            o.status = 'CONFIRMED';
+            o.paymentStatus = 'PAID';
+            await notifyRoomServiceOrderPaid({ foodOrderId: null, hkOrderId: o.id });
+          } else if (inv && inv.status === 'EXPIRED') {
+            await prisma.housekeepingOrder.update({
+              where: { id: o.id },
+              data: { status: 'CANCELLED', paymentStatus: 'EXPIRED' }
+            });
+            o.status = 'CANCELLED';
+            o.paymentStatus = 'EXPIRED';
+          }
+        } catch (e) {
+          console.error('Xendit self-heal error (HK):', e);
+        }
+      }
+    }
 
     const mappedHK = filteredHK.map(o => ({
       type: 'HK',
