@@ -108,6 +108,12 @@ async function sendWhatsAppMessageRaw(config: WhatsAppConfig, to: string, messag
     numberKey: config.numberKey,
   };
 
+  // DELAY UNTUK MENCEGAH SPAM / BOT DETECTION
+  // Memberikan jeda acak antara 1000ms (1 detik) sampai 3000ms (3 detik) sebelum request dikirim
+  const delayMs = Math.floor(Math.random() * 2000) + 1000;
+  console.log(`[WhatsApp] Applying anti-spam delay of ${delayMs}ms before sending to ${to}...`);
+  await new Promise((resolve) => setTimeout(resolve, delayMs));
+
   let headers: Record<string, string> = { 'Content-Type': 'application/json' };
   if (config.headersJson) {
     try {
@@ -269,7 +275,15 @@ export async function notifyRoomServiceOrderPaid(input: { foodOrderId?: string |
       const message = formatFoodOrderMessage(order);
       const recipients = splitRecipients(config.restaurantTo);
       console.log(`[WhatsApp] Sending Food Order ${order.id} to ${recipients.length} recipients`);
-      for (const to of recipients) {
+      for (let i = 0; i < recipients.length; i++) {
+        const to = recipients[i];
+        // Jeda tambahan antar nomor secara sekuensial (untuk bulk sending)
+        if (i > 0) {
+            const bulkDelay = Math.floor(Math.random() * 3000) + 2000; // 2-5 detik
+            console.log(`[WhatsApp] Waiting ${bulkDelay}ms before sending to next recipient...`);
+            await new Promise((resolve) => setTimeout(resolve, bulkDelay));
+        }
+
         const r = await sendWhatsAppMessageRaw(config, to, message);
         results.push({
           channel: 'RESTAURANT',
@@ -295,7 +309,14 @@ export async function notifyRoomServiceOrderPaid(input: { foodOrderId?: string |
       const message = formatHousekeepingOrderMessage(order);
       const recipients = splitRecipients(config.housekeepingTo);
       console.log(`[WhatsApp] Sending HK Order ${order.id} to ${recipients.length} recipients`);
-      for (const to of recipients) {
+      for (let i = 0; i < recipients.length; i++) {
+        const to = recipients[i];
+        // Jeda tambahan antar nomor secara sekuensial (untuk bulk sending)
+        if (i > 0) {
+            const bulkDelay = Math.floor(Math.random() * 3000) + 2000; // 2-5 detik
+            console.log(`[WhatsApp] Waiting ${bulkDelay}ms before sending to next recipient...`);
+            await new Promise((resolve) => setTimeout(resolve, bulkDelay));
+        }
         const r = await sendWhatsAppMessageRaw(config, to, message);
         results.push({
           channel: 'HOUSEKEEPING',
