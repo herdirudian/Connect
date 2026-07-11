@@ -43,8 +43,9 @@ function splitRecipients(v?: string) {
     .filter(Boolean);
   const out: string[] = [];
   for (const r of raw) {
-    const digits = r.replace(/[^\d+]/g, '');
-    if (digits) out.push(digits);
+    // Mengizinkan angka, tanda +, dan akhiran @c.us atau @g.us
+    const cleaned = r.replace(/[^\d+@.a-zA-Z]/g, '');
+    if (cleaned) out.push(cleaned);
   }
   return Array.from(new Set(out));
 }
