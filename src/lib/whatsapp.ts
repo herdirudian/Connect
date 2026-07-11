@@ -110,8 +110,8 @@ async function sendWhatsAppMessageRaw(config: WhatsAppConfig, to: string, messag
   };
 
   // DELAY UNTUK MENCEGAH SPAM / BOT DETECTION
-  // Memberikan jeda acak antara 1000ms (1 detik) sampai 3000ms (3 detik) sebelum request dikirim
-  const delayMs = Math.floor(Math.random() * 2000) + 1000;
+  // Memberikan jeda acak antara 3000ms (3 detik) sampai 7000ms (7 detik) sebelum request dikirim
+  const delayMs = Math.floor(Math.random() * 4000) + 3000;
   console.log(`[WhatsApp] Applying anti-spam delay of ${delayMs}ms before sending to ${to}...`);
   await new Promise((resolve) => setTimeout(resolve, delayMs));
 
@@ -280,7 +280,7 @@ export async function notifyRoomServiceOrderPaid(input: { foodOrderId?: string |
         const to = recipients[i];
         // Jeda tambahan antar nomor secara sekuensial (untuk bulk sending)
         if (i > 0) {
-            const bulkDelay = Math.floor(Math.random() * 3000) + 2000; // 2-5 detik
+            const bulkDelay = Math.floor(Math.random() * 5000) + 5000; // 5-10 detik
             console.log(`[WhatsApp] Waiting ${bulkDelay}ms before sending to next recipient...`);
             await new Promise((resolve) => setTimeout(resolve, bulkDelay));
         }
@@ -314,7 +314,7 @@ export async function notifyRoomServiceOrderPaid(input: { foodOrderId?: string |
         const to = recipients[i];
         // Jeda tambahan antar nomor secara sekuensial (untuk bulk sending)
         if (i > 0) {
-            const bulkDelay = Math.floor(Math.random() * 3000) + 2000; // 2-5 detik
+            const bulkDelay = Math.floor(Math.random() * 5000) + 5000; // 5-10 detik
             console.log(`[WhatsApp] Waiting ${bulkDelay}ms before sending to next recipient...`);
             await new Promise((resolve) => setTimeout(resolve, bulkDelay));
         }
