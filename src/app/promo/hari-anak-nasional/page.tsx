@@ -4,7 +4,6 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Checkbox } from '@/components/ui/checkbox';
 import { Loader2, CalendarHeart, Users, MapPin, CheckCircle2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import Link from 'next/link';
@@ -211,11 +210,12 @@ export default function HariAnakNasionalPromoPage() {
             </ul>
             
             <div className="flex items-start space-x-3 pt-3 border-t border-gray-200 mt-3">
-              <Checkbox 
+              <input 
+                type="checkbox"
                 id="privacy" 
                 checked={formData.agreedToPrivacy} 
-                onCheckedChange={handleCheckboxChange} 
-                className="mt-1"
+                onChange={(e) => handleCheckboxChange(e.target.checked)} 
+                className="mt-1 h-4 w-4 rounded border-gray-300 text-brand focus:ring-brand"
               />
               <div className="grid gap-1.5 leading-none">
                 <label
