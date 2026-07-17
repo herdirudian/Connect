@@ -210,6 +210,20 @@ export default function HariAnakNasionalPromoPage() {
             </div>
           </div>
 
+          {/* Syarat dan Ketentuan */}
+          <div className="bg-orange-50 p-4 rounded-xl border border-orange-100 text-sm text-gray-700 space-y-3">
+            <p className="font-bold text-orange-800">Syarat & Ketentuan Promo:</p>
+            <ul className="list-disc pl-5 space-y-1">
+              <li>Berlaku untuk anak usia 5-17 tahun</li>
+              <li>Registrasi dilakukan secara online</li>
+              <li>1 Registrasi berlaku untuk 1 Anak + 1 Orang Tua/Pendamping</li>
+              <li>Pilih tanggal kunjungan</li>
+              <li>Kuota terbatas hanya 3.000 registrasi</li>
+              <li>Berlaku selama periode promo</li>
+              <li>Tidak dapat digabung dengan promo lain</li>
+            </ul>
+          </div>
+
           {/* Kebijakan Privasi (UU PDP) */}
           <div className="bg-gray-50 p-4 rounded-xl border border-gray-100 text-xs text-gray-600 space-y-3">
             <p className="font-semibold text-gray-800">Kebijakan Privasi & Persetujuan Penggunaan Data</p>

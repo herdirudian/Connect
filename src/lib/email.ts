@@ -554,10 +554,13 @@ export async function sendHariAnakNasionalVoucherEmail(
             
             <p style="font-size: 14px; text-align: left;"><strong>Syarat & Ketentuan:</strong></p>
             <ul style="font-size: 12px; text-align: left; color: #666; padding-left: 20px;">
-              <li>Voucher ini berlaku hanya untuk anak (${childName}) pada tanggal ${formattedDate}.</li>
-              <li>Orang tua / pendamping wajib membeli tiket reguler di loket atau secara online.</li>
-              <li>Satu E-Voucher berlaku untuk 1 (satu) anak dan hanya dapat digunakan 1 kali (sekali scan).</li>
-              <li>Mohon siapkan bukti identitas anak (KIA/Kartu Keluarga) jika diminta oleh petugas.</li>
+              <li>Berlaku untuk anak usia 5-17 tahun</li>
+              <li>Registrasi dilakukan secara online</li>
+              <li>1 Registrasi berlaku untuk 1 Anak + 1 Orang Tua/Pendamping</li>
+              <li>Pilih tanggal kunjungan</li>
+              <li>Kuota terbatas hanya 3.000 registrasi</li>
+              <li>Berlaku selama periode promo</li>
+              <li>Tidak dapat digabung dengan promo lain</li>
             </ul>
           </div>
           <div style="text-align: center; margin-top: 20px; color: #999; font-size: 12px;">
