@@ -7,13 +7,6 @@ import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Loader2, CalendarHeart, Users, MapPin, CheckCircle2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { 
-  Select, 
-  SelectContent, 
-  SelectItem, 
-  SelectTrigger, 
-  SelectValue 
-} from "@/components/ui/select";
 import Link from 'next/link';
 
 export default function HariAnakNasionalPromoPage() {
@@ -188,17 +181,18 @@ export default function HariAnakNasionalPromoPage() {
             
             <div className="space-y-2">
               <Label>Pilih Tanggal Kunjungan <span className="text-red-500">*</span></Label>
-              <Select required value={formData.visitDate} onValueChange={handleDateChange}>
-                <SelectTrigger className="h-12 rounded-xl">
-                  <SelectValue placeholder="-- Pilih Tanggal --" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="2026-07-23">Kamis, 23 Juli 2026</SelectItem>
-                  <SelectItem value="2026-07-24">Jum'at, 24 Juli 2026</SelectItem>
-                  <SelectItem value="2026-07-25">Sabtu, 25 Juli 2026</SelectItem>
-                  <SelectItem value="2026-07-26">Minggu, 26 Juli 2026</SelectItem>
-                </SelectContent>
-              </Select>
+              <select 
+                required 
+                value={formData.visitDate} 
+                onChange={(e) => handleDateChange(e.target.value)}
+                className="flex h-12 w-full items-center justify-between rounded-xl border border-input bg-transparent px-3 py-2 text-sm shadow-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                <option value="" disabled>-- Pilih Tanggal --</option>
+                <option value="2026-07-23">Kamis, 23 Juli 2026</option>
+                <option value="2026-07-24">Jum'at, 24 Juli 2026</option>
+                <option value="2026-07-25">Sabtu, 25 Juli 2026</option>
+                <option value="2026-07-26">Minggu, 26 Juli 2026</option>
+              </select>
             </div>
           </div>
 
