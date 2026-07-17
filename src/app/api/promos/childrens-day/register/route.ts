@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { sendHariAnakNasionalVoucherEmail } from '@/lib/email';
 
 export async function POST(req: Request) {
   try {
@@ -65,6 +66,15 @@ export async function POST(req: Request) {
         agreedToPrivacy
       }
     });
+
+    // Send the E-Voucher via email
+    await sendHariAnakNasionalVoucherEmail(
+      parentEmail,
+      parentName,
+      childName,
+      visitDate,
+      registration.id
+    );
 
     return NextResponse.json({ 
       success: true, 

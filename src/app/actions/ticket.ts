@@ -387,7 +387,38 @@ export async function getTicketDetails(id: string): Promise<TicketValidationResu
         return await formatPromoResult(promoClaim);
     }
 
-    return { success: false, message: 'Ticket, Voucher, or Partner Promo not found' };
+    // 4. Try to find as Hari Anak Nasional Registration
+    const childrensDay = await prisma.childrensDayRegistration.findFirst({
+        where: {
+            OR: [
+                { id: searchId },
+                { id: { startsWith: searchId } }
+            ]
+        }
+    });
+
+    if (childrensDay) {
+        const mappedTicket = {
+            id: childrensDay.id,
+            title: 'Promo Hari Anak Nasional (Tiket Anak)',
+            description: `Kunjungan: ${childrensDay.visitDate}`,
+            status: childrensDay.isUsed ? 'USED' : 'ACTIVE',
+            validUntil: new Date(childrensDay.visitDate + 'T23:59:59'),
+            usedAt: childrensDay.usedAt,
+            user: {
+                name: childrensDay.parentName,
+                email: childrensDay.parentEmail,
+                tier: 'GUEST'
+            },
+            type: 'PROMO',
+            amount: 0,
+            pax: 1,
+            items: [{ id: childrensDay.id, name: `Tiket Anak Gratis - ${childrensDay.childName} (${childrensDay.childAge} Thn)`, qty: 1, price: 0 }]
+        };
+        return { success: true, message: 'Promo Hari Anak found', type: 'PROMO', data: mappedTicket };
+    }
+
+    return { success: false, message: 'Ticket, Voucher, or Promo not found' };
   } catch (error) {
     console.error('Error fetching details:', error);
     return { success: false, message: 'Failed to fetch details' };
@@ -426,7 +457,7 @@ export async function getRedemptionHistory(limit: number = 20, dateStr?: string)
     lt: new Date(`${dateStr}T23:59:59.999`)
   } : undefined;
 
-  const [usedTickets, usedVouchers, promoTxs, usedBookings] = await Promise.all([
+  const [usedTickets, usedVouchers, promoTxs, usedBookings, usedChildrensDay] = await Promise.all([
     prisma.ticket.findMany({
       where: { 
         status: 'USED', 
@@ -462,6 +493,14 @@ export async function getRedemptionHistory(limit: number = 20, dateStr?: string)
       orderBy: { updatedAt: 'desc' },
       take: limit,
     }),
+    prisma.childrensDayRegistration.findMany({
+      where: {
+        isUsed: true,
+        usedAt: whereDate || { not: null }
+      },
+      orderBy: { usedAt: 'desc' },
+      take: limit,
+    })
   ]);
 
   const promoIds = promoTxs.map(tx => tx.source?.split(':')[1]).filter(Boolean) as string[];
@@ -558,6 +597,19 @@ export async function getRedemptionHistory(limit: number = 20, dateStr?: string)
             usedAt: b.updatedAt // Use updatedAt as redemption time for bookings
         };
     }),
+    ...usedChildrensDay.map(c => ({
+        id: c.id,
+        type: 'PROMO' as const,
+        title: 'Promo Hari Anak Nasional (Tiket Anak)',
+        description: `Anak: ${c.childName} (${c.childAge} Thn)`,
+        userName: c.parentName,
+        userEmail: c.parentEmail,
+        amount: 0,
+        items: [{ name: 'Tiket Anak Gratis', qty: 1, price: 0 }],
+        pax: 1,
+        transactionId: c.id,
+        usedAt: c.usedAt as Date,
+    })),
   ];
 
   items.sort((a, b) => b.usedAt.getTime() - a.usedAt.getTime());
@@ -710,6 +762,42 @@ export async function redeemTicket(id: string): Promise<TicketValidationResult> 
         type: 'PROMO',
         data: promoItem,
       };
+    }
+
+    // 4. Try Hari Anak Nasional
+    const childrensDay = await prisma.childrensDayRegistration.findUnique({
+      where: { id }
+    });
+
+    if (childrensDay) {
+      if (childrensDay.isUsed) {
+        return { success: false, message: 'Voucher Hari Anak Nasional sudah pernah digunakan' };
+      }
+
+      const today = new Date();
+      // Only check date if needed, but the requirements just say "reedem"
+      // Optional: enforce date
+      // const visitDate = new Date(childrensDay.visitDate + 'T00:00:00');
+      // if (today.toDateString() !== visitDate.toDateString() && today > visitDate) ...
+
+      const updated = await prisma.childrensDayRegistration.update({
+        where: { id },
+        data: {
+          isUsed: true,
+          usedAt: today
+        }
+      });
+
+      const mappedData = {
+        id: updated.id,
+        title: 'Promo Hari Anak Nasional (Tiket Anak)',
+        status: 'USED',
+        usedAt: updated.usedAt,
+        type: 'PROMO'
+      };
+
+      revalidatePath('/admin/validate');
+      return { success: true, message: 'Voucher Hari Anak berhasil diredeem', type: 'PROMO', data: mappedData };
     }
 
     return { success: false, message: 'Item not found' };

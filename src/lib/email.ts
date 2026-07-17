@@ -510,6 +510,78 @@ export async function sendBookingNotificationToReception(
   }
 }
 
+export async function sendHariAnakNasionalVoucherEmail(
+  to: string,
+  parentName: string,
+  childName: string,
+  visitDate: string,
+  registrationId: string
+) {
+  try {
+    const qrCodeDataUrl = await QRCode.toDataURL(registrationId);
+    
+    // Format date properly
+    let formattedDate = visitDate;
+    if (visitDate === '2026-07-23') formattedDate = 'Kamis, 23 Juli 2026';
+    else if (visitDate === '2026-07-24') formattedDate = "Jum'at, 24 Juli 2026";
+    else if (visitDate === '2026-07-25') formattedDate = 'Sabtu, 25 Juli 2026';
+    else if (visitDate === '2026-07-26') formattedDate = 'Minggu, 26 Juli 2026';
+
+    const mailOptions = {
+      from: process.env.FROM_EMAIL,
+      to,
+      subject: `E-Voucher Promo Hari Anak Nasional - The Lodge Maribaya`,
+      html: `
+        <div style="font-family: Arial, sans-serif; padding: 20px; color: #333; max-width: 600px; margin: 0 auto; border: 1px solid #eee; border-radius: 10px;">
+          <div style="text-align: center; margin-bottom: 20px;">
+            <img src="${APP_URL}/logotlm.png" alt="The Lodge Maribaya" style="height: 48px; margin-bottom: 8px;" />
+            <h2 style="color: #1b5e20; margin: 0;">Promo Hari Anak Nasional</h2>
+          </div>
+          <div style="background-color: #f9f9f9; padding: 20px; border-radius: 8px; text-align: center;">
+            <p style="margin-top: 0; font-size: 16px;">Halo <strong>${parentName}</strong>,</p>
+            <p>Pendaftaran Anda berhasil! Berikut adalah E-Voucher tiket gratis untuk anak Anda:</p>
+            
+            <div style="background-color: white; padding: 15px; border-radius: 8px; margin: 20px 0; border: 1px dashed #2e7d32;">
+              <h3 style="color: #1b5e20; margin: 0 0 10px 0;">Tiket Anak Gratis</h3>
+              <p style="margin: 5px 0; font-size: 14px; color: #666;">Nama Anak: <strong>${childName}</strong></p>
+              <p style="margin: 5px 0 15px 0; font-size: 14px; color: #666;">Tanggal Kunjungan: <strong>${formattedDate}</strong></p>
+              
+              <div style="margin-top: 20px;">
+                <img src="cid:qrcode" alt="QR Code" style="width: 200px; height: 200px;" />
+              </div>
+              <p style="font-size: 12px; color: #888; margin-top: 10px;">Tunjukkan QR Code ini kepada petugas tiket saat kedatangan.</p>
+            </div>
+            
+            <p style="font-size: 14px; text-align: left;"><strong>Syarat & Ketentuan:</strong></p>
+            <ul style="font-size: 12px; text-align: left; color: #666; padding-left: 20px;">
+              <li>Voucher ini berlaku hanya untuk anak (${childName}) pada tanggal ${formattedDate}.</li>
+              <li>Orang tua / pendamping wajib membeli tiket reguler di loket atau secara online.</li>
+              <li>Satu E-Voucher berlaku untuk 1 (satu) anak dan hanya dapat digunakan 1 kali (sekali scan).</li>
+              <li>Mohon siapkan bukti identitas anak (KIA/Kartu Keluarga) jika diminta oleh petugas.</li>
+            </ul>
+          </div>
+          <div style="text-align: center; margin-top: 20px; color: #999; font-size: 12px;">
+            &copy; ${new Date().getFullYear()} The Lodge Group. All rights reserved.
+          </div>
+        </div>
+      `,
+      attachments: [
+        {
+          filename: 'qrcode.png',
+          content: qrCodeDataUrl.split('base64,')[1],
+          encoding: 'base64',
+          cid: 'qrcode' 
+        }
+      ]
+    };
+
+    await transporter.sendMail(mailOptions);
+    console.log(`Hari Anak Nasional voucher email sent to ${to}`);
+  } catch (error) {
+    console.error('Error sending Hari Anak Nasional voucher email:', error);
+  }
+}
+
 export async function sendVoucherClaimEmail(to: string, fullName: string, voucherCode: string) {
   const mailOptions = {
     from: process.env.FROM_EMAIL,

@@ -584,6 +584,8 @@ model ChildrensDayRegistration {
   childAge        Int
   visitDate       String
   agreedToPrivacy Boolean  @default(true)
+  isUsed          Boolean  @default(false)
+  usedAt          DateTime?
   createdAt       DateTime @default(now())
 
   @@index([parentEmail])
