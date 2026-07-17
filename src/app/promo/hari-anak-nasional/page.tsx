@@ -104,11 +104,24 @@ export default function HariAnakNasionalPromoPage() {
               'Minggu, 26 Juli 2026'
             }</p>
           </div>
-          <Link href="/" className="w-full block">
-            <Button className="w-full bg-brand hover:bg-brand-dark text-white rounded-xl h-12">
-              Kembali ke Beranda
-            </Button>
-          </Link>
+          <Button 
+            onClick={() => {
+              setSuccess(false);
+              setFormData({
+                parentName: '',
+                parentPhone: '',
+                parentEmail: '',
+                parentCity: '',
+                childName: '',
+                childAge: '',
+                visitDate: '',
+                agreedToPrivacy: false
+              });
+            }}
+            className="w-full bg-brand hover:bg-brand-dark text-white rounded-xl h-12"
+          >
+            Kembali ke Form Pendaftaran
+          </Button>
         </div>
       </div>
     );
