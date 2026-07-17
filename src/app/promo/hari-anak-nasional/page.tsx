@@ -105,9 +105,11 @@ export default function HariAnakNasionalPromoPage() {
               'Minggu, 26 Juli 2026'
             }</p>
           </div>
-          <Button asChild className="w-full bg-brand hover:bg-brand-dark text-white rounded-xl h-12">
-            <Link href="/">Kembali ke Beranda</Link>
-          </Button>
+          <Link href="/" className="w-full block">
+            <Button className="w-full bg-brand hover:bg-brand-dark text-white rounded-xl h-12">
+              Kembali ke Beranda
+            </Button>
+          </Link>
         </div>
       </div>
     );
