@@ -33,10 +33,16 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Tanggal kunjungan tidak valid' }, { status: 400 });
     }
 
-    // Check quota (Maximum 3000 participants)
+    // Get dynamic quota setting
+    const quotaSetting = await prisma.systemSetting.findUnique({
+      where: { key: 'promo_childrens_day_quota' }
+    });
+    const maxQuota = quotaSetting ? parseInt(quotaSetting.value, 10) : 3000;
+
+    // Check quota
     const currentCount = await prisma.childrensDayRegistration.count();
-    if (currentCount >= 3000) {
-      return NextResponse.json({ error: 'Mohon maaf, kuota Promo Hari Anak Nasional (3000 peserta) telah terpenuhi.' }, { status: 403 });
+    if (currentCount >= maxQuota) {
+      return NextResponse.json({ error: `Mohon maaf, kuota Promo Hari Anak Nasional (${maxQuota} peserta) telah terpenuhi.` }, { status: 403 });
     }
 
     // Check duplicate (optional, but good to have)

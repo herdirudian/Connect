@@ -7,17 +7,23 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
-import { Search, Loader2, Edit2, Trash2, Ticket, Users, RefreshCw } from 'lucide-react';
+import { Search, Loader2, Edit2, Trash2, Ticket, Users, RefreshCw, Settings } from 'lucide-react';
 
 export default function AdminChildrensDayPage() {
   const [data, setData] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [count, setCount] = useState(0);
+  const [maxQuota, setMaxQuota] = useState(3000);
   const [searchTerm, setSearchTerm] = useState('');
   
   const [editItem, setEditItem] = useState<any>(null);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+
+  // Quota Settings state
+  const [isQuotaDialogOpen, setIsQuotaDialogOpen] = useState(false);
+  const [tempQuota, setTempQuota] = useState(3000);
+  const [isSavingQuota, setIsSavingQuota] = useState(false);
 
   const { toast } = useToast();
 
@@ -29,6 +35,7 @@ export default function AdminChildrensDayPage() {
       if (res.ok) {
         setData(json.registrations);
         setCount(json.count);
+        setMaxQuota(json.maxQuota);
       }
     } catch (error) {
       console.error(error);
@@ -79,6 +86,26 @@ export default function AdminChildrensDayPage() {
     }
   };
 
+  const handleSaveQuota = async () => {
+    setIsSavingQuota(true);
+    try {
+      const res = await fetch('/api/admin/childrens-day', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ maxQuota: parseInt(tempQuota.toString(), 10) })
+      });
+      if (!res.ok) throw new Error('Gagal menyimpan kuota');
+      
+      toast({ title: 'Berhasil', description: 'Kuota berhasil diperbarui' });
+      setIsQuotaDialogOpen(false);
+      fetchData();
+    } catch (error: any) {
+      toast({ title: 'Error', description: error.message, variant: 'destructive' });
+    } finally {
+      setIsSavingQuota(false);
+    }
+  };
+
   const filteredData = data.filter(d => 
     d.parentName.toLowerCase().includes(searchTerm.toLowerCase()) ||
     d.childName.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -118,10 +145,23 @@ export default function AdminChildrensDayPage() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-orange-100 text-sm font-medium mb-1">Sisa Kuota</p>
-                <h3 className="text-4xl font-black">{Math.max(0, 3000 - count)}</h3>
+                <h3 className="text-4xl font-black">{Math.max(0, maxQuota - count)} <span className="text-sm font-normal text-orange-200">/ {maxQuota}</span></h3>
               </div>
-              <div className="bg-white/20 p-3 rounded-xl">
-                <Ticket size={32} className="text-white" />
+              <div className="flex flex-col gap-2 items-end">
+                <div className="bg-white/20 p-2 rounded-xl mb-1">
+                  <Ticket size={24} className="text-white" />
+                </div>
+                <Button 
+                  size="sm" 
+                  variant="secondary" 
+                  className="bg-white/20 hover:bg-white/30 text-white border-none h-8 text-xs"
+                  onClick={() => {
+                    setTempQuota(maxQuota);
+                    setIsQuotaDialogOpen(true);
+                  }}
+                >
+                  <Settings size={14} className="mr-1" /> Edit Kuota
+                </Button>
               </div>
             </div>
           </CardContent>
@@ -269,6 +309,34 @@ export default function AdminChildrensDayPage() {
             <Button variant="outline" onClick={() => setIsEditDialogOpen(false)}>Batal</Button>
             <Button onClick={handleSave} disabled={isSaving} className="bg-brand hover:bg-brand-dark">
               {isSaving ? <Loader2 className="animate-spin h-4 w-4" /> : 'Simpan Perubahan'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Quota Settings Dialog */}
+      <Dialog open={isQuotaDialogOpen} onOpenChange={setIsQuotaDialogOpen}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Pengaturan Kuota Promo</DialogTitle>
+          </DialogHeader>
+          <div className="py-4 space-y-4">
+            <div className="space-y-2">
+              <Label>Maksimal Pendaftar</Label>
+              <Input 
+                type="number" 
+                min="0"
+                value={tempQuota} 
+                onChange={(e) => setTempQuota(parseInt(e.target.value) || 0)} 
+                className="h-12 text-lg font-bold"
+              />
+              <p className="text-xs text-gray-500">Ubah nilai ini untuk membatasi atau membuka kembali pendaftaran.</p>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsQuotaDialogOpen(false)}>Batal</Button>
+            <Button onClick={handleSaveQuota} disabled={isSavingQuota} className="bg-orange-500 hover:bg-orange-600 text-white">
+              {isSavingQuota ? <Loader2 className="animate-spin h-4 w-4 mr-2" /> : null} Simpan Kuota
             </Button>
           </DialogFooter>
         </DialogContent>
