@@ -573,3 +573,19 @@ model VoucherClaim {
   @@index([phoneNumber])
   @@index([voucherCode])
 }
+
+model ChildrensDayRegistration {
+  id              String   @id @default(cuid())
+  parentName      String
+  parentPhone     String
+  parentEmail     String
+  parentCity      String
+  childName       String
+  childAge        Int
+  visitDate       String
+  agreedToPrivacy Boolean  @default(true)
+  createdAt       DateTime @default(now())
+
+  @@index([parentEmail])
+  @@index([parentPhone])
+}
