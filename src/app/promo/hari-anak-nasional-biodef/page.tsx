@@ -108,13 +108,13 @@ export default function HariAnakNasionalBiodefPromoPage() {
               setSuccess(false);
               setFormData({
                 parentName: '',
-                parentPhone: '',
                 parentEmail: '',
                 parentCity: '',
                 childName: '',
                 childAge: '',
                 visitDate: '',
-                agreedToPrivacy: false
+                agreedToPrivacy: false,
+                sponsor: 'BIODEF'
               });
             }}
             className="w-full bg-brand hover:bg-brand-dark text-white rounded-xl h-12"
