@@ -515,7 +515,8 @@ export async function sendHariAnakNasionalVoucherEmail(
   parentName: string,
   childName: string,
   visitDate: string,
-  registrationId: string
+  registrationId: string,
+  sponsor: string = 'NONE'
 ) {
   try {
     const qrCodeDataUrl = await QRCode.toDataURL(registrationId);
@@ -527,6 +528,8 @@ export async function sendHariAnakNasionalVoucherEmail(
     else if (visitDate === '2026-07-25') formattedDate = 'Sabtu, 25 Juli 2026';
     else if (visitDate === '2026-07-26') formattedDate = 'Minggu, 26 Juli 2026';
 
+    const title = sponsor === 'BIODEF' ? 'Promo Hari Anak x Biodef' : 'Promo Hari Anak Nasional';
+
     const mailOptions = {
       from: process.env.FROM_EMAIL,
       to,
@@ -535,7 +538,7 @@ export async function sendHariAnakNasionalVoucherEmail(
         <div style="font-family: Arial, sans-serif; padding: 20px; color: #333; max-width: 600px; margin: 0 auto; border: 1px solid #eee; border-radius: 10px;">
           <div style="text-align: center; margin-bottom: 20px;">
             <img src="${APP_URL}/logotlm.png" alt="The Lodge Maribaya" style="height: 48px; margin-bottom: 8px;" />
-            <h2 style="color: #1b5e20; margin: 0;">Promo Hari Anak Nasional</h2>
+            <h2 style="color: #1b5e20; margin: 0;">${title}</h2>
           </div>
           <div style="background-color: #f9f9f9; padding: 20px; border-radius: 8px; text-align: center;">
             <p style="margin-top: 0; font-size: 16px;">Halo <strong>${parentName}</strong>,</p>
@@ -558,7 +561,7 @@ export async function sendHariAnakNasionalVoucherEmail(
               <li>Registrasi dilakukan secara online</li>
               <li>1 Registrasi berlaku untuk 1 Anak + 1 Orang Tua/Pendamping</li>
               <li>Pilih tanggal kunjungan</li>
-              <li>Kuota terbatas hanya 3.000 registrasi</li>
+              <li>Kuota terbatas hanya ${sponsor === 'BIODEF' ? '100' : '3.000'} registrasi</li>
               <li>Berlaku selama periode promo</li>
               <li>Tidak dapat digabung dengan promo lain</li>
             </ul>

@@ -13,12 +13,17 @@ export async function POST(req: Request) {
       childName, 
       childAge, 
       visitDate, 
-      agreedToPrivacy 
+      agreedToPrivacy,
+      sponsor = 'NONE'
     } = body;
 
     // Validate input
-    if (!parentName || !parentPhone || !parentEmail || !parentCity || !childName || childAge === undefined || !visitDate || !agreedToPrivacy) {
+    if (!parentName || !parentEmail || !parentCity || !childName || childAge === undefined || !visitDate || !agreedToPrivacy) {
       return NextResponse.json({ error: 'Mohon lengkapi semua data dan setujui Kebijakan Privasi' }, { status: 400 });
+    }
+    
+    if (sponsor === 'NONE' && !parentPhone) {
+      return NextResponse.json({ error: 'Nomor WhatsApp wajib diisi' }, { status: 400 });
     }
 
     // Validate date
@@ -34,13 +39,18 @@ export async function POST(req: Request) {
     }
 
     // Get dynamic quota setting
+    const settingKey = sponsor === 'BIODEF' ? 'promo_childrens_day_biodef_quota' : 'promo_childrens_day_quota';
+    const defaultQuota = sponsor === 'BIODEF' ? 100 : 3000;
+    
     const quotaSetting = await prisma.systemSetting.findUnique({
-      where: { key: 'promo_childrens_day_quota' }
+      where: { key: settingKey }
     });
-    const maxQuota = quotaSetting ? parseInt(quotaSetting.value, 10) : 3000;
+    const maxQuota = quotaSetting ? parseInt(quotaSetting.value, 10) : defaultQuota;
 
     // Check quota
-    const currentCount = await prisma.childrensDayRegistration.count();
+    const currentCount = await prisma.childrensDayRegistration.count({
+      where: { sponsor }
+    });
     if (currentCount >= maxQuota) {
       return NextResponse.json({ error: `Mohon maaf, kuota Promo Hari Anak Nasional (${maxQuota} peserta) telah terpenuhi.` }, { status: 403 });
     }
@@ -48,9 +58,10 @@ export async function POST(req: Request) {
     // Check duplicate (optional, but good to have)
     const existingRegistration = await prisma.childrensDayRegistration.findFirst({
       where: {
+        sponsor,
         OR: [
           { parentEmail },
-          { parentPhone }
+          ...(parentPhone ? [{ parentPhone }] : [])
         ]
       }
     });
@@ -63,13 +74,14 @@ export async function POST(req: Request) {
     const registration = await prisma.childrensDayRegistration.create({
       data: {
         parentName,
-        parentPhone,
+        parentPhone: parentPhone || null,
         parentEmail,
         parentCity,
         childName,
         childAge: parseInt(childAge.toString(), 10),
         visitDate,
-        agreedToPrivacy
+        agreedToPrivacy,
+        sponsor
       }
     });
 

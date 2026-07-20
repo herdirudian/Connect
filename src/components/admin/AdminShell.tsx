@@ -86,7 +86,8 @@ export function AdminShell({ children, userPermissions }: AdminShellProps) {
                   {can(PERMISSIONS.MANAGE_REFERRALS) && <NavLink href="/admin/referrals" icon={Share2} active={pathname.startsWith('/admin/referrals')}>Referral Settings</NavLink>}
                   {can(PERMISSIONS.MANAGE_PROMOS) && <NavLink href="/admin/promos" icon={Megaphone} active={pathname.startsWith('/admin/promos')}>Partner Promos</NavLink>}
                   {can(PERMISSIONS.MANAGE_PROMOS) && <NavLink href="/admin/promocodes" icon={Percent} active={pathname.startsWith('/admin/promocodes')}>Promo Codes</NavLink>}
-                  {can(PERMISSIONS.MANAGE_PROMOS) && <NavLink href="/admin/childrens-day" icon={Users} active={pathname.startsWith('/admin/childrens-day')}>Promo Hari Anak</NavLink>}
+                  {can(PERMISSIONS.MANAGE_PROMOS) && <NavLink href="/admin/childrens-day" icon={Users} active={pathname.startsWith('/admin/childrens-day') && !pathname.startsWith('/admin/childrens-day-biodef')}>Promo Hari Anak</NavLink>}
+                  {can(PERMISSIONS.MANAGE_PROMOS) && <NavLink href="/admin/childrens-day-biodef" icon={Users} active={pathname.startsWith('/admin/childrens-day-biodef')}>Promo Biodef</NavLink>}
                   {can(PERMISSIONS.MANAGE_PROMOS) && <NavLink href="/admin/vouchers" icon={Ticket} active={pathname.startsWith('/admin/vouchers')}>Voucher Klaim</NavLink>}
                   {can(PERMISSIONS.VIEW_REPORTS) && <NavLink href="/admin/reports/daily-sales" icon={LayoutDashboard} active={pathname.startsWith('/admin/reports')}>Reports System</NavLink>}
                 </nav>

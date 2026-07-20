@@ -577,13 +577,14 @@ model VoucherClaim {
 model ChildrensDayRegistration {
   id              String   @id @default(cuid())
   parentName      String
-  parentPhone     String
+  parentPhone     String?
   parentEmail     String
   parentCity      String
   childName       String
   childAge        Int
   visitDate       String
   agreedToPrivacy Boolean  @default(true)
+  sponsor         String   @default("NONE") // "NONE" or "BIODEF"
   isUsed          Boolean  @default(false)
   usedAt          DateTime?
   createdAt       DateTime @default(now())
