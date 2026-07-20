@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
-import { Search, Loader2, Edit2, Trash2, Ticket, Users, RefreshCw, Settings } from 'lucide-react';
+import { Search, Loader2, Edit2, Trash2, Ticket, Users, RefreshCw, Settings, CalendarDays } from 'lucide-react';
 
 export default function AdminChildrensDayBiodefPage() {
   const [data, setData] = useState<any[]>([]);
@@ -15,6 +15,7 @@ export default function AdminChildrensDayBiodefPage() {
   const [count, setCount] = useState(0);
   const [maxQuota, setMaxQuota] = useState(3000);
   const [searchTerm, setSearchTerm] = useState('');
+  const [filterDate, setFilterDate] = useState('ALL');
   
   const [editItem, setEditItem] = useState<any>(null);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
@@ -106,12 +107,22 @@ export default function AdminChildrensDayBiodefPage() {
     }
   };
 
-  const filteredData = data.filter(d => 
-    d.parentName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    d.childName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    (d.parentPhone && d.parentPhone.includes(searchTerm)) ||
-    d.parentEmail.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredData = data.filter(d => {
+    const matchesSearch = d.parentName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      d.childName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (d.parentPhone && d.parentPhone.includes(searchTerm)) ||
+      d.parentEmail.toLowerCase().includes(searchTerm.toLowerCase());
+      
+    const matchesDate = filterDate === 'ALL' || d.visitDate === filterDate;
+    
+    return matchesSearch && matchesDate;
+  });
+
+  // Calculate Date Summaries
+  const dateSummaries = data.reduce((acc: any, curr: any) => {
+    acc[curr.visitDate] = (acc[curr.visitDate] || 0) + 1;
+    return acc;
+  }, {});
 
   return (
     <div className="space-y-8">
@@ -166,6 +177,33 @@ export default function AdminChildrensDayBiodefPage() {
             </div>
           </CardContent>
         </Card>
+
+        <Card className="bg-white border shadow-sm">
+          <CardContent className="p-4 flex flex-col h-full justify-center">
+            <div className="flex items-center gap-2 mb-3">
+              <CalendarDays className="text-brand w-5 h-5" />
+              <h4 className="font-bold text-gray-800 text-sm">Ringkasan per Tanggal</h4>
+            </div>
+            <div className="grid grid-cols-2 gap-2 text-xs">
+              <div className="bg-gray-50 p-2 rounded border">
+                <span className="text-gray-500 block">23 Jul:</span>
+                <span className="font-bold text-lg">{dateSummaries['2026-07-23'] || 0}</span>
+              </div>
+              <div className="bg-gray-50 p-2 rounded border">
+                <span className="text-gray-500 block">24 Jul:</span>
+                <span className="font-bold text-lg">{dateSummaries['2026-07-24'] || 0}</span>
+              </div>
+              <div className="bg-gray-50 p-2 rounded border">
+                <span className="text-gray-500 block">25 Jul:</span>
+                <span className="font-bold text-lg">{dateSummaries['2026-07-25'] || 0}</span>
+              </div>
+              <div className="bg-gray-50 p-2 rounded border">
+                <span className="text-gray-500 block">26 Jul:</span>
+                <span className="font-bold text-lg">{dateSummaries['2026-07-26'] || 0}</span>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
       </div>
 
       <Card>
@@ -175,14 +213,27 @@ export default function AdminChildrensDayBiodefPage() {
               <CardTitle>Daftar Peserta</CardTitle>
               <CardDescription>Semua pendaftar tiket promo gratis.</CardDescription>
             </div>
-            <div className="relative w-full md:w-72">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-              <Input 
-                placeholder="Cari nama, email, no HP..." 
-                className="pl-9"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-              />
+            <div className="flex flex-col sm:flex-row gap-3">
+              <select
+                className="flex h-10 w-full sm:w-48 rounded-md border border-input bg-transparent px-3 py-2 text-sm ring-offset-background"
+                value={filterDate}
+                onChange={(e) => setFilterDate(e.target.value)}
+              >
+                <option value="ALL">Semua Tanggal</option>
+                <option value="2026-07-23">23 Juli 2026</option>
+                <option value="2026-07-24">24 Juli 2026</option>
+                <option value="2026-07-25">25 Juli 2026</option>
+                <option value="2026-07-26">26 Juli 2026</option>
+              </select>
+              <div className="relative w-full sm:w-64">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                <Input 
+                  placeholder="Cari nama, email, no HP..." 
+                  className="pl-9"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                />
+              </div>
             </div>
           </div>
         </CardHeader>
