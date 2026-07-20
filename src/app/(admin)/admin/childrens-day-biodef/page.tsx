@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
-import { Search, Loader2, Edit2, Trash2, Ticket, Users, RefreshCw, Settings, CalendarDays } from 'lucide-react';
+import { Search, Loader2, Edit2, Trash2, Ticket, Users, RefreshCw, Settings, CalendarDays, Download } from 'lucide-react';
 
 export default function AdminChildrensDayBiodefPage() {
   const [data, setData] = useState<any[]>([]);
@@ -124,6 +124,38 @@ export default function AdminChildrensDayBiodefPage() {
     return acc;
   }, {});
 
+  const handleExportCSV = () => {
+    const headers = ['ID', 'Tanggal Daftar', 'Nama Orang Tua', 'No WhatsApp', 'Email', 'Kota Domisili', 'Nama Anak', 'Usia Anak', 'Tanggal Kunjungan', 'Status'];
+    const csvRows = [headers.join(',')];
+
+    filteredData.forEach(item => {
+      const row = [
+        item.id,
+        new Date(item.createdAt).toLocaleDateString('id-ID'),
+        `"${item.parentName}"`,
+        `"${item.parentPhone || ''}"`,
+        `"${item.parentEmail}"`,
+        `"${item.parentCity}"`,
+        `"${item.childName}"`,
+        item.childAge,
+        item.visitDate,
+        item.isUsed ? 'USED' : 'ACTIVE'
+      ];
+      csvRows.push(row.join(','));
+    });
+
+    const csvString = csvRows.join('\n');
+    const blob = new Blob([csvString], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.setAttribute('href', url);
+    link.setAttribute('download', `data_pendaftar_biodef_${new Date().getTime()}.csv`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   return (
     <div className="space-y-8">
       <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
@@ -234,6 +266,9 @@ export default function AdminChildrensDayBiodefPage() {
                   onChange={(e) => setSearchTerm(e.target.value)}
                 />
               </div>
+              <Button onClick={handleExportCSV} variant="outline" className="gap-2 bg-green-50 text-green-700 border-green-200 hover:bg-green-100 hover:text-green-800">
+                <Download size={16} /> Export CSV
+              </Button>
             </div>
           </div>
         </CardHeader>
