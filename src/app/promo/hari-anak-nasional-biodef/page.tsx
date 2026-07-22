@@ -133,10 +133,10 @@ export default function HariAnakNasionalBiodefPromoPage() {
         <div className="bg-brand text-white p-8 text-center relative overflow-hidden">
           <div className="absolute inset-0 opacity-10 bg-[url('/pattern.png')]"></div>
           <div className="relative z-10">
-            <div className="flex justify-center items-center gap-6 mb-6 bg-white/20 p-4 rounded-2xl backdrop-blur-sm w-fit mx-auto border border-white/30 shadow-sm">
-              <img src="/img/Collab/thelodge.png" alt="The Lodge Maribaya" className="h-12 md:h-16 object-contain bg-white rounded-lg p-2 shadow-sm" />
+            <div className="flex justify-center items-center gap-6 mb-6">
+              <img src="/img/Collab/thelodge.png" alt="The Lodge Maribaya" className="h-12 md:h-16 object-contain" />
               <span className="text-xl font-bold text-white drop-shadow-md">X</span>
-              <img src="/img/Collab/biodef.png" alt="Biodef" className="h-12 md:h-16 object-contain bg-white rounded-lg p-2 shadow-sm" />
+              <img src="/img/Collab/biodef.png" alt="Biodef" className="h-12 md:h-16 object-contain" />
             </div>
             <h1 className="text-3xl md:text-4xl font-black mb-3 drop-shadow-md">
               100 Tiket Wisata Gratis untuk Anak!
