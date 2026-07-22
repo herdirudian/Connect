@@ -131,9 +131,13 @@ export default function HariAnakNasionalPromoPage() {
     <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-xl mx-auto bg-white rounded-3xl shadow-xl overflow-hidden">
         {/* Header */}
-        <div className="bg-brand p-8 text-center text-white">
-          <h1 className="text-3xl font-black mb-2 tracking-tight">3.000 Tiket Wisata Gratis untuk Anak se-Indonesia!</h1>
-          <p className="text-brand-50 text-sm">Rayakan Hari Anak Nasional di The Lodge Maribaya</p>
+        <div className="bg-brand text-white p-8 text-center relative overflow-hidden">
+          <div className="relative z-10">
+            <h1 className="text-3xl md:text-4xl font-black mb-3 drop-shadow-md">
+              3.000 Tiket Wisata Gratis untuk Anak se-Indonesia!
+            </h1>
+            <p className="text-brand-50 text-sm">Rayakan Hari Anak Nasional di The Lodge Maribaya</p>
+          </div>
         </div>
 
         <form onSubmit={handleSubmit} className="p-8 space-y-8">

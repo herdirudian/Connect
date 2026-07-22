@@ -131,7 +131,6 @@ export default function HariAnakNasionalBiodefPromoPage() {
       <div className="max-w-xl mx-auto bg-white rounded-3xl shadow-xl overflow-hidden">
         {/* Header */}
         <div className="bg-brand text-white p-8 text-center relative overflow-hidden">
-          <div className="absolute inset-0 opacity-10 bg-[url('/pattern.png')]"></div>
           <div className="relative z-10">
             <div className="flex justify-center items-center gap-6 mb-6">
               <img src="/img/Collab/thelodge.png" alt="The Lodge Maribaya" className="h-12 md:h-16 object-contain" />
