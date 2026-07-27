@@ -5,7 +5,7 @@ import MemberCard from '@/components/MemberCard';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import Link from 'next/link';
 import Image from 'next/image';
-import { Ticket, Gift, CreditCard, ArrowRight, TrendingUp, TicketPercent, Clock, Camera, Star, MapPin, ShoppingCart, Calendar, User, Users, Tent, Handshake, Utensils, Sun, Cloud, CloudRain, CloudLightning, Snowflake, Copy, Check } from 'lucide-react';
+import { Ticket, Gift, CreditCard, ArrowRight, TrendingUp, TicketPercent, Clock, Camera, Star, MapPin, ShoppingCart, Calendar, User, Users, Tent, Handshake, Utensils, Sun, Cloud, CloudRain, CloudLightning, Snowflake, Copy, Check, QrCode, Compass } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { PromoBanner } from '@/components/PromoBanner';
 
@@ -343,6 +343,42 @@ export default function DashboardPage() {
                <MemberCard user={user} />
             </div>
          </div>
+      </div>
+
+      {/* Quick Actions Section */}
+      <div className="grid grid-cols-3 gap-3 md:gap-6 mb-12">
+        <Link href="/dashboard/profile" className="group">
+          <Card className="border border-gray-100 shadow-sm bg-white hover:shadow-md hover:border-brand-300 transition-all duration-300 h-full">
+            <CardContent className="p-4 md:p-6 flex flex-col items-center justify-center text-center h-full gap-3">
+              <div className="w-12 h-12 rounded-full bg-brand-50 text-brand group-hover:bg-brand group-hover:text-white transition-colors duration-300 flex items-center justify-center">
+                <QrCode className="h-6 w-6" />
+              </div>
+              <h4 className="font-bold text-gray-900 text-sm md:text-base">QR Member</h4>
+            </CardContent>
+          </Card>
+        </Link>
+        
+        <Link href="/dashboard/explore" className="group">
+          <Card className="border border-gray-100 shadow-sm bg-white hover:shadow-md hover:border-brand-300 transition-all duration-300 h-full">
+            <CardContent className="p-4 md:p-6 flex flex-col items-center justify-center text-center h-full gap-3">
+              <div className="w-12 h-12 rounded-full bg-orange-50 text-orange-500 group-hover:bg-orange-500 group-hover:text-white transition-colors duration-300 flex items-center justify-center">
+                <Compass className="h-6 w-6" />
+              </div>
+              <h4 className="font-bold text-gray-900 text-sm md:text-base">Book Activity</h4>
+            </CardContent>
+          </Card>
+        </Link>
+
+        <Link href="/dashboard/rewards" className="group">
+          <Card className="border border-gray-100 shadow-sm bg-white hover:shadow-md hover:border-brand-300 transition-all duration-300 h-full">
+            <CardContent className="p-4 md:p-6 flex flex-col items-center justify-center text-center h-full gap-3">
+              <div className="w-12 h-12 rounded-full bg-blue-50 text-blue-500 group-hover:bg-blue-500 group-hover:text-white transition-colors duration-300 flex items-center justify-center">
+                <Gift className="h-6 w-6" />
+              </div>
+              <h4 className="font-bold text-gray-900 text-sm md:text-base">Claim Benefit</h4>
+            </CardContent>
+          </Card>
+        </Link>
       </div>
 
       {/* My Journey / My Impact Section */}
