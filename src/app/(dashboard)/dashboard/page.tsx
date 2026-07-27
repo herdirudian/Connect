@@ -346,18 +346,7 @@ export default function DashboardPage() {
       </div>
 
       {/* Quick Actions Section */}
-      <div className="grid grid-cols-3 gap-3 md:gap-6 mb-12">
-        <Link href="/dashboard/profile" className="group">
-          <Card className="border border-gray-100 shadow-sm bg-white hover:shadow-md hover:border-brand-300 transition-all duration-300 h-full">
-            <CardContent className="p-4 md:p-6 flex flex-col items-center justify-center text-center h-full gap-3">
-              <div className="w-12 h-12 rounded-full bg-brand-50 text-brand group-hover:bg-brand group-hover:text-white transition-colors duration-300 flex items-center justify-center">
-                <QrCode className="h-6 w-6" />
-              </div>
-              <h4 className="font-bold text-gray-900 text-sm md:text-base">QR Member</h4>
-            </CardContent>
-          </Card>
-        </Link>
-        
+      <div className="grid grid-cols-2 gap-3 md:gap-6 mb-12">
         <Link href="/dashboard/tickets" className="group">
           <Card className="border border-gray-100 shadow-sm bg-white hover:shadow-md hover:border-brand-300 transition-all duration-300 h-full">
             <CardContent className="p-4 md:p-6 flex flex-col items-center justify-center text-center h-full gap-3">
