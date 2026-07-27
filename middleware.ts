@@ -87,11 +87,11 @@ async function handleMiddleware(req: NextRequest) {
     if (pathname.startsWith('/api/auth')) {
       const { success, reset } = rateLimit(`${ip}:auth`, 5, 60000);
       if (!success) {
-        return new NextResponse('Too Many Requests', {
+        return new NextResponse(JSON.stringify({ error: 'Terlalu banyak percobaan. Silakan coba lagi dalam beberapa menit.' }), {
           status: 429,
           headers: {
             'Retry-After': Math.ceil((reset - Date.now()) / 1000).toString(),
-            'Content-Type': 'text/plain',
+            'Content-Type': 'application/json',
           },
         });
       }
@@ -100,11 +100,11 @@ async function handleMiddleware(req: NextRequest) {
     else if (pathname.startsWith('/api/bookings')) {
       const { success, reset } = rateLimit(`${ip}:booking`, 10, 60000);
       if (!success) {
-        return new NextResponse('Too Many Requests', {
+        return new NextResponse(JSON.stringify({ error: 'Terlalu banyak permintaan. Silakan coba lagi.' }), {
           status: 429,
           headers: {
             'Retry-After': Math.ceil((reset - Date.now()) / 1000).toString(),
-            'Content-Type': 'text/plain',
+            'Content-Type': 'application/json',
           },
         });
       }
