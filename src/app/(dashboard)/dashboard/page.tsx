@@ -220,6 +220,14 @@ export default function DashboardPage() {
 
   const birthdayReward = specialBirthdayReward;
 
+  const getGreeting = () => {
+    const hour = new Date().getHours();
+    if (hour < 11) return 'selamat pagi';
+    if (hour < 15) return 'selamat siang';
+    if (hour < 18) return 'selamat sore';
+    return 'selamat malam';
+  };
+
   const handleClaimBirthday = async () => {
     if (!birthdayReward) return;
     try {
@@ -252,6 +260,13 @@ export default function DashboardPage() {
 
   return (
     <div className="space-y-8 pb-12">
+      {/* Greeting Section */}
+      <div className="pt-2 pb-2">
+        <h2 className="text-2xl md:text-3xl font-black text-gray-800 tracking-tight capitalize">
+           👋 Halo {getGreeting()}, {user?.name}
+        </h2>
+      </div>
+
       {/* Promo Slide Banner */}
       <PromoBanner />
 
