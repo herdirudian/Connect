@@ -18,7 +18,7 @@ export default function SpecialGiveawayBiodefPage() {
     parentCity: '',
     childName: '',
     childAge: '',
-    visitDate: '',
+    visitDate: '2026-08-31',
     agreedToPrivacy: false,
     sponsor: 'GIVEAWAY_BIODEF'
   });
@@ -96,12 +96,7 @@ export default function SpecialGiveawayBiodefPage() {
           <div className="bg-brand-50 p-4 rounded-xl text-left space-y-2 text-sm border border-brand-100">
             <p><span className="font-semibold text-gray-500">Nama Orang Tua:</span> {formData.parentName}</p>
             <p><span className="font-semibold text-gray-500">Nama Anak:</span> {formData.childName}</p>
-            <p><span className="font-semibold text-gray-500">Tanggal Kunjungan:</span> {
-              formData.visitDate === '2026-07-23' ? 'Kamis, 23 Juli 2026' :
-              formData.visitDate === '2026-07-24' ? 'Jumat, 24 Juli 2026' :
-              formData.visitDate === '2026-07-25' ? 'Sabtu, 25 Juli 2026' :
-              'Minggu, 26 Juli 2026'
-            }</p>
+            <p><span className="font-semibold text-gray-500">Masa Berlaku:</span> Sampai 31 Agustus 2026</p>
           </div>
           <Button 
             onClick={() => {
@@ -112,7 +107,7 @@ export default function SpecialGiveawayBiodefPage() {
                 parentCity: '',
                 childName: '',
                 childAge: '',
-                visitDate: '',
+                visitDate: '2026-08-31',
                 agreedToPrivacy: false,
                 sponsor: 'GIVEAWAY_BIODEF'
               });
@@ -187,30 +182,6 @@ export default function SpecialGiveawayBiodefPage() {
             </div>
           </div>
 
-          {/* Bagian 3: Data Kunjungan */}
-          <div className="space-y-4 pt-2">
-            <div className="flex items-center gap-2 border-b pb-2">
-              <CalendarHeart className="text-rose-500 w-5 h-5" />
-              <h2 className="text-lg font-bold text-gray-800">Rencana Kunjungan</h2>
-            </div>
-            
-            <div className="space-y-2">
-              <Label>Pilih Tanggal Kunjungan <span className="text-red-500">*</span></Label>
-              <select 
-                required 
-                value={formData.visitDate} 
-                onChange={(e) => handleDateChange(e.target.value)}
-                className="flex h-12 w-full items-center justify-between rounded-xl border border-input bg-transparent px-3 py-2 text-sm shadow-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
-              >
-                <option value="" disabled>-- Pilih Tanggal --</option>
-                <option value="2026-07-23">Kamis, 23 Juli 2026</option>
-                <option value="2026-07-24">Jum'at, 24 Juli 2026</option>
-                <option value="2026-07-25">Sabtu, 25 Juli 2026</option>
-                <option value="2026-07-26">Minggu, 26 Juli 2026</option>
-              </select>
-            </div>
-          </div>
-
           {/* Syarat dan Ketentuan */}
           <div className="bg-orange-50 p-4 rounded-xl border border-orange-100 text-sm text-gray-700 space-y-3">
             <p className="font-bold text-orange-800">Syarat & Ketentuan Promo:</p>
@@ -218,7 +189,7 @@ export default function SpecialGiveawayBiodefPage() {
               <li>Berlaku untuk anak usia 5-17 tahun</li>
               <li>Registrasi dilakukan secara online</li>
               <li>1 Registrasi berlaku untuk 1 Anak + 1 Orang Tua/Pendamping</li>
-              <li>Pilih tanggal kunjungan</li>
+              <li>Voucher ini berlaku sampai tanggal 31 Agustus 2026</li>
               <li>Kuota terbatas hanya 30 pemenang</li>
               <li>Berlaku selama periode promo</li>
               <li>Tidak dapat digabung dengan promo lain</li>

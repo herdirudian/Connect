@@ -32,6 +32,7 @@ export async function POST(req: Request) {
       '2026-07-24', // Jum'at
       '2026-07-25', // Sabtu
       '2026-07-26', // Minggu
+      '2026-08-31', // Dummy for GIVEAWAY_BIODEF
     ];
 
     if (!allowedDates.includes(visitDate)) {

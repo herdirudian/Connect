@@ -125,7 +125,7 @@ export default function AdminSpecialGiveawayBiodefPage() {
   }, {});
 
   const handleExportCSV = () => {
-    const headers = ['ID', 'Tanggal Daftar', 'Nama Orang Tua', 'No WhatsApp', 'Email', 'Kota Domisili', 'Nama Anak', 'Usia Anak', 'Tanggal Kunjungan', 'Status'];
+    const headers = ['ID', 'Tanggal Daftar', 'Nama Orang Tua', 'No WhatsApp', 'Email', 'Kota Domisili', 'Nama Anak', 'Usia Anak', 'Masa Berlaku', 'Status'];
     const csvRows = [headers.join(',')];
 
     filteredData.forEach(item => {
@@ -138,7 +138,7 @@ export default function AdminSpecialGiveawayBiodefPage() {
         `"${item.parentCity}"`,
         `"${item.childName}"`,
         item.childAge,
-        item.visitDate,
+        item.visitDate === '2026-08-31' ? '"Sampai 31 Agt 2026"' : `"${item.visitDate}"`,
         item.isUsed ? 'USED' : 'ACTIVE'
       ];
       csvRows.push(row.join(','));
@@ -183,7 +183,7 @@ export default function AdminSpecialGiveawayBiodefPage() {
           </CardContent>
         </Card>
 
-        <Card className="bg-orange-500 text-white border-none shadow-md">
+        <Card className="bg-orange-500 text-white border-none shadow-md md:col-span-2">
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
@@ -209,33 +209,6 @@ export default function AdminSpecialGiveawayBiodefPage() {
             </div>
           </CardContent>
         </Card>
-
-        <Card className="bg-white border shadow-sm">
-          <CardContent className="p-4 flex flex-col h-full justify-center">
-            <div className="flex items-center gap-2 mb-3">
-              <CalendarDays className="text-brand w-5 h-5" />
-              <h4 className="font-bold text-gray-800 text-sm">Ringkasan per Tanggal</h4>
-            </div>
-            <div className="grid grid-cols-2 gap-2 text-xs">
-              <div className="bg-gray-50 p-2 rounded border">
-                <span className="text-gray-500 block">23 Jul:</span>
-                <span className="font-bold text-lg">{dateSummaries['2026-07-23'] || 0}</span>
-              </div>
-              <div className="bg-gray-50 p-2 rounded border">
-                <span className="text-gray-500 block">24 Jul:</span>
-                <span className="font-bold text-lg">{dateSummaries['2026-07-24'] || 0}</span>
-              </div>
-              <div className="bg-gray-50 p-2 rounded border">
-                <span className="text-gray-500 block">25 Jul:</span>
-                <span className="font-bold text-lg">{dateSummaries['2026-07-25'] || 0}</span>
-              </div>
-              <div className="bg-gray-50 p-2 rounded border">
-                <span className="text-gray-500 block">26 Jul:</span>
-                <span className="font-bold text-lg">{dateSummaries['2026-07-26'] || 0}</span>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
       </div>
 
       <Card>
@@ -246,17 +219,6 @@ export default function AdminSpecialGiveawayBiodefPage() {
               <CardDescription>Semua pendaftar tiket promo gratis.</CardDescription>
             </div>
             <div className="flex flex-col sm:flex-row gap-3">
-              <select
-                className="flex h-10 w-full sm:w-48 rounded-md border border-input bg-transparent px-3 py-2 text-sm ring-offset-background"
-                value={filterDate}
-                onChange={(e) => setFilterDate(e.target.value)}
-              >
-                <option value="ALL">Semua Tanggal</option>
-                <option value="2026-07-23">23 Juli 2026</option>
-                <option value="2026-07-24">24 Juli 2026</option>
-                <option value="2026-07-25">25 Juli 2026</option>
-                <option value="2026-07-26">26 Juli 2026</option>
-              </select>
               <div className="relative w-full sm:w-64">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
                 <Input 
@@ -280,7 +242,7 @@ export default function AdminSpecialGiveawayBiodefPage() {
                   <th className="px-4 py-3">ID / Tanggal Daftar</th>
                   <th className="px-4 py-3">Orang Tua</th>
                   <th className="px-4 py-3">Anak</th>
-                  <th className="px-4 py-3">Tanggal Kunjungan</th>
+                  <th className="px-4 py-3">Masa Berlaku</th>
                   <th className="px-4 py-3">Status</th>
                   <th className="px-4 py-3 text-right">Aksi</th>
                 </tr>
@@ -308,7 +270,7 @@ export default function AdminSpecialGiveawayBiodefPage() {
                         <div className="text-xs text-gray-500">{item.childAge} Tahun</div>
                       </td>
                       <td className="px-4 py-3 font-medium">
-                        {item.visitDate}
+                        {item.visitDate === '2026-08-31' ? 'Sampai 31 Agt 2026' : item.visitDate}
                       </td>
                       <td className="px-4 py-3">
                         {item.isUsed ? (
@@ -366,17 +328,8 @@ export default function AdminSpecialGiveawayBiodefPage() {
                 <Input type="number" value={editItem.childAge} onChange={(e) => setEditItem({...editItem, childAge: e.target.value})} />
               </div>
               <div className="space-y-2">
-                <Label>Tanggal Kunjungan</Label>
-                <select 
-                  className="flex h-10 w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm ring-offset-background"
-                  value={editItem.visitDate}
-                  onChange={(e) => setEditItem({...editItem, visitDate: e.target.value})}
-                >
-                  <option value="2026-07-23">2026-07-23</option>
-                  <option value="2026-07-24">2026-07-24</option>
-                  <option value="2026-07-25">2026-07-25</option>
-                  <option value="2026-07-26">2026-07-26</option>
-                </select>
+                <Label>Masa Berlaku</Label>
+                <Input value={editItem.visitDate === '2026-08-31' ? 'Sampai 31 Agt 2026' : editItem.visitDate} disabled />
               </div>
               <div className="space-y-2">
                 <Label>Status Voucher</Label>

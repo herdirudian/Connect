@@ -527,6 +527,7 @@ export async function sendHariAnakNasionalVoucherEmail(
     else if (visitDate === '2026-07-24') formattedDate = "Jum'at, 24 Juli 2026";
     else if (visitDate === '2026-07-25') formattedDate = 'Sabtu, 25 Juli 2026';
     else if (visitDate === '2026-07-26') formattedDate = 'Minggu, 26 Juli 2026';
+    else if (visitDate === '2026-08-31') formattedDate = 'Sampai dengan 31 Agustus 2026';
 
     const title = sponsor === 'GIVEAWAY_BIODEF' ? '30 Pemenang Special Giveaway Package' : 
                   sponsor === 'BIODEF' ? 'Promo Hari Anak x Biodef' : 
@@ -535,6 +536,9 @@ export async function sendHariAnakNasionalVoucherEmail(
     let quotaText = '3.000';
     if (sponsor === 'BIODEF') quotaText = '100';
     if (sponsor === 'GIVEAWAY_BIODEF') quotaText = '30';
+
+    const dateTncText = sponsor === 'GIVEAWAY_BIODEF' ? 'Voucher ini berlaku sampai tanggal 31 Agustus 2026' : 'Pilih tanggal kunjungan';
+    const visitDateLabel = sponsor === 'GIVEAWAY_BIODEF' ? 'Masa Berlaku' : 'Tanggal Kunjungan';
 
     const mailOptions = {
       from: process.env.FROM_EMAIL,
@@ -553,7 +557,7 @@ export async function sendHariAnakNasionalVoucherEmail(
             <div style="background-color: white; padding: 15px; border-radius: 8px; margin: 20px 0; border: 1px dashed #2e7d32;">
               <h3 style="color: #1b5e20; margin: 0 0 10px 0;">Tiket Anak Gratis</h3>
               <p style="margin: 5px 0; font-size: 14px; color: #666;">Nama Anak: <strong>${childName}</strong></p>
-              <p style="margin: 5px 0 15px 0; font-size: 14px; color: #666;">Tanggal Kunjungan: <strong>${formattedDate}</strong></p>
+              <p style="margin: 5px 0 15px 0; font-size: 14px; color: #666;">${visitDateLabel}: <strong>${formattedDate}</strong></p>
               
               <div style="margin-top: 20px;">
                 <img src="cid:qrcode" alt="QR Code" style="width: 200px; height: 200px;" />
@@ -566,7 +570,7 @@ export async function sendHariAnakNasionalVoucherEmail(
               <li>Berlaku untuk anak usia 5-17 tahun</li>
               <li>Registrasi dilakukan secara online</li>
               <li>1 Registrasi berlaku untuk 1 Anak + 1 Orang Tua/Pendamping</li>
-              <li>Pilih tanggal kunjungan</li>
+              <li>${dateTncText}</li>
               <li>Kuota terbatas hanya ${quotaText} registrasi</li>
               <li>Berlaku selama periode promo</li>
               <li>Tidak dapat digabung dengan promo lain</li>
