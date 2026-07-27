@@ -16,6 +16,7 @@ export default function DashboardPage() {
     availableRewards: 0,
     transactionCount: 0,
     recentTransactions: [] as any[],
+    upcomingEvents: [] as any[],
     myImpact: {
       friendsInvited: 0,
       totalVisits: 0,
@@ -398,6 +399,66 @@ export default function DashboardPage() {
             </CardContent>
           </Card>
         </div>
+      </div>
+
+      {/* Upcoming Events Section */}
+      <div className="space-y-6 mb-12">
+        <div className="flex items-center justify-between">
+           <h3 className="text-2xl font-black text-brand-dark uppercase tracking-tight">Upcoming Events</h3>
+           <Link href="/dashboard/tickets?category=EVENT">
+              <Button variant="ghost" className="font-bold text-brand hover:text-brand-dark hover:bg-brand-50 uppercase tracking-wider text-xs">
+                See All <ArrowRight className="ml-2 h-4 w-4" />
+              </Button>
+           </Link>
+        </div>
+
+        {stats.upcomingEvents && stats.upcomingEvents.length > 0 ? (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {stats.upcomingEvents.map((event: any) => (
+              <Card key={event.id} className="border border-gray-100 shadow-md bg-white hover:shadow-xl transition-all duration-300 overflow-hidden flex flex-col group">
+                <div className="relative h-48 bg-gray-100 overflow-hidden">
+                  {event.imageUrl ? (
+                    <img src={event.imageUrl} alt={event.name} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center bg-brand-50 text-brand">
+                      <Tent className="h-12 w-12 opacity-50" />
+                    </div>
+                  )}
+                  <div className="absolute top-3 left-3 bg-white/90 backdrop-blur px-3 py-1 rounded-full text-xs font-bold text-brand shadow-sm flex items-center gap-1.5">
+                    <Calendar className="h-3.5 w-3.5" />
+                    {new Date(event.eventDate).toLocaleDateString('id-ID', { day: 'numeric', month: 'short' })}
+                  </div>
+                </div>
+                <CardContent className="p-5 flex-1 flex flex-col">
+                  <h4 className="font-black text-lg text-gray-900 mb-2 line-clamp-1">{event.name}</h4>
+                  <p className="text-sm text-gray-500 line-clamp-2 mb-4 flex-1">{event.description}</p>
+                  
+                  <div className="flex items-center justify-between mt-auto">
+                    <div>
+                      <p className="text-xs text-gray-400 font-bold uppercase tracking-wide">Ticket Price</p>
+                      <p className="font-black text-brand text-lg">
+                        {new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(event.eventPromoPrice || event.price)}
+                      </p>
+                    </div>
+                    <Link href={`/dashboard/tickets?eventId=${event.id}`}>
+                      <Button className="bg-brand text-white hover:bg-brand-dark rounded-xl shadow-md px-6">
+                        Join
+                      </Button>
+                    </Link>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        ) : (
+          <div className="bg-gray-50 rounded-2xl border-2 border-dashed border-gray-200 p-10 text-center">
+            <div className="bg-white p-4 rounded-full shadow-sm inline-block mb-3">
+              <Calendar className="h-8 w-8 text-gray-400" />
+            </div>
+            <h4 className="text-lg font-bold text-gray-900">No Upcoming Events</h4>
+            <p className="text-sm text-gray-500 mt-1">Check back soon for new wellness and adventure activities!</p>
+          </div>
+        )}
       </div>
 
       {/* Steps Section - Replaces Stats */}

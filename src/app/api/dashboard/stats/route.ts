@@ -25,7 +25,8 @@ export async function GET() {
       friendsInvited,
       usedTicketsCount,
       bookingsPaid,
-      foodOrdersPaid
+      foodOrdersPaid,
+      upcomingEvents
     ] = await Promise.all([
       prisma.ticket.count({
         where: { 
@@ -57,6 +58,15 @@ export async function GET() {
       prisma.foodOrder.aggregate({
         where: { userId: payload.userId, paymentStatus: 'PAID' },
         _sum: { totalAmount: true }
+      }),
+      prisma.attraction.findMany({
+        where: { 
+          isEvent: true, 
+          active: true,
+          eventDate: { gte: new Date() } 
+        },
+        orderBy: { eventDate: 'asc' },
+        take: 3
       })
     ]);
 
@@ -67,6 +77,7 @@ export async function GET() {
       availableRewards,
       transactionCount,
       recentTransactions,
+      upcomingEvents,
       myImpact: {
         friendsInvited,
         totalVisits: usedTicketsCount,
