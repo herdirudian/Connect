@@ -140,9 +140,6 @@ export default function SpecialGiveawayBiodefPage() {
             <h1 className="text-3xl md:text-4xl font-black mb-3 drop-shadow-md">
               30 Pemenang Special Giveaway Package
             </h1>
-            <p className="text-brand-50 text-sm md:text-base font-medium">
-              Rayakan Hari Anak Nasional bersama The Lodge Maribaya x Biodef
-            </p>
           </div>
         </div>
 
