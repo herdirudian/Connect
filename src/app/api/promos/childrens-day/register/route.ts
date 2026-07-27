@@ -39,8 +39,16 @@ export async function POST(req: Request) {
     }
 
     // Get dynamic quota setting
-    const settingKey = sponsor === 'BIODEF' ? 'promo_childrens_day_biodef_quota' : 'promo_childrens_day_quota';
-    const defaultQuota = sponsor === 'BIODEF' ? 100 : 3000;
+    let settingKey = 'promo_childrens_day_quota';
+    let defaultQuota = 3000;
+    
+    if (sponsor === 'BIODEF') {
+      settingKey = 'promo_childrens_day_biodef_quota';
+      defaultQuota = 100;
+    } else if (sponsor === 'GIVEAWAY_BIODEF') {
+      settingKey = 'promo_giveaway_biodef_quota';
+      defaultQuota = 30;
+    }
     
     const quotaSetting = await prisma.systemSetting.findUnique({
       where: { key: settingKey }

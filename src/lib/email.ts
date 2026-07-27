@@ -528,7 +528,13 @@ export async function sendHariAnakNasionalVoucherEmail(
     else if (visitDate === '2026-07-25') formattedDate = 'Sabtu, 25 Juli 2026';
     else if (visitDate === '2026-07-26') formattedDate = 'Minggu, 26 Juli 2026';
 
-    const title = sponsor === 'BIODEF' ? 'Promo Hari Anak x Biodef' : 'Promo Hari Anak Nasional';
+    const title = sponsor === 'GIVEAWAY_BIODEF' ? '30 Pemenang Special Giveaway Package' : 
+                  sponsor === 'BIODEF' ? 'Promo Hari Anak x Biodef' : 
+                  'Promo Hari Anak Nasional';
+    
+    let quotaText = '3.000';
+    if (sponsor === 'BIODEF') quotaText = '100';
+    if (sponsor === 'GIVEAWAY_BIODEF') quotaText = '30';
 
     const mailOptions = {
       from: process.env.FROM_EMAIL,
@@ -561,7 +567,7 @@ export async function sendHariAnakNasionalVoucherEmail(
               <li>Registrasi dilakukan secara online</li>
               <li>1 Registrasi berlaku untuk 1 Anak + 1 Orang Tua/Pendamping</li>
               <li>Pilih tanggal kunjungan</li>
-              <li>Kuota terbatas hanya ${sponsor === 'BIODEF' ? '100' : '3.000'} registrasi</li>
+              <li>Kuota terbatas hanya ${quotaText} registrasi</li>
               <li>Berlaku selama periode promo</li>
               <li>Tidak dapat digabung dengan promo lain</li>
             </ul>
