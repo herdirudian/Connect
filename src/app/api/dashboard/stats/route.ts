@@ -17,7 +17,16 @@ export async function GET() {
   }
 
   try {
-    const [activeTickets, availableRewards, transactionCount, recentTransactions] = await Promise.all([
+    const [
+      activeTickets, 
+      availableRewards, 
+      transactionCount, 
+      recentTransactions,
+      friendsInvited,
+      usedTicketsCount,
+      bookingsPaid,
+      foodOrdersPaid
+    ] = await Promise.all([
       prisma.ticket.count({
         where: { 
           userId: payload.userId,
@@ -34,14 +43,36 @@ export async function GET() {
         where: { userId: payload.userId },
         orderBy: { createdAt: 'desc' },
         take: 5
+      }),
+      prisma.user.count({
+        where: { referredById: payload.userId }
+      }),
+      prisma.ticket.count({
+        where: { userId: payload.userId, status: 'USED' }
+      }),
+      prisma.booking.aggregate({
+        where: { userId: payload.userId, paymentStatus: 'PAID' },
+        _sum: { amount: true }
+      }),
+      prisma.foodOrder.aggregate({
+        where: { userId: payload.userId, paymentStatus: 'PAID' },
+        _sum: { totalAmount: true }
       })
     ]);
+
+    const totalSpending = (bookingsPaid._sum.amount || 0) + (foodOrdersPaid._sum.totalAmount || 0);
 
     return NextResponse.json({
       activeTickets,
       availableRewards,
       transactionCount,
-      recentTransactions
+      recentTransactions,
+      myImpact: {
+        friendsInvited,
+        totalVisits: usedTicketsCount,
+        totalSpending,
+        treesPlanted: 0 // Mock for now until Tree Adoption is implemented
+      }
     });
   } catch (error) {
     return NextResponse.json({ error: 'Failed to fetch stats' }, { status: 500 });

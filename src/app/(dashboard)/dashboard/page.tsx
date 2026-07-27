@@ -15,7 +15,13 @@ export default function DashboardPage() {
     activeTickets: 0,
     availableRewards: 0,
     transactionCount: 0,
-    recentTransactions: [] as any[]
+    recentTransactions: [] as any[],
+    myImpact: {
+      friendsInvited: 0,
+      totalVisits: 0,
+      totalSpending: 0,
+      treesPlanted: 0
+    }
   });
   const [loading, setLoading] = useState(true);
   const [rewards, setRewards] = useState<Array<{ id: string; name: string; description: string; cost: number; imageUrl?: string }>>([]);
@@ -336,6 +342,62 @@ export default function DashboardPage() {
                <MemberCard user={user} />
             </div>
          </div>
+      </div>
+
+      {/* My Journey / My Impact Section */}
+      <div className="space-y-6 mb-12">
+        <div className="flex items-center justify-between">
+           <h3 className="text-2xl font-black text-brand-dark uppercase tracking-tight">My Journey</h3>
+           <div className="hidden md:block h-px flex-1 bg-gray-200 ml-6"></div>
+        </div>
+
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          {/* Card 1: Member Since */}
+          <Card className="border border-gray-100 shadow-sm bg-white hover:-translate-y-1 transition-transform duration-300">
+            <CardContent className="p-6 flex flex-col items-center text-center">
+              <div className="w-12 h-12 rounded-full bg-blue-50 text-blue-500 flex items-center justify-center mb-4 shadow-inner">
+                <Calendar className="h-6 w-6" />
+              </div>
+              <h4 className="text-3xl font-black text-gray-900 mb-1">{new Date(user.createdAt).getFullYear()}</h4>
+              <p className="text-xs text-gray-500 font-bold uppercase tracking-wide">Member Sejak</p>
+            </CardContent>
+          </Card>
+
+          {/* Card 2: Total Visits */}
+          <Card className="border border-gray-100 shadow-sm bg-white hover:-translate-y-1 transition-transform duration-300">
+            <CardContent className="p-6 flex flex-col items-center text-center">
+              <div className="w-12 h-12 rounded-full bg-brand-50 text-brand flex items-center justify-center mb-4 shadow-inner">
+                <MapPin className="h-6 w-6" />
+              </div>
+              <h4 className="text-3xl font-black text-gray-900 mb-1">{stats.myImpact?.totalVisits || 0}</h4>
+              <p className="text-xs text-gray-500 font-bold uppercase tracking-wide">Kali Berkunjung</p>
+            </CardContent>
+          </Card>
+
+          {/* Card 3: Total Spending */}
+          <Card className="border border-gray-100 shadow-sm bg-white hover:-translate-y-1 transition-transform duration-300">
+            <CardContent className="p-6 flex flex-col items-center text-center">
+              <div className="w-12 h-12 rounded-full bg-orange-50 text-orange-500 flex items-center justify-center mb-4 shadow-inner">
+                <CreditCard className="h-6 w-6" />
+              </div>
+              <h4 className="text-lg md:text-xl font-black text-gray-900 mb-1">
+                {new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(stats.myImpact?.totalSpending || 0)}
+              </h4>
+              <p className="text-xs text-gray-500 font-bold uppercase tracking-wide">Total Spending</p>
+            </CardContent>
+          </Card>
+
+          {/* Card 4: Friends Invited */}
+          <Card className="border border-gray-100 shadow-sm bg-white hover:-translate-y-1 transition-transform duration-300">
+            <CardContent className="p-6 flex flex-col items-center text-center">
+              <div className="w-12 h-12 rounded-full bg-purple-50 text-purple-500 flex items-center justify-center mb-4 shadow-inner">
+                <Users className="h-6 w-6" />
+              </div>
+              <h4 className="text-3xl font-black text-gray-900 mb-1">{stats.myImpact?.friendsInvited || 0}</h4>
+              <p className="text-xs text-gray-500 font-bold uppercase tracking-wide">Teman Diajak</p>
+            </CardContent>
+          </Card>
+        </div>
       </div>
 
       {/* Steps Section - Replaces Stats */}
