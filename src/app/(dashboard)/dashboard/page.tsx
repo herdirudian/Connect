@@ -358,7 +358,7 @@ export default function DashboardPage() {
           </Card>
         </Link>
         
-        <Link href="/dashboard/explore" className="group">
+        <Link href="/dashboard/tickets" className="group">
           <Card className="border border-gray-100 shadow-sm bg-white hover:shadow-md hover:border-brand-300 transition-all duration-300 h-full">
             <CardContent className="p-4 md:p-6 flex flex-col items-center justify-center text-center h-full gap-3">
               <div className="w-12 h-12 rounded-full bg-orange-50 text-orange-500 group-hover:bg-orange-500 group-hover:text-white transition-colors duration-300 flex items-center justify-center">
