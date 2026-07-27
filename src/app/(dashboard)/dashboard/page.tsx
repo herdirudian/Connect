@@ -5,7 +5,7 @@ import MemberCard from '@/components/MemberCard';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import Link from 'next/link';
 import Image from 'next/image';
-import { Ticket, Gift, CreditCard, ArrowRight, TrendingUp, TicketPercent, Clock, Camera, Star, MapPin, ShoppingCart, Calendar, User, Tent, Handshake, Utensils, Sun, Cloud, CloudRain, CloudLightning, Snowflake, Copy, Check } from 'lucide-react';
+import { Ticket, Gift, CreditCard, ArrowRight, TrendingUp, TicketPercent, Clock, Camera, Star, MapPin, ShoppingCart, Calendar, User, Users, Tent, Handshake, Utensils, Sun, Cloud, CloudRain, CloudLightning, Snowflake, Copy, Check } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { PromoBanner } from '@/components/PromoBanner';
 
