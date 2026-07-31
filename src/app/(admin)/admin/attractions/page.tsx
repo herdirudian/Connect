@@ -67,6 +67,7 @@ interface Attraction {
   eventSoldQuota?: number;
   eventPromoPrice?: number | null;
   eventPromoQuota?: number | null;
+  sortOrder?: number;
 }
 
 export default function AdminAttractionsPage() {
@@ -99,6 +100,7 @@ export default function AdminAttractionsPage() {
       eventMaxQuota: '',
       eventPromoPrice: '',
       eventPromoQuota: '',
+      sortOrder: '0',
     });
   const [uploading, setUploading] = useState(false);
   const [pricingFor, setPricingFor] = useState<{ id: string; name: string } | null>(null);
@@ -172,6 +174,7 @@ export default function AdminAttractionsPage() {
         eventMaxQuota: '',
         eventPromoPrice: '',
         eventPromoQuota: '',
+        sortOrder: '0',
     });
     setIsAdding(false);
     setEditingId(null);
@@ -212,6 +215,7 @@ export default function AdminAttractionsPage() {
         eventMaxQuota: item.eventMaxQuota ? item.eventMaxQuota.toString() : '',
         eventPromoPrice: item.eventPromoPrice ? item.eventPromoPrice.toString() : '',
         eventPromoQuota: item.eventPromoQuota ? item.eventPromoQuota.toString() : '',
+        sortOrder: item.sortOrder ? item.sortOrder.toString() : '0',
       });
     setEditingId(item.id);
     setIsAdding(true); // Re-use the add form area for editing
@@ -311,6 +315,7 @@ export default function AdminAttractionsPage() {
         price: parseFloat(formData.price),
         points: parseInt(formData.points) || 0,
         benefits: benefitsArray,
+        sortOrder: parseInt(formData.sortOrder) || 0,
       };
 
       let res;
@@ -482,6 +487,16 @@ export default function AdminAttractionsPage() {
                     onChange={(e) => setFormData({...formData, waitTime: e.target.value})}
                     placeholder="e.g. 10-15 menit"
                   />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Urutan Tampil (Sort Order)</label>
+                  <Input 
+                    type="number"
+                    value={formData.sortOrder}
+                    onChange={(e) => setFormData({...formData, sortOrder: e.target.value})}
+                    placeholder="0"
+                  />
+                  <p className="text-[10px] text-gray-500 italic">Angka terkecil muncul pertama (misal: 1).</p>
                 </div>
                 <div className="space-y-2 md:col-span-2">
                   <label className="text-sm font-medium">Tags (comma separated)</label>

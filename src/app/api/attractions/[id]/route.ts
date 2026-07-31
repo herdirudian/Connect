@@ -24,7 +24,7 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
     }
 
     const body = await req.json();
-    const { name, description, category, price, originalPrice, points, benefits, imageUrl, videoUrl, images, status, waitTime, tags, active, rating, displayTarget, allowVoucherClaim, maxVoucherPax, voucherExpiry, isEvent, eventDate, eventMaxQuota, eventPromoPrice, eventPromoQuota } = body;
+    const { name, description, category, price, originalPrice, points, benefits, imageUrl, videoUrl, images, status, waitTime, tags, active, rating, displayTarget, allowVoucherClaim, maxVoucherPax, voucherExpiry, isEvent, eventDate, eventMaxQuota, eventPromoPrice, eventPromoQuota, sortOrder } = body;
     const { id } = await params;
 
     console.log(`[Attractions API] Updating attraction ${id}:`, JSON.stringify(body));
@@ -55,7 +55,8 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
         eventDate: eventDate !== undefined ? (eventDate ? new Date(eventDate) : null) : undefined,
         eventMaxQuota: eventMaxQuota !== undefined ? (eventMaxQuota ? parseInt(eventMaxQuota) : null) : undefined,
         eventPromoPrice: eventPromoPrice !== undefined ? (eventPromoPrice ? parseFloat(eventPromoPrice) : null) : undefined,
-        eventPromoQuota: eventPromoQuota !== undefined ? (eventPromoQuota ? parseInt(eventPromoQuota) : null) : undefined
+        eventPromoQuota: eventPromoQuota !== undefined ? (eventPromoQuota ? parseInt(eventPromoQuota) : null) : undefined,
+        sortOrder: sortOrder !== undefined ? parseInt(sortOrder) : undefined
       },
     });
     return NextResponse.json(updated);

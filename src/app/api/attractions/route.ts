@@ -10,7 +10,10 @@ export async function GET(req: Request) {
     const url = new URL(req.url);
     const dateParam = url.searchParams.get('date');
     const attractions = await prisma.attraction.findMany({
-      orderBy: { createdAt: 'desc' },
+      orderBy: [
+        { sortOrder: 'asc' },
+        { createdAt: 'desc' }
+      ],
       include: dateParam ? { priceSchedules: true } : undefined,
     });
     if (dateParam) {
@@ -101,7 +104,8 @@ export async function POST(req: Request) {
       eventDate,
       eventMaxQuota,
       eventPromoPrice,
-      eventPromoQuota
+      eventPromoQuota,
+      sortOrder
     } = body;
 
     console.log('[Attractions API] Creating attraction in database...');
@@ -131,6 +135,7 @@ export async function POST(req: Request) {
         eventMaxQuota: eventMaxQuota ? parseInt(eventMaxQuota) : null,
         eventPromoPrice: eventPromoPrice ? parseFloat(eventPromoPrice) : null,
         eventPromoQuota: eventPromoQuota ? parseInt(eventPromoQuota) : null,
+        sortOrder: sortOrder ? parseInt(sortOrder) : 0,
       }
     });
 

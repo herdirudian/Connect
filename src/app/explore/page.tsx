@@ -94,6 +94,7 @@ export default function GreeterHubPage() {
   const [previewTab, setPreviewTab] = useState<'video' | 'gallery'>('video');
   const [loading, setLoading] = useState(true);
   const [currentPromo, setCurrentPromo] = useState(0);
+  const [currentPahe, setCurrentPahe] = useState(0);
   const [activeFilter, setActiveFilter] = useState('ALL');
   const [activeCategory, setActiveCategory] = useState('ALL');
   const [zoom, setZoom] = useState(1);
@@ -471,80 +472,143 @@ export default function GreeterHubPage() {
             </div>
           )}
 
-          {/* Dynamic Promo Cards */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {attractions.filter(a => a.originalPrice).map(attr => (
-              <Card key={attr.id} className="group border-none shadow-lg hover:shadow-2xl transition-all duration-300 rounded-2xl overflow-hidden bg-white">
-                <div 
-                  className="relative h-48 overflow-hidden cursor-zoom-in"
-                  onClick={() => setShowPreview({
-                    type: 'image',
-                    url: attr.imageUrl || '/placeholder.jpg',
-                    name: attr.name,
-                    description: attr.description,
-                    hideAction: true
-                  })}
-                >
-                  <img src={attr.imageUrl || '/placeholder.jpg'} alt={attr.name} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
-                  <div className="absolute top-3 left-3 bg-brand text-white text-[10px] font-bold px-3 py-1 rounded-full shadow-lg">PAHE (PAKET HEMAT)</div>
-                  <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                    <Maximize2 className="text-white" size={24} />
+          {/* Dynamic Promo Cards (Slider 1 persatu) */}
+          {(() => {
+            const paheAttractions = attractions.filter(a => a.originalPrice);
+            if (paheAttractions.length === 0) return null;
+
+            return (
+              <div className="relative group max-w-xl mx-auto">
+                <div className="overflow-hidden rounded-2xl shadow-lg border-none bg-white">
+                  <div 
+                    className="flex transition-transform duration-500 ease-out"
+                    style={{ transform: `translateX(-${currentPahe * 100}%)` }}
+                  >
+                    {paheAttractions.map((attr, idx) => (
+                      <div key={attr.id} className="min-w-full flex-shrink-0">
+                        <Card className="h-full border-none shadow-none bg-transparent rounded-none">
+                          <div 
+                            className="relative h-64 sm:h-72 overflow-hidden cursor-zoom-in group/img"
+                            onClick={() => {
+                              let galleryImages: string[] = [];
+                              try {
+                                galleryImages = attr.images ? JSON.parse(attr.images) : [];
+                                if (typeof galleryImages === 'string') {
+                                  galleryImages = (galleryImages as string).split(',').map(s => s.trim());
+                                }
+                              } catch (e) {
+                                galleryImages = attr.images ? attr.images.split(',').map(s => s.trim()) : [];
+                              }
+
+                              setShowPreview({ 
+                                type: attr.videoUrl ? 'video' : 'image', 
+                                url: attr.videoUrl || attr.imageUrl || (galleryImages.length > 0 ? galleryImages[0] : '/placeholder.jpg'),
+                                name: attr.name,
+                                description: attr.description,
+                                gallery: galleryImages.length > 0 ? galleryImages : undefined,
+                                benefits: attr.benefits || undefined,
+                                price: attr.price,
+                                originalPrice: attr.originalPrice,
+                                tags: attr.tags || undefined
+                              });
+                              setActiveGalleryIndex(0);
+                              setPreviewTab(attr.videoUrl ? 'video' : 'gallery');
+                            }}
+                          >
+                            <img src={attr.imageUrl || '/placeholder.jpg'} alt={attr.name} className="w-full h-full object-cover group-hover/img:scale-110 transition-transform duration-500" />
+                            <div className="absolute top-3 left-3 bg-brand text-white text-[10px] font-bold px-3 py-1 rounded-full shadow-lg">PAHE (PAKET HEMAT)</div>
+                            <div className="absolute inset-0 bg-black/20 opacity-0 group-hover/img:opacity-100 transition-opacity flex items-center justify-center">
+                              <Maximize2 className="text-white" size={32} />
+                            </div>
+                          </div>
+                          <CardContent className="p-6 md:p-8">
+                            <h4 className="font-bold text-xl md:text-2xl mb-2">{attr.name}</h4>
+                            <div className="flex items-baseline gap-3 mb-4">
+                              <span className="text-brand font-black text-2xl md:text-3xl">Rp {attr.price.toLocaleString('id-ID')}</span>
+                              {attr.originalPrice && (
+                                <span className="text-gray-400 line-through text-base">Rp {attr.originalPrice.toLocaleString('id-ID')}</span>
+                              )}
+                            </div>
+                            <p className="text-sm text-gray-500 line-clamp-3 mb-4 leading-relaxed">{attr.description}</p>
+                            {renderBenefitIcons(attr.benefits)}
+                            <div className="flex gap-3 mt-6">
+                              <Button 
+                                className="flex-1 rounded-xl bg-gray-100 text-gray-900 hover:bg-brand hover:text-white transition-colors border-none font-bold py-6" 
+                                variant="outline"
+                                onClick={() => {
+                                  let galleryImages: string[] = [];
+                                  try {
+                                    galleryImages = attr.images ? JSON.parse(attr.images) : [];
+                                    if (typeof galleryImages === 'string') {
+                                      galleryImages = (galleryImages as string).split(',').map(s => s.trim());
+                                    }
+                                  } catch (e) {
+                                    galleryImages = attr.images ? attr.images.split(',').map(s => s.trim()) : [];
+                                  }
+
+                                  setShowPreview({ 
+                                    type: attr.videoUrl ? 'video' : 'image', 
+                                    url: attr.videoUrl || attr.imageUrl || (galleryImages.length > 0 ? galleryImages[0] : '/placeholder.jpg'),
+                                    name: attr.name,
+                                    description: attr.description,
+                                    gallery: galleryImages.length > 0 ? galleryImages : undefined,
+                                    benefits: attr.benefits || undefined,
+                                    price: attr.price,
+                                    originalPrice: attr.originalPrice,
+                                    tags: attr.tags || undefined
+                                  });
+                                  setActiveGalleryIndex(0);
+                                  setPreviewTab(attr.videoUrl ? 'video' : 'gallery');
+                                }}
+                              >
+                                DETAIL
+                              </Button>
+                              <Button 
+                                onClick={() => setShowQR({ url: `https://family.thelodgegroup.id/booking/tickets`, name: attr.name })}
+                                className="rounded-xl bg-brand/10 text-brand hover:bg-brand hover:text-white border-none py-6 px-6" 
+                                size="icon"
+                              >
+                                <QrCode size={24} />
+                              </Button>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      </div>
+                    ))}
                   </div>
                 </div>
-                <CardContent className="p-5">
-                  <h4 className="font-bold text-lg mb-1">{attr.name}</h4>
-                  <div className="flex items-baseline gap-2 mb-3">
-                    <span className="text-brand font-black text-xl">Rp {attr.price.toLocaleString()}</span>
-                    {attr.originalPrice && (
-                      <span className="text-gray-400 line-through text-sm">Rp {attr.originalPrice.toLocaleString()}</span>
-                    )}
-                  </div>
-                  <p className="text-xs text-gray-500 line-clamp-2 mb-2">{attr.description}</p>
-                  {renderBenefitIcons(attr.benefits)}
-                  <div className="flex gap-2 mt-4">
-                    <Button 
-                      className="flex-1 rounded-xl bg-gray-100 text-gray-900 hover:bg-brand hover:text-white transition-colors border-none font-bold" 
-                      variant="outline"
-                      onClick={() => {
-                        let galleryImages: string[] = [];
-                        try {
-                          galleryImages = attr.images ? JSON.parse(attr.images) : [];
-                          if (typeof galleryImages === 'string') {
-                            galleryImages = (galleryImages as string).split(',').map(s => s.trim());
-                          }
-                        } catch (e) {
-                          galleryImages = attr.images ? attr.images.split(',').map(s => s.trim()) : [];
-                        }
 
-                        setShowPreview({ 
-                          type: attr.videoUrl ? 'video' : 'image', 
-                          url: attr.videoUrl || attr.imageUrl || (galleryImages.length > 0 ? galleryImages[0] : '/placeholder.jpg'),
-                          name: attr.name,
-                          description: attr.description,
-                          gallery: galleryImages.length > 0 ? galleryImages : undefined,
-                          benefits: attr.benefits || undefined,
-                          price: attr.price,
-                          originalPrice: attr.originalPrice,
-                          tags: attr.tags || undefined
-                        });
-                        setActiveGalleryIndex(0);
-                        setPreviewTab(attr.videoUrl ? 'video' : 'gallery');
-                      }}
+                {/* Slider Controls */}
+                {paheAttractions.length > 1 && (
+                  <>
+                    <button 
+                      onClick={() => setCurrentPahe(prev => (prev - 1 + paheAttractions.length) % paheAttractions.length)}
+                      className="absolute -left-4 md:-left-6 top-1/2 -translate-y-1/2 bg-white shadow-xl border border-gray-100 hover:bg-gray-50 p-3 rounded-full text-gray-700 transition-all z-10"
                     >
-                      DETAIL
-                    </Button>
-                    <Button 
-                      onClick={() => setShowQR({ url: `https://family.thelodgegroup.id/booking/tickets`, name: attr.name })}
-                      className="rounded-xl bg-brand/10 text-brand hover:bg-brand hover:text-white border-none" 
-                      size="icon"
+                      <ChevronLeft size={24} />
+                    </button>
+                    <button 
+                      onClick={() => setCurrentPahe(prev => (prev + 1) % paheAttractions.length)}
+                      className="absolute -right-4 md:-right-6 top-1/2 -translate-y-1/2 bg-white shadow-xl border border-gray-100 hover:bg-gray-50 p-3 rounded-full text-gray-700 transition-all z-10"
                     >
-                      <QrCode size={18} />
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
+                      <ChevronRight size={24} />
+                    </button>
+
+                    {/* Dots Indicator */}
+                    <div className="flex justify-center gap-2 mt-4">
+                      {paheAttractions.map((_, idx) => (
+                        <button
+                          key={idx}
+                          onClick={() => setCurrentPahe(idx)}
+                          className={`h-2 rounded-full transition-all ${idx === currentPahe ? 'w-8 bg-brand' : 'w-2 bg-gray-300'}`}
+                        />
+                      ))}
+                    </div>
+                  </>
+                )}
+              </div>
+            );
+          })()}
         </section>
 
         {/* SECTION 2: PLAYGROUND HUB */}
