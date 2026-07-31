@@ -107,6 +107,43 @@ export default function GreeterHubPage() {
   const [qrImageData, setQRImageData] = useState<string>('');
   const [isOffline, setIsOffline] = useState(false);
 
+  // Swipe handlers
+  const [touchStart, setTouchStart] = useState<number | null>(null);
+  const [touchEnd, setTouchEnd] = useState<number | null>(null);
+
+  const minSwipeDistance = 50;
+
+  const onTouchStart = (e: React.TouchEvent) => {
+    setTouchEnd(null);
+    setTouchStart(e.targetTouches[0].clientX);
+  };
+
+  const onTouchMove = (e: React.TouchEvent) => {
+    setTouchEnd(e.targetTouches[0].clientX);
+  };
+
+  const onTouchEndPromo = (length: number) => {
+    if (!touchStart || !touchEnd) return;
+    const distance = touchStart - touchEnd;
+    if (distance > minSwipeDistance) {
+      setCurrentPromo(prev => (prev + 1) % length);
+    }
+    if (distance < -minSwipeDistance) {
+      setCurrentPromo(prev => (prev - 1 + length) % length);
+    }
+  };
+
+  const onTouchEndPahe = (length: number) => {
+    if (!touchStart || !touchEnd) return;
+    const distance = touchStart - touchEnd;
+    if (distance > minSwipeDistance) {
+      setCurrentPahe(prev => (prev + 1) % length);
+    }
+    if (distance < -minSwipeDistance) {
+      setCurrentPahe(prev => (prev - 1 + length) % length);
+    }
+  };
+
   const mapRef = useRef<HTMLDivElement>(null);
 
   const categories = [
@@ -412,7 +449,12 @@ export default function GreeterHubPage() {
 
           {/* Carousel */}
           {promotions.length > 0 && (
-            <div className="relative h-[300px] md:h-[500px] rounded-3xl overflow-hidden shadow-2xl border-4 border-white group">
+            <div 
+              className="relative h-[300px] md:h-[500px] rounded-3xl overflow-hidden shadow-2xl border-4 border-white group"
+              onTouchStart={onTouchStart}
+              onTouchMove={onTouchMove}
+              onTouchEnd={() => onTouchEndPromo(promotions.length)}
+            >
               {promotions.map((promo, idx) => (
                 <div 
                   key={promo.id}
@@ -447,24 +489,39 @@ export default function GreeterHubPage() {
               ))}
               
               <button 
-                onClick={() => setCurrentPromo(prev => (prev - 1 + promotions.length) % promotions.length)}
-                className="absolute left-4 top-1/2 -translate-y-1/2 bg-white/20 hover:bg-white/40 backdrop-blur-md p-3 rounded-full text-white transition-all opacity-0 group-hover:opacity-100"
+                type="button"
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  setCurrentPromo(prev => (prev - 1 + promotions.length) % promotions.length);
+                }}
+                className="absolute left-4 top-1/2 -translate-y-1/2 bg-white/20 hover:bg-white/40 backdrop-blur-md p-3 rounded-full text-white transition-all opacity-0 group-hover:opacity-100 z-10"
               >
                 <ChevronLeft size={24} />
               </button>
               <button 
-                onClick={() => setCurrentPromo(prev => (prev + 1) % promotions.length)}
-                className="absolute right-4 top-1/2 -translate-y-1/2 bg-white/20 hover:bg-white/40 backdrop-blur-md p-3 rounded-full text-white transition-all opacity-0 group-hover:opacity-100"
+                type="button"
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  setCurrentPromo(prev => (prev + 1) % promotions.length);
+                }}
+                className="absolute right-4 top-1/2 -translate-y-1/2 bg-white/20 hover:bg-white/40 backdrop-blur-md p-3 rounded-full text-white transition-all opacity-0 group-hover:opacity-100 z-10"
               >
                 <ChevronRight size={24} />
               </button>
 
               {/* Dots */}
-              <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex gap-2">
+              <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex gap-2 z-10">
                 {promotions.map((_, idx) => (
                   <button 
                     key={idx}
-                    onClick={() => setCurrentPromo(idx)}
+                    type="button"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      setCurrentPromo(idx);
+                    }}
                     className={`h-1.5 rounded-full transition-all ${idx === currentPromo ? 'w-8 bg-brand' : 'w-2 bg-white/50'}`}
                   />
                 ))}
@@ -479,7 +536,12 @@ export default function GreeterHubPage() {
 
             return (
               <div className="relative group max-w-xl mx-auto">
-                <div className="overflow-hidden rounded-2xl shadow-lg border-none bg-white">
+                <div 
+                  className="overflow-hidden rounded-2xl shadow-lg border-none bg-white"
+                  onTouchStart={onTouchStart}
+                  onTouchMove={onTouchMove}
+                  onTouchEnd={() => onTouchEndPahe(paheAttractions.length)}
+                >
                   <div 
                     className="flex transition-transform duration-500 ease-out"
                     style={{ transform: `translateX(-${currentPahe * 100}%)` }}
@@ -582,13 +644,23 @@ export default function GreeterHubPage() {
                 {paheAttractions.length > 1 && (
                   <>
                     <button 
-                      onClick={() => setCurrentPahe(prev => (prev - 1 + paheAttractions.length) % paheAttractions.length)}
+                      type="button"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        setCurrentPahe(prev => (prev - 1 + paheAttractions.length) % paheAttractions.length);
+                      }}
                       className="absolute -left-4 md:-left-6 top-1/2 -translate-y-1/2 bg-white shadow-xl border border-gray-100 hover:bg-gray-50 p-3 rounded-full text-gray-700 transition-all z-10"
                     >
                       <ChevronLeft size={24} />
                     </button>
                     <button 
-                      onClick={() => setCurrentPahe(prev => (prev + 1) % paheAttractions.length)}
+                      type="button"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        setCurrentPahe(prev => (prev + 1) % paheAttractions.length);
+                      }}
                       className="absolute -right-4 md:-right-6 top-1/2 -translate-y-1/2 bg-white shadow-xl border border-gray-100 hover:bg-gray-50 p-3 rounded-full text-gray-700 transition-all z-10"
                     >
                       <ChevronRight size={24} />
@@ -599,7 +671,12 @@ export default function GreeterHubPage() {
                       {paheAttractions.map((_, idx) => (
                         <button
                           key={idx}
-                          onClick={() => setCurrentPahe(idx)}
+                          type="button"
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            setCurrentPahe(idx);
+                          }}
                           className={`h-2 rounded-full transition-all ${idx === currentPahe ? 'w-8 bg-brand' : 'w-2 bg-gray-300'}`}
                         />
                       ))}
