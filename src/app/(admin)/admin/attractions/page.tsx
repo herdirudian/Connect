@@ -793,7 +793,7 @@ export default function AdminAttractionsPage() {
                     <Checkbox 
                       id="isLandingHub" 
                       checked={formData.isLandingHub}
-                      onCheckedChange={(checked) => setFormData({...formData, isLandingHub: checked as boolean})}
+                      onCheckedChange={(checked: boolean | 'indeterminate') => setFormData({...formData, isLandingHub: checked === true})}
                     />
                     <label htmlFor="isLandingHub" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer">
                       Tampilkan item ini di slider "1. THE LANDING HUB (PAHE)"
