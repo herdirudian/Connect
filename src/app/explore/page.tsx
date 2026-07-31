@@ -558,9 +558,9 @@ export default function GreeterHubPage() {
             if (paheAttractions.length === 0) return null;
 
             return (
-              <div className="relative group max-w-md mx-auto">
+              <div className="relative group max-w-3xl mx-auto">
                 <div 
-                  className="overflow-hidden rounded-2xl shadow-lg border-none bg-white touch-pan-y"
+                  className="overflow-hidden rounded-[32px] shadow-2xl border border-gray-100 bg-white touch-pan-y"
                   onTouchStart={onDragStart}
                   onTouchMove={onDragMove}
                   onTouchEnd={() => onDragEndPahe(paheAttractions.length)}
@@ -575,9 +575,9 @@ export default function GreeterHubPage() {
                   >
                     {paheAttractions.map((attr, idx) => (
                       <div key={attr.id} className="w-full min-w-full flex-shrink-0">
-                        <Card className="h-full border-none shadow-none bg-transparent rounded-none">
+                        <Card className="h-full border-none shadow-none bg-transparent rounded-none flex flex-col md:flex-row">
                           <div 
-                            className="relative h-64 sm:h-72 overflow-hidden cursor-zoom-in group/img"
+                            className="relative h-[300px] md:h-auto md:w-1/2 overflow-hidden cursor-zoom-in group/img"
                             onClick={() => {
                               let galleryImages: string[] = [];
                               try {
@@ -610,19 +610,21 @@ export default function GreeterHubPage() {
                               <Maximize2 className="text-white" size={32} />
                             </div>
                           </div>
-                          <CardContent className="p-6 md:p-8">
-                            <h4 className="font-bold text-xl md:text-2xl mb-2">{attr.name}</h4>
-                            <div className="flex items-baseline gap-3 mb-4">
-                              <span className="text-brand font-black text-2xl md:text-3xl">Rp {attr.price.toLocaleString('id-ID')}</span>
+                          <CardContent className="p-6 md:p-8 flex-1 flex flex-col justify-center">
+                            <h4 className="font-bold text-2xl md:text-3xl mb-3">{attr.name}</h4>
+                            <div className="flex items-baseline gap-3 mb-5">
+                              <span className="text-brand font-black text-3xl md:text-4xl">Rp {attr.price.toLocaleString('id-ID')}</span>
                               {attr.originalPrice && (
-                                <span className="text-gray-400 line-through text-base">Rp {attr.originalPrice.toLocaleString('id-ID')}</span>
+                                <span className="text-gray-400 line-through text-lg font-bold">Rp {attr.originalPrice.toLocaleString('id-ID')}</span>
                               )}
                             </div>
-                            <p className="text-sm text-gray-500 line-clamp-3 mb-4 leading-relaxed">{attr.description}</p>
-                            {renderBenefitIcons(attr.benefits)}
-                            <div className="flex gap-3 mt-6">
+                            <p className="text-sm md:text-base text-gray-500 line-clamp-3 mb-6 leading-relaxed">{attr.description}</p>
+                            <div className="mb-6">
+                              {renderBenefitIcons(attr.benefits)}
+                            </div>
+                            <div className="flex gap-3 mt-auto">
                               <Button 
-                                className="flex-1 rounded-xl bg-gray-100 text-gray-900 hover:bg-brand hover:text-white transition-colors border-none font-bold py-6" 
+                                className="flex-1 rounded-2xl bg-gray-100 text-gray-900 hover:bg-brand hover:text-white transition-colors border-none font-bold py-6 text-lg" 
                                 variant="outline"
                                 onClick={() => {
                                   let galleryImages: string[] = [];
@@ -654,7 +656,7 @@ export default function GreeterHubPage() {
                               </Button>
                               <Button 
                                 onClick={() => setShowQR({ url: `https://family.thelodgegroup.id/booking/tickets`, name: attr.name })}
-                                className="rounded-xl bg-brand/10 text-brand hover:bg-brand hover:text-white border-none py-6 px-6" 
+                                className="rounded-2xl bg-brand/10 text-brand hover:bg-brand hover:text-white border-none py-6 px-6" 
                                 size="icon"
                               >
                                 <QrCode size={24} />
@@ -677,9 +679,9 @@ export default function GreeterHubPage() {
                         e.stopPropagation();
                         setCurrentPahe(prev => (prev - 1 + paheAttractions.length) % paheAttractions.length);
                       }}
-                      className="absolute left-2 md:-left-6 top-1/2 -translate-y-1/2 bg-white shadow-xl border border-gray-100 hover:bg-gray-50 p-2 md:p-3 rounded-full text-gray-700 transition-all z-10"
+                      className="absolute left-2 md:-left-6 top-[150px] md:top-1/2 -translate-y-1/2 bg-white shadow-xl border border-gray-100 hover:bg-gray-50 p-2 md:p-4 rounded-full text-gray-700 transition-all z-10"
                     >
-                      <ChevronLeft size={24} />
+                      <ChevronLeft size={24} className="md:w-8 md:h-8" />
                     </button>
                     <button 
                       type="button"
@@ -688,9 +690,9 @@ export default function GreeterHubPage() {
                         e.stopPropagation();
                         setCurrentPahe(prev => (prev + 1) % paheAttractions.length);
                       }}
-                      className="absolute right-2 md:-right-6 top-1/2 -translate-y-1/2 bg-white shadow-xl border border-gray-100 hover:bg-gray-50 p-2 md:p-3 rounded-full text-gray-700 transition-all z-10"
+                      className="absolute right-2 md:-right-6 top-[150px] md:top-1/2 -translate-y-1/2 bg-white shadow-xl border border-gray-100 hover:bg-gray-50 p-2 md:p-4 rounded-full text-gray-700 transition-all z-10"
                     >
-                      <ChevronRight size={24} />
+                      <ChevronRight size={24} className="md:w-8 md:h-8" />
                     </button>
 
                     {/* Dots Indicator */}
