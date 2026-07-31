@@ -107,23 +107,31 @@ export default function GreeterHubPage() {
   const [qrImageData, setQRImageData] = useState<string>('');
   const [isOffline, setIsOffline] = useState(false);
 
-  // Swipe handlers (using Pointer Events for Desktop + Mobile)
+  // Swipe handlers (using Touch + Mouse Events for Desktop & Mobile)
   const [touchStart, setTouchStart] = useState<number | null>(null);
   const [touchEnd, setTouchEnd] = useState<number | null>(null);
 
   const minSwipeDistance = 50;
 
-  const onPointerDown = (e: React.PointerEvent) => {
+  const onDragStart = (e: React.TouchEvent | React.MouseEvent) => {
     setTouchEnd(null);
-    setTouchStart(e.clientX);
+    if ('touches' in e) {
+      setTouchStart(e.touches[0].clientX);
+    } else {
+      setTouchStart((e as React.MouseEvent).clientX);
+    }
   };
 
-  const onPointerMove = (e: React.PointerEvent) => {
+  const onDragMove = (e: React.TouchEvent | React.MouseEvent) => {
     if (touchStart === null) return;
-    setTouchEnd(e.clientX);
+    if ('touches' in e) {
+      setTouchEnd(e.touches[0].clientX);
+    } else {
+      setTouchEnd((e as React.MouseEvent).clientX);
+    }
   };
 
-  const onPointerUpPromo = (length: number) => {
+  const onDragEndPromo = (length: number) => {
     if (touchStart === null || touchEnd === null) {
       setTouchStart(null);
       setTouchEnd(null);
@@ -139,7 +147,7 @@ export default function GreeterHubPage() {
     setTouchEnd(null);
   };
 
-  const onPointerUpPahe = (length: number) => {
+  const onDragEndPahe = (length: number) => {
     if (touchStart === null || touchEnd === null) {
       setTouchStart(null);
       setTouchEnd(null);
@@ -462,10 +470,13 @@ export default function GreeterHubPage() {
           {promotions.length > 0 && (
             <div 
               className="relative h-[300px] md:h-[500px] rounded-3xl overflow-hidden shadow-2xl border-4 border-white group touch-pan-y"
-              onPointerDown={onPointerDown}
-              onPointerMove={onPointerMove}
-              onPointerUp={() => onPointerUpPromo(promotions.length)}
-              onPointerCancel={() => { setTouchStart(null); setTouchEnd(null); }}
+              onTouchStart={onDragStart}
+              onTouchMove={onDragMove}
+              onTouchEnd={() => onDragEndPromo(promotions.length)}
+              onMouseDown={onDragStart}
+              onMouseMove={onDragMove}
+              onMouseUp={() => onDragEndPromo(promotions.length)}
+              onMouseLeave={() => { if (touchStart !== null) onDragEndPromo(promotions.length); }}
             >
               {promotions.map((promo, idx) => (
                 <div 
@@ -547,20 +558,23 @@ export default function GreeterHubPage() {
             if (paheAttractions.length === 0) return null;
 
             return (
-              <div className="relative group max-w-xl mx-auto">
+              <div className="relative group max-w-md mx-auto">
                 <div 
                   className="overflow-hidden rounded-2xl shadow-lg border-none bg-white touch-pan-y"
-                  onPointerDown={onPointerDown}
-                  onPointerMove={onPointerMove}
-                  onPointerUp={() => onPointerUpPahe(paheAttractions.length)}
-                  onPointerCancel={() => { setTouchStart(null); setTouchEnd(null); }}
+                  onTouchStart={onDragStart}
+                  onTouchMove={onDragMove}
+                  onTouchEnd={() => onDragEndPahe(paheAttractions.length)}
+                  onMouseDown={onDragStart}
+                  onMouseMove={onDragMove}
+                  onMouseUp={() => onDragEndPahe(paheAttractions.length)}
+                  onMouseLeave={() => { if (touchStart !== null) onDragEndPahe(paheAttractions.length); }}
                 >
                   <div 
-                    className="flex transition-transform duration-500 ease-out"
+                    className="flex flex-row w-full transition-transform duration-500 ease-out"
                     style={{ transform: `translateX(-${currentPahe * 100}%)` }}
                   >
                     {paheAttractions.map((attr, idx) => (
-                      <div key={attr.id} className="min-w-full flex-shrink-0">
+                      <div key={attr.id} className="w-full min-w-full flex-shrink-0">
                         <Card className="h-full border-none shadow-none bg-transparent rounded-none">
                           <div 
                             className="relative h-64 sm:h-72 overflow-hidden cursor-zoom-in group/img"
@@ -663,7 +677,7 @@ export default function GreeterHubPage() {
                         e.stopPropagation();
                         setCurrentPahe(prev => (prev - 1 + paheAttractions.length) % paheAttractions.length);
                       }}
-                      className="absolute -left-4 md:-left-6 top-1/2 -translate-y-1/2 bg-white shadow-xl border border-gray-100 hover:bg-gray-50 p-3 rounded-full text-gray-700 transition-all z-10"
+                      className="absolute left-2 md:-left-6 top-1/2 -translate-y-1/2 bg-white shadow-xl border border-gray-100 hover:bg-gray-50 p-2 md:p-3 rounded-full text-gray-700 transition-all z-10"
                     >
                       <ChevronLeft size={24} />
                     </button>
@@ -674,7 +688,7 @@ export default function GreeterHubPage() {
                         e.stopPropagation();
                         setCurrentPahe(prev => (prev + 1) % paheAttractions.length);
                       }}
-                      className="absolute -right-4 md:-right-6 top-1/2 -translate-y-1/2 bg-white shadow-xl border border-gray-100 hover:bg-gray-50 p-3 rounded-full text-gray-700 transition-all z-10"
+                      className="absolute right-2 md:-right-6 top-1/2 -translate-y-1/2 bg-white shadow-xl border border-gray-100 hover:bg-gray-50 p-2 md:p-3 rounded-full text-gray-700 transition-all z-10"
                     >
                       <ChevronRight size={24} />
                     </button>
