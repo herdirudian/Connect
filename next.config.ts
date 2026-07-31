@@ -55,7 +55,7 @@ const nextConfig: NextConfig = {
           },
           {
             key: 'Content-Security-Policy',
-            value: "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://*.xendit.co https://*.sentry.io https://*.google-analytics.com https://*.googletagmanager.com https://static.cloudflareinsights.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data: blob: https://*.unsplash.com https://*.xendit.co https://*.cloudinary.com; font-src 'self' https://fonts.gstatic.com; connect-src 'self' https://*.xendit.co https://*.sentry.io https://*.google-analytics.com https://cloudflareinsights.com; frame-src 'self' https://*.xendit.co; media-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'self';"
+            value: "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://*.xendit.co https://*.sentry.io https://*.google-analytics.com https://*.googletagmanager.com https://static.cloudflareinsights.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data: blob: https://*.unsplash.com https://*.xendit.co https://*.cloudinary.com https://www.google.com; font-src 'self' https://fonts.gstatic.com; connect-src 'self' https://*.xendit.co https://*.sentry.io https://*.google-analytics.com https://cloudflareinsights.com; frame-src 'self' https://*.xendit.co; media-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'self';"
           }
         ],
       },
