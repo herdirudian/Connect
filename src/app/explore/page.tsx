@@ -107,41 +107,52 @@ export default function GreeterHubPage() {
   const [qrImageData, setQRImageData] = useState<string>('');
   const [isOffline, setIsOffline] = useState(false);
 
-  // Swipe handlers
+  // Swipe handlers (using Pointer Events for Desktop + Mobile)
   const [touchStart, setTouchStart] = useState<number | null>(null);
   const [touchEnd, setTouchEnd] = useState<number | null>(null);
 
   const minSwipeDistance = 50;
 
-  const onTouchStart = (e: React.TouchEvent) => {
+  const onPointerDown = (e: React.PointerEvent) => {
     setTouchEnd(null);
-    setTouchStart(e.targetTouches[0].clientX);
+    setTouchStart(e.clientX);
   };
 
-  const onTouchMove = (e: React.TouchEvent) => {
-    setTouchEnd(e.targetTouches[0].clientX);
+  const onPointerMove = (e: React.PointerEvent) => {
+    if (touchStart === null) return;
+    setTouchEnd(e.clientX);
   };
 
-  const onTouchEndPromo = (length: number) => {
-    if (!touchStart || !touchEnd) return;
+  const onPointerUpPromo = (length: number) => {
+    if (touchStart === null || touchEnd === null) {
+      setTouchStart(null);
+      setTouchEnd(null);
+      return;
+    }
     const distance = touchStart - touchEnd;
     if (distance > minSwipeDistance) {
       setCurrentPromo(prev => (prev + 1) % length);
-    }
-    if (distance < -minSwipeDistance) {
+    } else if (distance < -minSwipeDistance) {
       setCurrentPromo(prev => (prev - 1 + length) % length);
     }
+    setTouchStart(null);
+    setTouchEnd(null);
   };
 
-  const onTouchEndPahe = (length: number) => {
-    if (!touchStart || !touchEnd) return;
+  const onPointerUpPahe = (length: number) => {
+    if (touchStart === null || touchEnd === null) {
+      setTouchStart(null);
+      setTouchEnd(null);
+      return;
+    }
     const distance = touchStart - touchEnd;
     if (distance > minSwipeDistance) {
       setCurrentPahe(prev => (prev + 1) % length);
-    }
-    if (distance < -minSwipeDistance) {
+    } else if (distance < -minSwipeDistance) {
       setCurrentPahe(prev => (prev - 1 + length) % length);
     }
+    setTouchStart(null);
+    setTouchEnd(null);
   };
 
   const mapRef = useRef<HTMLDivElement>(null);
@@ -450,10 +461,11 @@ export default function GreeterHubPage() {
           {/* Carousel */}
           {promotions.length > 0 && (
             <div 
-              className="relative h-[300px] md:h-[500px] rounded-3xl overflow-hidden shadow-2xl border-4 border-white group"
-              onTouchStart={onTouchStart}
-              onTouchMove={onTouchMove}
-              onTouchEnd={() => onTouchEndPromo(promotions.length)}
+              className="relative h-[300px] md:h-[500px] rounded-3xl overflow-hidden shadow-2xl border-4 border-white group touch-pan-y"
+              onPointerDown={onPointerDown}
+              onPointerMove={onPointerMove}
+              onPointerUp={() => onPointerUpPromo(promotions.length)}
+              onPointerCancel={() => { setTouchStart(null); setTouchEnd(null); }}
             >
               {promotions.map((promo, idx) => (
                 <div 
@@ -537,10 +549,11 @@ export default function GreeterHubPage() {
             return (
               <div className="relative group max-w-xl mx-auto">
                 <div 
-                  className="overflow-hidden rounded-2xl shadow-lg border-none bg-white"
-                  onTouchStart={onTouchStart}
-                  onTouchMove={onTouchMove}
-                  onTouchEnd={() => onTouchEndPahe(paheAttractions.length)}
+                  className="overflow-hidden rounded-2xl shadow-lg border-none bg-white touch-pan-y"
+                  onPointerDown={onPointerDown}
+                  onPointerMove={onPointerMove}
+                  onPointerUp={() => onPointerUpPahe(paheAttractions.length)}
+                  onPointerCancel={() => { setTouchStart(null); setTouchEnd(null); }}
                 >
                   <div 
                     className="flex transition-transform duration-500 ease-out"
