@@ -41,6 +41,7 @@ export async function GET(req: Request) {
           eventPromoPrice: a.eventPromoPrice,
           eventPromoQuota: a.eventPromoQuota,
           normalPrice: a.price,
+          isLandingHub: a.isLandingHub,
         };
       });
       return NextResponse.json(mapped);
@@ -105,7 +106,8 @@ export async function POST(req: Request) {
       eventMaxQuota,
       eventPromoPrice,
       eventPromoQuota,
-      sortOrder
+      sortOrder,
+      isLandingHub
     } = body;
 
     console.log('[Attractions API] Creating attraction in database...');
@@ -136,7 +138,8 @@ export async function POST(req: Request) {
         eventPromoPrice: eventPromoPrice ? parseFloat(eventPromoPrice) : null,
         eventPromoQuota: eventPromoQuota ? parseInt(eventPromoQuota) : null,
         sortOrder: sortOrder ? parseInt(sortOrder) : 0,
-      }
+        isLandingHub: isLandingHub || false
+      },
     });
 
     console.log('[Attractions API] Attraction created successfully:', attraction.id);

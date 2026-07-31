@@ -259,6 +259,7 @@ model Attraction {
   eventPromoQuota   Int?
   
   sortOrder         Int      @default(0)
+  isLandingHub      Boolean  @default(false)
   
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt

@@ -68,6 +68,7 @@ interface Attraction {
   eventPromoPrice?: number | null;
   eventPromoQuota?: number | null;
   sortOrder?: number;
+  isLandingHub?: boolean;
 }
 
 export default function AdminAttractionsPage() {
@@ -101,6 +102,7 @@ export default function AdminAttractionsPage() {
       eventPromoPrice: '',
       eventPromoQuota: '',
       sortOrder: '0',
+      isLandingHub: false,
     });
   const [uploading, setUploading] = useState(false);
   const [pricingFor, setPricingFor] = useState<{ id: string; name: string } | null>(null);
@@ -175,6 +177,7 @@ export default function AdminAttractionsPage() {
         eventPromoPrice: '',
         eventPromoQuota: '',
         sortOrder: '0',
+        isLandingHub: false,
     });
     setIsAdding(false);
     setEditingId(null);
@@ -216,6 +219,7 @@ export default function AdminAttractionsPage() {
         eventPromoPrice: item.eventPromoPrice ? item.eventPromoPrice.toString() : '',
         eventPromoQuota: item.eventPromoQuota ? item.eventPromoQuota.toString() : '',
         sortOrder: item.sortOrder ? item.sortOrder.toString() : '0',
+        isLandingHub: item.isLandingHub || false,
       });
     setEditingId(item.id);
     setIsAdding(true); // Re-use the add form area for editing
@@ -781,6 +785,20 @@ export default function AdminAttractionsPage() {
                     <option value="BOOKING">Hanya di Halaman Booking (Tamu)</option>
                   </select>
                   <p className="text-[10px] text-gray-500 italic">Gunakan "Hanya di Explore Hub" jika Anda ingin menambahkan item yang hanya untuk presentasi Greeter (misal: Galeri Foto Wahana).</p>
+                </div>
+
+                <div className="space-y-2 md:col-span-2">
+                  <label className="text-sm font-medium">The Landing Hub (Promo Depan)</label>
+                  <div className="flex items-center space-x-2 p-3 border rounded-md bg-gray-50">
+                    <Checkbox 
+                      id="isLandingHub" 
+                      checked={formData.isLandingHub}
+                      onCheckedChange={(checked) => setFormData({...formData, isLandingHub: checked as boolean})}
+                    />
+                    <label htmlFor="isLandingHub" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer">
+                      Tampilkan item ini di slider "1. THE LANDING HUB (PAHE)"
+                    </label>
+                  </div>
                 </div>
               </div>
               <Button type="submit" className="w-full bg-brand hover:bg-brand-dark text-white">

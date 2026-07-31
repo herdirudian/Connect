@@ -554,7 +554,7 @@ export default function GreeterHubPage() {
 
           {/* Dynamic Promo Cards (Slider 1 persatu) */}
           {(() => {
-            const paheAttractions = attractions.filter(a => a.originalPrice);
+            const paheAttractions = attractions.filter(a => (a as any).isLandingHub);
             if (paheAttractions.length === 0) return null;
 
             return (
