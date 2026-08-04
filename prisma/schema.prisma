@@ -88,6 +88,7 @@ model User {
   reviews                Review[]
   userPassportMissions   UserPassportMission[]
   userBadges             UserBadge[]
+  communityGroups        UserCommunityGroup[]
   
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
@@ -569,6 +570,43 @@ model UserBadge {
   earnedAt  DateTime @default(now())
   
   @@unique([userId, badgeId])
+}
+
+// ==========================================
+// COMMUNITY: GROUPS, EVENTS, & GALLERY
+// ==========================================
+
+model CommunityGroup {
+  id          String   @id @default(uuid())
+  name        String
+  description String   @db.Text
+  imageUrl    String?
+  color       String   @default("bg-brand-50 text-brand")
+  active      Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  members     UserCommunityGroup[]
+}
+
+model UserCommunityGroup {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  groupId   String
+  group     CommunityGroup @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  joinedAt  DateTime @default(now())
+
+  @@unique([userId, groupId])
+}
+
+model CommunityGallery {
+  id          String   @id @default(uuid())
+  title       String
+  imageUrl    String
+  active      Boolean  @default(true)
+  likes       Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 }
 
 model UserReward {

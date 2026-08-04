@@ -5,64 +5,40 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Users, Calendar, Image as ImageIcon, ArrowRight, Heart, MessageCircle, Share2, MapPin } from 'lucide-react';
 import Link from 'next/link';
+import { format, parseISO } from 'date-fns';
+import { id as idLocale } from 'date-fns/locale';
 
 export default function CommunityPage() {
   const [activeTab, setActiveTab] = useState<'groups' | 'events' | 'gallery'>('groups');
+  const [groups, setGroups] = useState<any[]>([]);
+  const [gallery, setGallery] = useState<any[]>([]);
+  const [events, setEvents] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const groups = [
-    {
-      id: 'yoga-club',
-      name: 'Enjing-Enjing Yoga Club',
-      members: 128,
-      description: 'Komunitas pecinta yoga pagi dengan pemandangan hutan pinus The Lodge Maribaya.',
-      image: 'https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?q=80&w=1000&auto=format&fit=crop',
-      color: 'bg-green-50 text-green-600'
-    },
-    {
-      id: 'forest-walker',
-      name: 'Forest Walkers',
-      members: 342,
-      description: 'Eksplorasi alam dan trekking santai menyusuri keindahan hutan The Lodge setiap akhir pekan.',
-      image: 'https://images.unsplash.com/photo-1551632811-561732d1e306?q=80&w=1000&auto=format&fit=crop',
-      color: 'bg-orange-50 text-orange-600'
-    },
-    {
-      id: 'photography',
-      name: 'Nature Photography',
-      members: 89,
-      description: 'Berbagi tips, trik, dan hasil jepretan lanskap alam The Lodge Maribaya yang menakjubkan.',
-      image: 'https://images.unsplash.com/photo-1452587925148-ce544e77e70d?q=80&w=1000&auto=format&fit=crop',
-      color: 'bg-blue-50 text-blue-600'
+  useEffect(() => {
+    async function fetchData() {
+      try {
+        const [groupsRes, galleryRes, eventsRes] = await Promise.all([
+          fetch('/api/community/groups'),
+          fetch('/api/community/gallery'),
+          fetch('/api/events')
+        ]);
+        if (groupsRes.ok) setGroups(await groupsRes.json());
+        if (galleryRes.ok) setGallery(await galleryRes.json());
+        if (eventsRes.ok) {
+          const allEvents = await eventsRes.json();
+          // filter events that are not in the past for "upcoming"
+          const now = new Date();
+          setEvents(allEvents.filter((e: any) => new Date(e.eventDate) >= now).slice(0, 4));
+        }
+      } catch (error) {
+        console.error('Error fetching community data:', error);
+      } finally {
+        setLoading(false);
+      }
     }
-  ];
-
-  const upcomingEvents = [
-    {
-      id: '1',
-      title: 'Sunrise Yoga Massal',
-      date: '24 Agustus 2026',
-      time: '06:00 WIB',
-      location: 'The Pines Area',
-      attendees: 45,
-      image: 'https://images.unsplash.com/photo-1506126613408-eca07ce68773?q=80&w=1000&auto=format&fit=crop'
-    },
-    {
-      id: '2',
-      title: 'Workshop Fotografi Alam',
-      date: '05 September 2026',
-      time: '15:00 WIB',
-      location: 'Omah Bamboo',
-      attendees: 28,
-      image: 'https://images.unsplash.com/photo-1469474968028-56623f02e42e?q=80&w=1000&auto=format&fit=crop'
-    }
-  ];
-
-  const gallery = [
-    { id: '1', url: 'https://images.unsplash.com/photo-1533561797500-4bad47320d6c?q=80&w=1000&auto=format&fit=crop', title: 'Yoga Bersama', likes: 124, comments: 12 },
-    { id: '2', url: 'https://images.unsplash.com/photo-1445308394109-4ec2920981b1?q=80&w=1000&auto=format&fit=crop', title: 'Forest Trekking', likes: 89, comments: 5 },
-    { id: '3', url: 'https://images.unsplash.com/photo-1511497584788-876760111969?q=80&w=1000&auto=format&fit=crop', title: 'Family Gathering', likes: 256, comments: 45 },
-    { id: '4', url: 'https://images.unsplash.com/photo-1510076857177-7470076d4098?q=80&w=1000&auto=format&fit=crop', title: 'Sunset at The Lodge', likes: 312, comments: 28 },
-  ];
+    fetchData();
+  }, []);
 
   return (
     <div className="space-y-8 pb-12">
@@ -111,14 +87,14 @@ export default function CommunityPage() {
         {/* GROUPS TAB */}
         {activeTab === 'groups' && (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
-            {groups.map((group) => (
+            {loading ? <div className="p-8 text-center">Loading...</div> : groups.map((group) => (
               <Card key={group.id} className="border-gray-100 shadow-sm hover:shadow-xl transition-all duration-300 overflow-hidden group">
                 <div className="h-40 bg-gray-100 relative overflow-hidden">
-                  <img src={group.image} alt={group.name} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" />
+                  <img src={group.imageUrl} alt={group.name} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" />
                   <div className="absolute inset-0 bg-gradient-to-t from-gray-900/80 to-transparent"></div>
                   <div className="absolute bottom-4 left-4 right-4 flex justify-between items-end">
                     <span className="bg-white/20 backdrop-blur-md text-white text-[10px] font-bold uppercase tracking-widest px-2.5 py-1 rounded-full flex items-center gap-1.5 border border-white/30">
-                      <Users className="h-3 w-3" /> {group.members} Member
+                      <Users className="h-3 w-3" /> {group._count?.members || 0} Member
                     </span>
                   </div>
                 </div>
@@ -146,31 +122,33 @@ export default function CommunityPage() {
               </Link>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {upcomingEvents.map((event) => (
+              {loading ? <div className="p-8 text-center">Loading...</div> : events.map((event) => (
                 <Card key={event.id} className="border-gray-100 shadow-sm hover:shadow-md transition-all flex flex-col sm:flex-row overflow-hidden group">
                   <div className="w-full sm:w-48 h-48 sm:h-auto relative overflow-hidden shrink-0">
-                    <img src={event.image} alt={event.title} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" />
+                    <img src={event.imageUrl || 'https://images.unsplash.com/photo-1506126613408-eca07ce68773?q=80&w=1000&auto=format&fit=crop'} alt={event.name} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" />
                   </div>
                   <CardContent className="p-6 flex flex-col justify-between w-full">
                     <div>
                       <div className="flex justify-between items-start mb-2">
-                        <h4 className="text-lg font-black text-gray-900 uppercase tracking-tight leading-tight">{event.title}</h4>
+                        <h4 className="text-lg font-black text-gray-900 uppercase tracking-tight leading-tight">{event.name}</h4>
                       </div>
                       <div className="space-y-2 mb-4">
                         <div className="flex items-center text-xs font-medium text-gray-500">
-                          <Calendar className="w-4 h-4 mr-2 text-brand" /> {event.date} • {event.time}
+                          <Calendar className="w-4 h-4 mr-2 text-brand" /> {format(parseISO(event.eventDate), 'dd MMMM yyyy', { locale: idLocale })} • {format(parseISO(event.eventDate), 'HH:mm', { locale: idLocale })} WIB
                         </div>
                         <div className="flex items-center text-xs font-medium text-gray-500">
-                          <MapPin className="w-4 h-4 mr-2 text-brand" /> {event.location}
+                          <MapPin className="w-4 h-4 mr-2 text-brand" /> {event.category}
                         </div>
                         <div className="flex items-center text-xs font-medium text-gray-500">
-                          <Users className="w-4 h-4 mr-2 text-brand" /> {event.attendees} orang akan hadir
+                          <Users className="w-4 h-4 mr-2 text-brand" /> Quota: {event.eventSoldQuota}/{event.eventMaxQuota}
                         </div>
                       </div>
                     </div>
-                    <Button className="w-full bg-gray-900 text-white hover:bg-brand font-bold uppercase tracking-wider text-xs shadow-none">
-                      RSVP Now
-                    </Button>
+                    <Link href={`/dashboard/tickets?eventId=${event.id}`}>
+                      <Button className="w-full bg-gray-900 text-white hover:bg-brand font-bold uppercase tracking-wider text-xs shadow-none">
+                        RSVP Now
+                      </Button>
+                    </Link>
                   </CardContent>
                 </Card>
               ))}
@@ -188,9 +166,9 @@ export default function CommunityPage() {
               </Button>
             </div>
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-              {gallery.map((item) => (
+              {loading ? <div className="col-span-full p-8 text-center">Loading...</div> : gallery.map((item) => (
                 <div key={item.id} className="relative group rounded-2xl overflow-hidden aspect-square bg-gray-100 cursor-pointer shadow-sm">
-                  <img src={item.url} alt={item.title} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" />
+                  <img src={item.imageUrl} alt={item.title} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" />
                   
                   {/* Overlay */}
                   <div className="absolute inset-0 bg-gradient-to-t from-gray-900/90 via-gray-900/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col justify-end p-4">
@@ -198,9 +176,6 @@ export default function CommunityPage() {
                     <div className="flex items-center gap-4">
                       <div className="flex items-center text-white/90 text-xs font-medium hover:text-brand-100 transition-colors">
                         <Heart className="w-4 h-4 mr-1.5" /> {item.likes}
-                      </div>
-                      <div className="flex items-center text-white/90 text-xs font-medium hover:text-brand-100 transition-colors">
-                        <MessageCircle className="w-4 h-4 mr-1.5" /> {item.comments}
                       </div>
                     </div>
                   </div>
