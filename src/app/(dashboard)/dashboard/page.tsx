@@ -564,7 +564,7 @@ export default function DashboardPage() {
                       <span className="text-xs font-bold text-gray-500 mb-1.5">TIER</span>
                    </div>
                 </div>
-                <Link href="/dashboard/membership">
+                <Link href="/dashboard/benefits">
                    <Button className="w-full bg-white border-2 border-gray-200 text-gray-900 hover:bg-brand hover:border-brand hover:text-white font-bold uppercase tracking-wider h-12 rounded-xl shadow-none">
                       View Benefits
                    </Button>
@@ -578,7 +578,14 @@ export default function DashboardPage() {
 
       {/* Your Member Benefits Section */}
       <div className="bg-white rounded-3xl p-8 shadow-sm border border-gray-100 mb-10">
-        <h3 className="text-xl font-black text-gray-900 uppercase tracking-tight mb-8">Your Member Benefits</h3>
+        <div className="flex items-center justify-between mb-8">
+           <h3 className="text-xl font-black text-gray-900 uppercase tracking-tight">Your Member Benefits</h3>
+           <Link href="/dashboard/benefits">
+             <Button variant="ghost" className="text-sm font-bold text-brand hover:text-brand-dark flex items-center gap-1 uppercase">
+                View All <ArrowRight className="h-4 w-4" />
+             </Button>
+           </Link>
+        </div>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
            {/* Card 1 */}
            <Link href="/dashboard/vouchers">
