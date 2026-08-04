@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { LayoutDashboard, Ticket, Gift, User, Tent } from 'lucide-react';
+import { LayoutDashboard, Ticket, Gift, User, Tent, Users } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 export default function MobileNav() {
@@ -32,6 +32,12 @@ export default function MobileNav() {
       href: '/dashboard/profile',
       icon: User,
       active: pathname.startsWith('/dashboard/profile')
+    },
+    {
+      name: 'Community',
+      href: '/dashboard/community',
+      icon: Users,
+      active: pathname.startsWith('/dashboard/community')
     }
   ];
 
