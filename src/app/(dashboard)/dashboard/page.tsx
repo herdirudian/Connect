@@ -430,7 +430,7 @@ export default function DashboardPage() {
       <div className="space-y-6 mb-12">
         <div className="flex items-center justify-between">
            <h3 className="text-2xl font-black text-brand-dark uppercase tracking-tight">Upcoming Events</h3>
-           <Link href="/dashboard/tickets?category=EVENT">
+           <Link href="/dashboard/calendar">
               <Button variant="ghost" className="font-bold text-brand hover:text-brand-dark hover:bg-brand-50 uppercase tracking-wider text-xs">
                 See All <ArrowRight className="ml-2 h-4 w-4" />
               </Button>
