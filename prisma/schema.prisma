@@ -86,6 +86,8 @@ model User {
   restaurantReservations RestaurantReservation[]
   foodOrders             FoodOrder[]
   reviews                Review[]
+  userPassportMissions   UserPassportMission[]
+  userBadges             UserBadge[]
   
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
@@ -501,6 +503,72 @@ model Reward {
   imageUrl    String?
   active      Boolean  @default(true)
   userRewards UserReward[]
+}
+
+// ==========================================
+// GAMIFICATION: PASSPORT, MISSIONS, & BADGES
+// ==========================================
+
+model Passport {
+  id          String   @id @default(uuid())
+  name        String   // e.g., "Wellness Passport", "Adventure Passport"
+  description String   @db.Text
+  imageUrl    String?
+  active      Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  missions    PassportMission[]
+}
+
+model PassportMission {
+  id           String   @id @default(uuid())
+  passportId   String
+  passport     Passport @relation(fields: [passportId], references: [id], onDelete: Cascade)
+  name         String   // e.g., "Join Yoga 4x"
+  description  String?
+  targetCount  Int      @default(1) // Number of actions required
+  pointsReward Int      @default(0) // Points awarded upon completion
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  userProgress UserPassportMission[]
+}
+
+model UserPassportMission {
+  id           String   @id @default(uuid())
+  userId       String
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  missionId    String
+  mission      PassportMission @relation(fields: [missionId], references: [id], onDelete: Cascade)
+  currentCount Int      @default(0)
+  isCompleted  Boolean  @default(false)
+  completedAt  DateTime?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  
+  @@unique([userId, missionId])
+}
+
+model Badge {
+  id          String   @id @default(uuid())
+  name        String
+  description String   @db.Text
+  imageUrl    String?
+  condition   String?  // e.g., "COMPLETE_WELLNESS_PASSPORT"
+  active      Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  userBadges  UserBadge[]
+}
+
+model UserBadge {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  badgeId   String
+  badge     Badge    @relation(fields: [badgeId], references: [id], onDelete: Cascade)
+  earnedAt  DateTime @default(now())
+  
+  @@unique([userId, badgeId])
 }
 
 model UserReward {
