@@ -2,9 +2,23 @@ import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { sendPasswordResetEmail } from '@/lib/email';
 import crypto from 'crypto';
+import rateLimit from '@/lib/rate-limit';
+
+const limiter = rateLimit({
+  interval: 60 * 1000 * 15, // 15 minutes
+  uniqueTokenPerInterval: 500,
+});
 
 export async function POST(req: Request) {
   try {
+    const ip = req.headers.get('x-forwarded-for') || '127.0.0.1';
+    let rateLimitHeaders: any;
+    try {
+      rateLimitHeaders = await limiter.check(NextResponse.next(), 3, ip);
+    } catch (headers: any) {
+      return NextResponse.json({ error: 'Terlalu banyak percobaan. Silakan coba lagi dalam 15 menit.' }, { status: 429, headers });
+    }
+
     const { email } = await req.json();
 
     if (!email) {
@@ -37,7 +51,15 @@ export async function POST(req: Request) {
 
     await sendPasswordResetEmail(email, resetLink);
 
-    return NextResponse.json({ message: 'If the email exists, a reset link has been sent.' });
+    const response = NextResponse.json({ message: 'If the email exists, a reset link has been sent.' });
+
+    if (rateLimitHeaders) {
+      rateLimitHeaders.forEach((value: string, key: string) => {
+        response.headers.set(key, value);
+      });
+    }
+
+    return response;
   } catch (error: any) {
     console.error('Forgot password error:', error);
 

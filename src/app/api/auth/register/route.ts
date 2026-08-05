@@ -4,6 +4,12 @@ import { hashPassword, signToken, generateReferralCode } from '@/lib/auth';
 import { z } from 'zod';
 import { sendVerificationEmail } from '@/lib/email';
 import { createNotification } from '@/lib/notifications';
+import rateLimit from '@/lib/rate-limit';
+
+const limiter = rateLimit({
+  interval: 60 * 1000 * 60, // 1 hour
+  uniqueTokenPerInterval: 500,
+});
 
 const registerSchema = z.object({
   name: z.string().min(2),
@@ -15,6 +21,15 @@ const registerSchema = z.object({
 
 export async function POST(req: Request) {
   try {
+    // Check Rate Limit (3 registrations per hour per IP)
+    const ip = req.headers.get('x-forwarded-for') || '127.0.0.1';
+    let rateLimitHeaders: any;
+    try {
+      rateLimitHeaders = await limiter.check(NextResponse.next(), 3, ip);
+    } catch (headers: any) {
+      return NextResponse.json({ error: 'Terlalu banyak percobaan pendaftaran. Silakan coba lagi nanti.' }, { status: 429, headers });
+    }
+
     const body = await req.json();
     const { name, email, password, phone, referralCode } = registerSchema.parse(body);
 
@@ -81,12 +96,20 @@ export async function POST(req: Request) {
       'Thank you for joining us. Verify your email to unlock all features.'
     );
 
-    return NextResponse.json({ 
+    const response = NextResponse.json({ 
       success: true,
       message: 'Registration successful. Please verify your email.',
       needVerification: true,
       email: user.email 
     });
+
+    if (rateLimitHeaders) {
+      rateLimitHeaders.forEach((value: string, key: string) => {
+        response.headers.set(key, value);
+      });
+    }
+
+    return response;
 
   } catch (error: any) {
     console.error('Registration error:', error);

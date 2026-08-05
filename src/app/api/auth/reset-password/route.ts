@@ -1,9 +1,23 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { hashPassword } from '@/lib/auth';
+import rateLimit from '@/lib/rate-limit';
+
+const limiter = rateLimit({
+  interval: 60 * 1000 * 15, // 15 minutes
+  uniqueTokenPerInterval: 500,
+});
 
 export async function POST(req: Request) {
   try {
+    const ip = req.headers.get('x-forwarded-for') || '127.0.0.1';
+    let rateLimitHeaders: any;
+    try {
+      rateLimitHeaders = await limiter.check(NextResponse.next(), 5, ip);
+    } catch (headers: any) {
+      return NextResponse.json({ error: 'Terlalu banyak percobaan. Silakan coba lagi dalam 15 menit.' }, { status: 429, headers });
+    }
+
     const { token, newPassword } = await req.json();
 
     if (!token || !newPassword) {
@@ -38,7 +52,15 @@ export async function POST(req: Request) {
       },
     });
 
-    return NextResponse.json({ message: 'Password has been reset successfully' });
+    const response = NextResponse.json({ message: 'Password has been reset successfully' });
+
+    if (rateLimitHeaders) {
+      rateLimitHeaders.forEach((value: string, key: string) => {
+        response.headers.set(key, value);
+      });
+    }
+
+    return response;
   } catch (error) {
     console.error('Reset password error:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });

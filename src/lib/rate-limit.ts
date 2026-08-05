@@ -1,44 +1,40 @@
-interface RateLimitStore {
-  count: number;
-  resetTime: number;
-}
+import { LRUCache } from 'lru-cache';
+import { NextResponse } from 'next/server';
 
-const store = new Map<string, RateLimitStore>();
+type Options = {
+  uniqueTokenPerInterval?: number;
+  interval?: number;
+};
 
-// Clean up expired entries every 5 minutes
-setInterval(() => {
-  const now = Date.now();
-  for (const [key, value] of store.entries()) {
-    if (value.resetTime < now) {
-      store.delete(key);
-    }
-  }
-}, 300000); 
+export default function rateLimit(options?: Options) {
+  const tokenCache = new LRUCache({
+    max: options?.uniqueTokenPerInterval || 500,
+    ttl: options?.interval || 60000,
+  });
 
-export function rateLimit(ip: string, limit: number, windowMs: number) {
-  const now = Date.now();
-  const record = store.get(ip);
+  return {
+    check: (res: NextResponse, limit: number, token: string) =>
+      new Promise<void>((resolve, reject) => {
+        const tokenCount = (tokenCache.get(token) as number[]) || [0];
+        if (tokenCount[0] === 0) {
+          tokenCache.set(token, tokenCount);
+        }
+        tokenCount[0] += 1;
 
-  if (!record) {
-    store.set(ip, {
-      count: 1,
-      resetTime: now + windowMs,
-    });
-    return { success: true, remaining: limit - 1, reset: now + windowMs };
-  }
+        const currentUsage = tokenCount[0];
+        const isRateLimited = currentUsage >= limit;
+        
+        // Headers are typically set on NextResponse in Next.js App Router.
+        // We'll return the headers object so the route handler can attach it.
+        const headers = new Headers();
+        headers.set('X-RateLimit-Limit', limit.toString());
+        headers.set('X-RateLimit-Remaining', isRateLimited ? '0' : (limit - currentUsage).toString());
 
-  if (now > record.resetTime) {
-    store.set(ip, {
-      count: 1,
-      resetTime: now + windowMs,
-    });
-    return { success: true, remaining: limit - 1, reset: now + windowMs };
-  }
-
-  if (record.count >= limit) {
-    return { success: false, remaining: 0, reset: record.resetTime };
-  }
-
-  record.count += 1;
-  return { success: true, remaining: limit - record.count, reset: record.resetTime };
+        if (isRateLimited) {
+          reject(headers);
+        } else {
+          resolve(headers as any);
+        }
+      }),
+  };
 }
