@@ -77,18 +77,23 @@ export async function POST(req: Request) {
 
               // 1. Reward Referrer
               if (referrerPoints > 0) {
-                  await prisma.user.update({
-                      where: { id: referrer.id },
-                      data: { points: { increment: referrerPoints } }
-                  });
-                  await prisma.transaction.create({
-                      data: {
-                          userId: referrer.id,
-                          amount: referrerPoints,
-                          type: 'EARN',
-                          description: `Referral Bonus for inviting ${user.name}`,
-                          source: 'REFERRAL_BONUS'
-                      }
+                  await prisma.$transaction(async (tx) => {
+                      const updatedReferrer = await tx.user.update({
+                          where: { id: referrer.id },
+                          data: { points: { increment: referrerPoints } },
+                          select: { id: true, points: true }
+                      });
+                      await tx.transaction.create({
+                          data: {
+                              userId: referrer.id,
+                              amount: referrerPoints,
+                              type: 'EARN',
+                              description: `Referral Bonus for inviting ${user.name}`,
+                              source: 'REFERRAL_BONUS',
+                              balanceAfter: updatedReferrer.points,
+                              referenceId: user.id
+                          }
+                      });
                   });
                   await createNotification(
                       referrer.id, 
@@ -99,18 +104,23 @@ export async function POST(req: Request) {
 
               // 2. Reward New User
               if (refereePoints > 0) {
-                  await prisma.user.update({
-                      where: { id: user.id },
-                      data: { points: { increment: refereePoints } }
-                  });
-                  await prisma.transaction.create({
-                      data: {
-                          userId: user.id,
-                          amount: refereePoints,
-                          type: 'EARN',
-                          description: `Welcome Bonus from ${referrer.name}`,
-                          source: 'REFERRAL_WELCOME'
-                      }
+                  await prisma.$transaction(async (tx) => {
+                      const updatedNewUser = await tx.user.update({
+                          where: { id: user.id },
+                          data: { points: { increment: refereePoints } },
+                          select: { id: true, points: true }
+                      });
+                      await tx.transaction.create({
+                          data: {
+                              userId: user.id,
+                              amount: refereePoints,
+                              type: 'EARN',
+                              description: `Welcome Bonus from ${referrer.name}`,
+                              source: 'REFERRAL_WELCOME',
+                              balanceAfter: updatedNewUser.points,
+                              referenceId: referrer.id
+                          }
+                      });
                   });
                   await createNotification(
                       user.id, 

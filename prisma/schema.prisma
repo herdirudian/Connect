@@ -27,6 +27,7 @@ enum Tier {
 enum TransactionType {
   EARN
   REDEEM
+  ADJUSTMENT
 }
 
 enum OrderChannel {
@@ -89,6 +90,7 @@ model User {
   userPassportMissions   UserPassportMission[]
   userBadges             UserBadge[]
   communityGroups        UserCommunityGroup[]
+  auditLogs              AuditLog[]
   
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
@@ -164,6 +166,9 @@ model Transaction {
   type        TransactionType
   description String
   source      String?         // e.g., "TICKET_PURCHASE", "F&B", "REFERRAL"
+  balanceAfter Int?
+  referenceId  String?
+  createdBy    String?
   createdAt   DateTime        @default(now())
   
   @@index([userId])
@@ -700,4 +705,21 @@ model ChildrensDayRegistration {
 
   @@index([parentEmail])
   @@index([parentPhone])
+}
+
+model AuditLog {
+  id          String   @id @default(uuid())
+  userId      String?  // Who performed the action (Admin/Staff)
+  user        User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  action      String   // e.g., "UPDATE_BOOKING", "REDEEM_REWARD", "ADJUST_POINTS"
+  entityType  String   // e.g., "Booking", "User", "Reward"
+  entityId    String   // The ID of the entity affected
+  details     String?  @db.Text // JSON string containing changes or additional context
+  ipAddress   String?
+  userAgent   String?
+  createdAt   DateTime @default(now())
+
+  @@index([userId])
+  @@index([entityType, entityId])
+  @@index([createdAt])
 }

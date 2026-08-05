@@ -188,6 +188,16 @@ export async function POST(req: Request) {
             }
         });
 
+        // Audit Log
+        await prisma.auditLog.create({
+            data: {
+                userId: decoded.userId,
+                action: 'VERIFY_PARTNER_PROMO',
+                entityType: 'PartnerPromoClaim',
+                entityId: promoClaim.id,
+            }
+        });
+
         return NextResponse.json({
             success: true,
             voucher: {
@@ -234,6 +244,16 @@ export async function POST(req: Request) {
         usedAt: new Date()
       },
       include: { user: true, reward: true }
+    });
+
+    // Audit Log
+    await prisma.auditLog.create({
+        data: {
+            userId: decoded.userId,
+            action: 'VERIFY_USER_REWARD',
+            entityType: 'UserReward',
+            entityId: voucher.id,
+        }
     });
 
     return NextResponse.json({ success: true, voucher: updated });

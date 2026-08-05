@@ -107,19 +107,24 @@ export async function POST(req: Request) {
 
               // Record Transaction & notify only if associated user exists
               if (order.userId) {
-                await prisma.transaction.create({
-                    data: {
-                        userId: order.userId!,
-                        amount: order.totalAmount,
-                        type: 'EARN', 
-                        description: `Payment for Food Order #${order.id.substring(0,8)}`,
-                        source: `FOOD:${order.id}`,
-                    }
-                });
-
-                await prisma.user.update({
-                    where: { id: order.userId! },
-                    data: { points: { increment: Math.floor(order.totalAmount) } }
+                await prisma.$transaction(async (tx) => {
+                    const updatedUser = await tx.user.update({
+                        where: { id: order.userId! },
+                        data: { points: { increment: Math.floor(order.totalAmount) } },
+                        select: { id: true, points: true }
+                    });
+                    
+                    await tx.transaction.create({
+                        data: {
+                            userId: order.userId!,
+                            amount: Math.floor(order.totalAmount),
+                            type: 'EARN', 
+                            description: `Payment for Food Order #${order.id.substring(0,8)}`,
+                            source: `FOOD:${order.id}`,
+                            balanceAfter: updatedUser.points,
+                            referenceId: order.id,
+                        }
+                    });
                 });
 
                 await createNotification(
@@ -244,21 +249,25 @@ export async function POST(req: Request) {
                 }
             }
 
-            // Record Transaction
-            await prisma.transaction.create({
-            data: {
-                userId: booking.userId,
-                amount: earnedPoints,
-                type: 'EARN', 
-                description: `Payment for booking ${booking.id}`,
-                source: `BOOKING:${booking.id}`,
-            }
-            });
+            // Update User Points and Record Transaction atomically
+            await prisma.$transaction(async (tx) => {
+                const updatedUser = await tx.user.update({
+                    where: { id: booking.userId },
+                    data: { points: { increment: earnedPoints } },
+                    select: { id: true, points: true }
+                });
 
-            // Update User Points
-            await prisma.user.update({
-                where: { id: booking.userId },
-                data: { points: { increment: earnedPoints } }
+                await tx.transaction.create({
+                    data: {
+                        userId: booking.userId,
+                        amount: earnedPoints,
+                        type: 'EARN', 
+                        description: `Payment for booking ${booking.id}`,
+                        source: `BOOKING:${booking.id}`,
+                        balanceAfter: updatedUser.points,
+                        referenceId: booking.id,
+                    }
+                });
             });
 
             // Send in-app notification

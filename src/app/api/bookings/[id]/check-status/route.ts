@@ -153,20 +153,25 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
                 }
             }
 
-            await prisma.transaction.create({
-                data: {
-                    userId: booking.userId,
-                    amount: earnedPoints,
-                    type: 'EARN',
-                    description: `Payment for booking ${booking.id}`,
-                    source: `BOOKING:${booking.id}`,
-                }
-            });
+            // Update User Points and Record Transaction atomically
+            await prisma.$transaction(async (tx) => {
+                const updatedUser = await tx.user.update({
+                    where: { id: booking.userId },
+                    data: { points: { increment: earnedPoints } },
+                    select: { id: true, points: true }
+                });
 
-            // Update User Points
-            await prisma.user.update({
-                where: { id: booking.userId },
-                data: { points: { increment: earnedPoints } }
+                await tx.transaction.create({
+                    data: {
+                        userId: booking.userId,
+                        amount: earnedPoints,
+                        type: 'EARN',
+                        description: `Payment for booking ${booking.id}`,
+                        source: `BOOKING:${booking.id}`,
+                        balanceAfter: updatedUser.points,
+                        referenceId: booking.id,
+                    }
+                });
             });
 
             // Determine email recipient

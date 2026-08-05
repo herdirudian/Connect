@@ -65,18 +65,27 @@ export async function POST(req: Request) {
     if (user.points < reward.cost) return NextResponse.json({ error: 'Insufficient points' }, { status: 400 });
 
     const result = await prisma.$transaction(async (tx) => {
+      // Re-fetch user inside transaction with lock (if supported, otherwise just update and get returned points)
       const updatedUser = await tx.user.update({
         where: { id: user.id },
         data: { points: { decrement: reward.cost } },
         select: { id: true, points: true },
       });
+
+      if (updatedUser.points < 0) {
+        throw new Error('Insufficient points');
+      }
+
       await tx.transaction.create({
         data: {
           userId: user.id,
-          amount: reward.cost,
+          amount: -reward.cost, // Store as negative for REDEEM
           type: 'REDEEM',
           description: `Redeem ${reward.name}`,
           source: `REWARD:${reward.id}`,
+          balanceAfter: updatedUser.points,
+          referenceId: reward.id,
+          createdBy: user.id,
         },
       });
 

@@ -254,7 +254,11 @@ export async function GET(request: Request) {
 }
 
 export async function PATCH(request: Request) {
-  if (!await isAdmin()) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  const cookieStore = await cookies();
+  const token = cookieStore.get('token')?.value;
+  if (!token) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  const payload = verifyToken(token) as any;
+  if (!payload || payload.role !== 'ADMIN') return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
   try {
     const { id, status, paymentStatus } = await request.json();
@@ -299,6 +303,17 @@ export async function PATCH(request: Request) {
     const booking = await prisma.booking.update({
       where: { id },
       data
+    });
+
+    // Create Audit Log
+    await prisma.auditLog.create({
+      data: {
+        userId: payload.userId,
+        action: 'UPDATE_BOOKING',
+        entityType: 'Booking',
+        entityId: id,
+        details: JSON.stringify(data),
+      }
     });
 
     return NextResponse.json(booking);

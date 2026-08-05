@@ -14,13 +14,14 @@ export async function addPoints(userId: string, amount: number, description: str
 
     await prisma.$transaction(async (tx) => {
       // Update user points
-      await tx.user.update({
+      const updatedUser = await tx.user.update({
         where: { id: userId },
         data: {
           points: {
             increment: pointsToAdd
           }
-        }
+        },
+        select: { id: true, points: true }
       })
 
       // Create transaction record
@@ -30,7 +31,18 @@ export async function addPoints(userId: string, amount: number, description: str
           amount: pointsToAdd,
           type: 'EARN',
           description: description || 'Penambahan poin oleh Admin',
-          source: 'ADMIN_ADJUSTMENT'
+          source: 'ADMIN_ADJUSTMENT',
+          balanceAfter: updatedUser.points,
+        }
+      })
+      
+      // Create audit log
+      await tx.auditLog.create({
+        data: {
+          action: 'ADD_POINTS',
+          entityType: 'User',
+          entityId: userId,
+          details: JSON.stringify({ amount: pointsToAdd, description }),
         }
       })
     })
