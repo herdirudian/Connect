@@ -43,6 +43,18 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
         active,
       },
     });
+
+    // Audit Log
+    await prisma.auditLog.create({
+      data: {
+        userId: payload.userId,
+        action: 'UPDATE_REWARD',
+        entityType: 'Reward',
+        entityId: id,
+        details: JSON.stringify({ name, description, cost, type, active })
+      }
+    });
+
     return NextResponse.json(updated);
   } catch (error) {
     console.error('Update reward error:', error);
@@ -66,6 +78,17 @@ export async function DELETE(req: Request, { params }: { params: Promise<{ id: s
     
     const { id } = await params;
     await prisma.reward.delete({ where: { id } });
+
+    // Audit Log
+    await prisma.auditLog.create({
+      data: {
+        userId: payload.userId,
+        action: 'DELETE_REWARD',
+        entityType: 'Reward',
+        entityId: id,
+      }
+    });
+
     return NextResponse.json({ ok: true });
   } catch (error) {
     console.error('Delete reward error:', error);

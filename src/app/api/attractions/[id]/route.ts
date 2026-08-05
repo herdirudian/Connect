@@ -60,6 +60,17 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
         isLandingHub: isLandingHub !== undefined ? isLandingHub : undefined
       },
     });
+
+    // Audit Log
+    await prisma.auditLog.create({
+      data: {
+        userId: (decoded as any).userId,
+        action: 'UPDATE_ATTRACTION',
+        entityType: 'Attraction',
+        entityId: id,
+      }
+    });
+
     return NextResponse.json(updated);
   } catch (error: any) {
     console.error(`[Attractions API] Error updating attraction:`, error);
@@ -81,6 +92,17 @@ export async function DELETE(req: Request, { params }: { params: Promise<{ id: s
     
     const { id } = await params;
     await prisma.attraction.delete({ where: { id } });
+
+    // Audit Log
+    await prisma.auditLog.create({
+      data: {
+        userId: (decoded as any).userId,
+        action: 'DELETE_ATTRACTION',
+        entityType: 'Attraction',
+        entityId: id,
+      }
+    });
+
     return NextResponse.json({ ok: true });
   } catch {
     return NextResponse.json({ error: 'Failed to delete' }, { status: 500 });
