@@ -1,6 +1,5 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
-import { rateLimit } from '@/lib/rate-limit';
 
 function decodeJwtRole(token: string): string | null {
   try {
@@ -51,38 +50,10 @@ async function handleMiddleware(req: NextRequest) {
   }
 
   // 2. Rate Limiting for API routes
-  if (pathname.startsWith('/api')) {
-    const ip = req.headers.get('x-forwarded-for') || 'unknown';
-    
-    // Stricter limit for Auth (5 req/min)
-    if (pathname.startsWith('/api/auth')) {
-      const { success, reset } = rateLimit(`${ip}:auth`, 5, 60000);
-      if (!success) {
-        return new NextResponse(JSON.stringify({ error: 'Terlalu banyak percobaan. Silakan coba lagi dalam beberapa menit.' }), {
-          status: 429,
-          headers: {
-            'Retry-After': Math.ceil((reset - Date.now()) / 1000).toString(),
-            'Content-Type': 'application/json',
-          },
-        });
-      }
-    }
-    // General Booking limit (10 req/min)
-    else if (pathname.startsWith('/api/bookings')) {
-      const { success, reset } = rateLimit(`${ip}:booking`, 10, 60000);
-      if (!success) {
-        return new NextResponse(JSON.stringify({ error: 'Terlalu banyak permintaan. Silakan coba lagi.' }), {
-          status: 429,
-          headers: {
-            'Retry-After': Math.ceil((reset - Date.now()) / 1000).toString(),
-            'Content-Type': 'application/json',
-          },
-        });
-      }
-    }
-  }
-
-  // 2. Admin/Staff Authentication
+  // (Moved rate limit logic directly to route handlers using in-memory LRU cache
+  // to avoid issues with Edge Runtime and global variables)
+  
+  // 3. Admin/Staff Authentication
   if (pathname.startsWith('/admin')) {
     const cookie = req.headers.get('cookie') || '';
     const match = cookie.match(/(?:^|;\s*)token=([^;]+)/);
