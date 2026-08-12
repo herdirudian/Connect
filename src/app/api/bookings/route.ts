@@ -160,7 +160,7 @@ export async function POST(req: Request) {
         });
 
         if (voucherClaim && !voucherClaim.isUsed) {
-          const expiryDate = new Date('2026-07-31T23:59:59');
+          const expiryDate = new Date('2026-12-31T23:59:59');
           if (new Date() <= expiryDate) {
             // Validate items in cart for 20% discount
             let totalVoucherDiscount = 0;
@@ -172,7 +172,7 @@ export async function POST(req: Request) {
 
               if (attraction && attraction.allowVoucherClaim) {
                 // Check dynamic expiry
-                const itemExpiry = attraction.voucherExpiry ? new Date(attraction.voucherExpiry) : new Date('2026-07-31T23:59:59');
+                const itemExpiry = attraction.voucherExpiry ? new Date(attraction.voucherExpiry) : new Date('2026-12-31T23:59:59');
                 if (new Date() > itemExpiry) {
                   throw new Error(`Voucher untuk ${attraction.name} sudah kedaluwarsa`);
                 }

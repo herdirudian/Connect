@@ -93,7 +93,7 @@ export default function PublicVoucherClaimPage() {
                     </div>
                     <ul className="space-y-4">
                       {[
-                        'Voucher berlaku hingga 31 Juli 2026.',
+                        'Voucher berlaku hingga 31 Desember 2026.',
                         'Berlaku untuk Tiket Basic, Regular, dan Terusan.',
                         'Satu voucher untuk maksimal 10 tiket.',
                         'Gunakan di family.thelodgegroup.id/booking atau claim langsung di loket.',

@@ -624,7 +624,7 @@ export async function sendVoucherClaimEmail(to: string, fullName: string, vouche
           <ul style="padding-left: 20px; margin-bottom: 0;">
             <li>Voucher memberikan diskon 20% untuk kunjungan berikutnya ke The Lodge Maribaya.</li>
             <li>Diskon berlaku untuk pembelian Tiket Basic, Tiket Regular, dan Tiket Terusan.</li>
-            <li>Voucher berlaku hingga <strong>31 Juli 2026</strong>.</li>
+            <li>Voucher berlaku hingga <strong>31 Desember 2026</strong>.</li>
             <li>Satu voucher dapat digunakan untuk pembelian maksimal 10 tiket dalam satu transaksi.</li>
             <li>Voucher tidak dapat diuangkan atau ditukar dengan produk lainnya.</li>
             <li>Gunakan kode ini di: <a href="https://family.thelodgegroup.id/booking">family.thelodgegroup.id/booking</a> atau bisa diklaim pada saat kunjungan langsung di loket tiket masuk.</li>

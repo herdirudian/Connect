@@ -38,7 +38,7 @@ export async function POST(req: Request) {
         }
 
         // Check validity (until 31 July 2026 as per user instruction)
-        const expiryDate = new Date('2026-07-31T23:59:59');
+        const expiryDate = new Date('2026-12-31T23:59:59');
         if (new Date() > expiryDate) {
           return NextResponse.json({ error: 'Voucher sudah kedaluwarsa' }, { status: 400 });
         }
@@ -61,7 +61,7 @@ export async function POST(req: Request) {
           }
 
           // Check dynamic expiry from attraction settings
-          const itemExpiry = attraction.voucherExpiry ? new Date(attraction.voucherExpiry) : new Date('2026-07-31T23:59:59');
+          const itemExpiry = attraction.voucherExpiry ? new Date(attraction.voucherExpiry) : new Date('2026-12-31T23:59:59');
           if (new Date() > itemExpiry) {
             return NextResponse.json({ error: `Voucher untuk ${attraction.name} sudah kedaluwarsa` }, { status: 400 });
           }

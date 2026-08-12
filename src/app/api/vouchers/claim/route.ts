@@ -56,7 +56,7 @@ export async function POST(req: Request) {
  *Syarat & Ketentuan:*
  - Diskon 20% untuk kunjungan berikutnya.
  - Berlaku untuk Tiket Basic, Regular, & Terusan.
- - Berlaku hingga 31 Juli 2026.
+ - Berlaku hingga 31 Desember 2026.
  - Maksimal 10 tiket per transaksi.
  - Gunakan di: family.thelodgegroup.id/booking atau bisa diklaim pada saat kunjungan langsung di loket tiket masuk.
  
