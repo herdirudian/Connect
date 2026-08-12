@@ -15,6 +15,8 @@ type Restaurant = {
   name: string;
   status: string;
   allowOrders?: boolean;
+  allowRoomService?: boolean;
+  allowDineIn?: boolean;
 };
 
 type MenuItem = {
@@ -106,7 +108,7 @@ export default function DineInPage() {
       const res = await fetch('/api/restaurants');
       const data = await res.json();
       const list: Restaurant[] = Array.isArray(data) ? data : [];
-      const active = list.filter((r) => r.status === 'Open');
+      const active = list.filter((r) => r.status === 'Open' && r.allowDineIn !== false);
       setRestaurants(active);
       if (active.length > 0) setSelectedRestaurant(active[0]);
     } catch (e) {

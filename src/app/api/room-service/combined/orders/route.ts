@@ -57,10 +57,11 @@ export async function POST(req: Request) {
       if (!restaurantId) return NextResponse.json({ error: 'Restaurant ID wajib untuk pesanan makanan' }, { status: 400 });
       const restaurant = await prisma.restaurant.findUnique({
         where: { id: restaurantId },
-        select: { allowOrders: true }
+        select: { allowOrders: true, allowRoomService: true }
       });
       if (!restaurant) return NextResponse.json({ error: 'Restoran tidak ditemukan' }, { status: 404 });
       if (!restaurant.allowOrders) return NextResponse.json({ error: 'Pemesanan makanan sedang tidak tersedia' }, { status: 400 });
+      if (restaurant.allowRoomService === false) return NextResponse.json({ error: 'Restoran ini tidak tersedia untuk layanan Room Service' }, { status: 400 });
       const menuIds = foodItems!.map(i => i.menuItemId);
       const menuItems = await prisma.menuItem.findMany({
         where: { id: { in: menuIds }, restaurantId },

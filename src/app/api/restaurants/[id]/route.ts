@@ -40,7 +40,7 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
 
     const { id } = await params;
     const body = await req.json();
-    const { name, type, description, status, imageUrl, menuUrl, active, allowReservations, allowOrders, minOrderAmount } = body;
+    const { name, type, description, status, imageUrl, menuUrl, active, allowReservations, allowOrders, minOrderAmount, allowRoomService, allowDineIn } = body;
     const minOrder = Number.isFinite(Number(minOrderAmount)) ? Number(minOrderAmount) : 0;
 
     try {
@@ -56,6 +56,8 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
           active: active ?? true,
           allowReservations: allowReservations ?? true,
           allowOrders: allowOrders ?? true,
+          allowRoomService: allowRoomService ?? true,
+          allowDineIn: allowDineIn ?? true,
           minOrderAmount: minOrder,
         },
       });

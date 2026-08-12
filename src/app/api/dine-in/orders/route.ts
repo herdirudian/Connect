@@ -46,10 +46,11 @@ export async function POST(req: Request) {
     // Prepare food price map
     const restaurant = await prisma.restaurant.findUnique({
       where: { id: restaurantId },
-      select: { allowOrders: true }
+      select: { allowOrders: true, allowDineIn: true }
     });
     if (!restaurant) return NextResponse.json({ error: 'Restoran tidak ditemukan' }, { status: 404 });
     if (!restaurant.allowOrders) return NextResponse.json({ error: 'Pemesanan makanan sedang tidak tersedia' }, { status: 400 });
+    if (restaurant.allowDineIn === false) return NextResponse.json({ error: 'Restoran ini tidak tersedia untuk layanan Dine In' }, { status: 400 });
 
     const menuIds = items.map(i => i.menuItemId);
     const menuItems = await prisma.menuItem.findMany({

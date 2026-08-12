@@ -19,6 +19,8 @@ interface Restaurant {
   active: boolean;
   allowReservations: boolean;
   allowOrders: boolean;
+  allowRoomService: boolean;
+  allowDineIn: boolean;
 }
 
 export default function AdminFoodPage() {
@@ -38,6 +40,8 @@ export default function AdminFoodPage() {
     active: true,
     allowReservations: true,
     allowOrders: true,
+    allowRoomService: true,
+    allowDineIn: true,
   });
   const [uploading, setUploading] = useState(false);
 
@@ -68,6 +72,8 @@ export default function AdminFoodPage() {
       active: true,
       allowReservations: true,
       allowOrders: true,
+      allowRoomService: true,
+      allowDineIn: true,
     });
     setIsAdding(false);
     setEditingId(null);
@@ -84,6 +90,8 @@ export default function AdminFoodPage() {
       active: item.active,
       allowReservations: item.allowReservations ?? true,
       allowOrders: item.allowOrders ?? true,
+      allowRoomService: item.allowRoomService ?? true,
+      allowDineIn: item.allowDineIn ?? true,
     });
     setEditingId(item.id);
     setIsAdding(true);
@@ -304,6 +312,26 @@ export default function AdminFoodPage() {
                             className="h-4 w-4 rounded border-gray-300 text-brand focus:ring-brand"
                         />
                         <label htmlFor="allowOrders" className="text-sm font-medium text-gray-700">Allow Food Orders</label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                        <input 
+                            type="checkbox" 
+                            id="allowRoomService" 
+                            checked={formData.allowRoomService} 
+                            onChange={(e) => setFormData({...formData, allowRoomService: e.target.checked})}
+                            className="h-4 w-4 rounded border-gray-300 text-brand focus:ring-brand"
+                        />
+                        <label htmlFor="allowRoomService" className="text-sm font-medium text-gray-700">Tersedia untuk Room Service</label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                        <input 
+                            type="checkbox" 
+                            id="allowDineIn" 
+                            checked={formData.allowDineIn} 
+                            onChange={(e) => setFormData({...formData, allowDineIn: e.target.checked})}
+                            className="h-4 w-4 rounded border-gray-300 text-brand focus:ring-brand"
+                        />
+                        <label htmlFor="allowDineIn" className="text-sm font-medium text-gray-700">Tersedia untuk Dine In (Meja)</label>
                     </div>
                 </div>
               </div>

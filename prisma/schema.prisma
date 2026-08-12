@@ -331,6 +331,8 @@ model Restaurant {
   
   allowReservations Boolean @default(true)
   allowOrders       Boolean @default(true)
+  allowRoomService  Boolean @default(true)
+  allowDineIn       Boolean @default(true)
   minOrderAmount    Float   @default(0)
   
   menuItems     MenuItem[]
