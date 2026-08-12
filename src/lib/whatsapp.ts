@@ -209,8 +209,13 @@ function safeText(v: any) {
 
 function formatFoodOrderMessage(order: any) {
   const lines: string[] = [];
-  lines.push(`ROOM SERVICE - FOOD (PAID)`);
+  if (order.channel === 'DINE_IN') {
+    lines.push(`DINE IN ORDER (PAID)`);
+  } else {
+    lines.push(`ROOM SERVICE - FOOD (PAID)`);
+  }
   lines.push(`Order: #${String(order.id).slice(0, 8)}`);
+  if (order.tableNumber) lines.push(`Meja: ${safeText(order.tableNumber)}`);
   if (order.roomNumber) lines.push(`Kamar: ${safeText(order.roomNumber)}`);
   if (order.guestName) lines.push(`Tamu: ${safeText(order.guestName)}`);
   if (order.guestPhone) lines.push(`HP: ${safeText(order.guestPhone)}`);

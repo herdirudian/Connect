@@ -155,6 +155,26 @@ export async function POST(req: Request) {
                 console.log(`[Xendit Webhook] RoomService Order ${orderId} updated to PAID`);
               }
           }
+      } else if (external_id && external_id.startsWith('DINEIN:')) {
+          const orderId = external_id.replace('DINEIN:', '');
+          console.log(`[Xendit Webhook] Handling DINEIN Order: ${orderId}`);
+          const order = await prisma.foodOrder.findUnique({
+              where: { id: orderId }
+          });
+          if (order) {
+              if (order.paymentStatus !== 'PAID') {
+                await prisma.foodOrder.update({
+                    where: { id: orderId },
+                    data: {
+                        status: 'CONFIRMED',
+                        paymentStatus: 'PAID',
+                        paymentId: id
+                    }
+                });
+                await notifyRoomServiceOrderPaid({ foodOrderId: orderId, hkOrderId: null });
+                console.log(`[Xendit Webhook] DineIn Order ${orderId} updated to PAID`);
+              }
+          }
       } else if (external_id && external_id.startsWith('HK-')) {
           const orderId = external_id.replace('HK-', '');
           console.log(`[Xendit Webhook] Handling HK Order: ${orderId}`);

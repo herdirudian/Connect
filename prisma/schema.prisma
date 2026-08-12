@@ -33,6 +33,7 @@ enum TransactionType {
 enum OrderChannel {
   MEMBER
   ROOM_SERVICE
+  DINE_IN
 }
 
 enum TicketStatus {
@@ -390,6 +391,7 @@ model FoodOrder {
   channel        OrderChannel @default(MEMBER)
   guestName      String?
   roomNumber     String?
+  tableNumber    String?
   guestPhone     String?
   deliveryNotes  String?
   
@@ -662,6 +664,15 @@ model SystemSetting {
 }
 
 model RoomServiceRoom {
+  id        String   @id @default(uuid())
+  number    String
+  slug      String   @unique
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model DineInTable {
   id        String   @id @default(uuid())
   number    String
   slug      String   @unique

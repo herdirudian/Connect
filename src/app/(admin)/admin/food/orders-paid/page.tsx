@@ -249,10 +249,14 @@ export default function AdminFoodOrdersPaidPage() {
                 </div>
                 <div className="text-xs text-gray-600 space-y-1">
                   <div>
-                    {order.user ? (
-                      <>User: {order.user.name} ({order.user.email})</>
+                    {order.channel === 'DINE_IN' ? (
+                      <>Dine-In: Meja {order.tableNumber || '-'} • {order.guestName || '-'} {order.guestPhone ? `(${order.guestPhone})` : ''}</>
+                    ) : order.channel === 'ROOM_SERVICE' ? (
+                      <>Room Service: Kamar {order.roomNumber || '-'} • {order.guestName || '-'} {order.guestPhone ? `(${order.guestPhone})` : ''}</>
+                    ) : order.user ? (
+                      <>User: {order.user?.name} ({order.user?.email})</>
                     ) : (
-                      <>Room: {order.roomNumber || '-'} • {order.guestName || '-'} {order.guestPhone ? `(${order.guestPhone})` : ''}</>
+                      <>Guest: {order.guestName || '-'} {order.guestPhone ? `(${order.guestPhone})` : ''}</>
                     )}
                   </div>
                   <div>Resto: {order.restaurant?.name || '-'}</div>

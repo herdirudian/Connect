@@ -178,10 +178,14 @@ export default function AdminFoodOrdersPage() {
                                                     </span>
                                                 </div>
                                                 <p className="text-sm text-gray-600">
-                                                    {order.user ? (
+                                                    {order.channel === 'DINE_IN' ? (
+                                                        <>Dine-In: Meja {order.tableNumber || '-'} • {order.guestName || '-'} {order.guestPhone ? `(${order.guestPhone})` : ''}</>
+                                                    ) : order.channel === 'ROOM_SERVICE' ? (
+                                                        <>Room Service: Kamar {order.roomNumber || '-'} • {order.guestName || '-'} {order.guestPhone ? `(${order.guestPhone})` : ''}</>
+                                                    ) : order.user ? (
                                                         <>User: {order.user.name} ({order.user.email})</>
                                                     ) : (
-                                                        <>Room Service: Kamar {order.roomNumber || '-'} • {order.guestName || '-'} {order.guestPhone ? `(${order.guestPhone})` : ''}</>
+                                                        <>Guest: {order.guestName || '-'} {order.guestPhone ? `(${order.guestPhone})` : ''}</>
                                                     )}
                                                 </p>
                                                 <p className="text-sm text-gray-600">Restaurant: {order.restaurant.name}</p>

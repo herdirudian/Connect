@@ -179,6 +179,9 @@ export default function AdminFoodPage() {
             <Button variant="outline" onClick={() => router.push('/admin/food/roomservice')} className="w-full sm:w-auto">
                 Room Service QR
             </Button>
+            <Button variant="outline" onClick={() => router.push('/admin/food/dine-in')} className="w-full sm:w-auto">
+                Dine In QR
+            </Button>
             <Button 
               onClick={() => {
                 if (isAdding) {
