@@ -22,19 +22,25 @@ export async function GET(
     const pathSegments = rawPathSegments.map(segment => decodeURIComponent(segment));
     
     // Construct the file path
-    // Use path.resolve to get an absolute path and handle any weirdness
     const publicUploadsDir = path.resolve(process.cwd(), 'public', 'uploads');
     const filePath = path.resolve(publicUploadsDir, ...pathSegments);
 
+    // Logging for debugging
+    const logMsg = `[${new Date().toISOString()}] Request: ${rawPathSegments.join('/')} -> Resolved: ${filePath}\n`;
+    try {
+        fs.appendFileSync(path.join(process.cwd(), 'uploads-debug.log'), logMsg);
+    } catch (e) {}
+
     // Security check: Ensure we don't traverse up
     if (!filePath.startsWith(publicUploadsDir)) {
-        console.warn('[Uploads Route] Security violation: attempt to access', filePath);
         return NextResponse.json({ error: 'Invalid path' }, { status: 400 });
     }
 
     if (!fs.existsSync(filePath)) {
-      console.warn('[Uploads Route] File not found:', filePath);
-      return NextResponse.json({ error: 'File not found' }, { status: 404 });
+      // Fallback: check without 'public' if it's already in the path or something weird
+      if (!fs.existsSync(filePath)) {
+          return NextResponse.json({ error: 'File not found' }, { status: 404 });
+      }
     }
 
     const fileBuffer = fs.readFileSync(filePath);
