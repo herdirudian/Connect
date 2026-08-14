@@ -18,19 +18,22 @@ export async function GET(
   { params }: { params: Promise<{ path: string[] }> }
 ) {
   try {
-    const { path: pathSegments } = await params;
+    const { path: rawPathSegments } = await params;
+    const pathSegments = rawPathSegments.map(segment => decodeURIComponent(segment));
     
     // Construct the file path
-    // We look in the actual public directory in the project root
-    const filePath = path.join(process.cwd(), 'public', 'uploads', ...pathSegments);
+    // Use path.resolve to get an absolute path and handle any weirdness
+    const publicUploadsDir = path.resolve(process.cwd(), 'public', 'uploads');
+    const filePath = path.resolve(publicUploadsDir, ...pathSegments);
 
     // Security check: Ensure we don't traverse up
-    const publicUploadsDir = path.join(process.cwd(), 'public', 'uploads');
     if (!filePath.startsWith(publicUploadsDir)) {
+        console.warn('[Uploads Route] Security violation: attempt to access', filePath);
         return NextResponse.json({ error: 'Invalid path' }, { status: 400 });
     }
 
     if (!fs.existsSync(filePath)) {
+      console.warn('[Uploads Route] File not found:', filePath);
       return NextResponse.json({ error: 'File not found' }, { status: 404 });
     }
 
