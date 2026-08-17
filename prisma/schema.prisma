@@ -720,10 +720,24 @@ model ChildrensDayRegistration {
   @@index([parentPhone])
 }
 
+model CustomEventGroup {
+  id              String   @id @default(uuid())
+  name            String
+  eventDate       DateTime
+  logos           String?  @db.Text // JSON string for logo URLs
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  events          CustomEvent[]
+
+  @@index([name])
+}
+
 model CustomEvent {
   id              String   @id @default(uuid())
-  eventName       String
-  eventDate       DateTime
+  groupId         String?
+  group           CustomEventGroup? @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  eventName       String?  // Optional override or legacy
+  eventDate       DateTime? // Optional override or legacy
   participantName String
   pax             Int      @default(1)
   email           String
@@ -739,6 +753,7 @@ model CustomEvent {
   @@index([voucherCode])
   @@index([email])
   @@index([phoneNumber])
+  @@index([groupId])
 }
 
 model AuditLog {

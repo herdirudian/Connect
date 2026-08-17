@@ -20,17 +20,33 @@ import {
   X,
   Loader2,
   Upload,
-  Image as ImageIcon
+  Image as ImageIcon,
+  ChevronLeft,
+  ChevronRight,
+  LayoutGrid
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
 import { jsPDF } from 'jspdf';
 import QRCode from 'qrcode';
 
+interface CustomEventGroup {
+  id: string;
+  name: string;
+  eventDate: string;
+  logos: string | null;
+  createdAt: string;
+  _count?: {
+    events: number;
+  };
+  events?: CustomEvent[];
+}
+
 interface CustomEvent {
   id: string;
-  eventName: string;
-  eventDate: string;
+  groupId: string | null;
+  eventName?: string | null;
+  eventDate?: string | null;
   participantName: string;
   pax: number;
   email: string;
@@ -40,40 +56,64 @@ interface CustomEvent {
   status: string;
   usedAt: string | null;
   createdAt: string;
+  group?: CustomEventGroup;
 }
 
 export default function AdminCustomEventsPage() {
-  const [events, setEvents] = useState<CustomEvent[]>([]);
+  const [groups, setGroups] = useState<CustomEventGroup[]>([]);
+  const [selectedGroup, setSelectedGroup] = useState<CustomEventGroup | null>(null);
+  const [viewMode, setViewMode] = useState<'GROUPS' | 'PARTICIPANTS'>('GROUPS');
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
-  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isGroupModalOpen, setIsGroupModalOpen] = useState(false);
+  const [isParticipantModalOpen, setIsParticipantModalOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [uploading, setUploading] = useState(false);
   const { toast } = useToast();
 
-  const [formData, setFormData] = useState({
-    eventName: '',
+  const [groupFormData, setGroupFormData] = useState({
+    name: '',
     eventDate: '',
-    participantName: '',
-    pax: 1,
-    email: '',
-    phoneNumber: '',
     logos: [] as string[]
   });
 
+  const [participantFormData, setParticipantFormData] = useState({
+    participantName: '',
+    pax: 1,
+    email: '',
+    phoneNumber: ''
+  });
+
   useEffect(() => {
-    fetchEvents();
+    fetchGroups();
   }, []);
 
-  const fetchEvents = async () => {
+  const fetchGroups = async () => {
     try {
-      const res = await fetch('/api/admin/custom-events');
+      setLoading(true);
+      const res = await fetch('/api/admin/custom-event-groups');
       if (res.ok) {
         const data = await res.json();
-        setEvents(data);
+        setGroups(data);
       }
     } catch (error) {
-      toast({ title: 'Error', description: 'Failed to fetch events', variant: 'destructive' });
+      toast({ title: 'Error', description: 'Failed to fetch event groups', variant: 'destructive' });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchGroupDetails = async (id: string) => {
+    try {
+      setLoading(true);
+      const res = await fetch(`/api/admin/custom-event-groups/${id}`);
+      if (res.ok) {
+        const data = await res.json();
+        setSelectedGroup(data);
+        setViewMode('PARTICIPANTS');
+      }
+    } catch (error) {
+      toast({ title: 'Error', description: 'Failed to fetch group details', variant: 'destructive' });
     } finally {
       setLoading(false);
     }
@@ -98,7 +138,7 @@ export default function AdminCustomEventsPage() {
       });
 
       const urls = await Promise.all(uploadPromises);
-      setFormData(prev => ({
+      setGroupFormData(prev => ({
         ...prev,
         logos: [...prev.logos, ...urls]
       }));
@@ -111,61 +151,101 @@ export default function AdminCustomEventsPage() {
   };
 
   const removeLogo = (index: number) => {
-    setFormData(prev => ({
+    setGroupFormData(prev => ({
       ...prev,
       logos: prev.logos.filter((_, i) => i !== index)
     }));
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleGroupSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setSubmitting(true);
     try {
-      const res = await fetch('/api/admin/custom-events', {
+      const res = await fetch('/api/admin/custom-event-groups', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData)
+        body: JSON.stringify(groupFormData)
       });
 
       if (res.ok) {
-        toast({ title: 'Success', description: 'Custom event created successfully' });
-        setIsModalOpen(false);
-        setFormData({
-          eventName: '',
-          eventDate: '',
-          participantName: '',
-          pax: 1,
-          email: '',
-          phoneNumber: '',
-          logos: []
-        });
-        fetchEvents();
+        toast({ title: 'Success', description: 'Event Group created successfully' });
+        setIsGroupModalOpen(false);
+        setGroupFormData({ name: '', eventDate: '', logos: [] });
+        fetchGroups();
       } else {
         const err = await res.json();
-        toast({ title: 'Error', description: err.error || 'Failed to create event', variant: 'destructive' });
+        toast({ title: 'Error', description: err.error || 'Failed to create group', variant: 'destructive' });
       }
     } catch (error) {
-      toast({ title: 'Error', description: 'Failed to create event', variant: 'destructive' });
+      toast({ title: 'Error', description: 'Failed to create group', variant: 'destructive' });
     } finally {
       setSubmitting(false);
     }
   };
 
-  const handleDelete = async (id: string) => {
-    if (!confirm('Are you sure you want to delete this event?')) return;
+  const handleParticipantSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedGroup) return;
+    setSubmitting(true);
+    try {
+      const res = await fetch('/api/admin/custom-events', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ...participantFormData,
+          groupId: selectedGroup.id
+        })
+      });
+
+      if (res.ok) {
+        toast({ title: 'Success', description: 'Participant added successfully' });
+        setIsParticipantModalOpen(false);
+        setParticipantFormData({ participantName: '', pax: 1, email: '', phoneNumber: '' });
+        fetchGroupDetails(selectedGroup.id);
+      } else {
+        const err = await res.json();
+        toast({ title: 'Error', description: err.error || 'Failed to add participant', variant: 'destructive' });
+      }
+    } catch (error) {
+      toast({ title: 'Error', description: 'Failed to add participant', variant: 'destructive' });
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleDeleteGroup = async (id: string) => {
+    if (!confirm('Are you sure you want to delete this group? All vouchers inside will also be deleted.')) return;
+    try {
+      const res = await fetch(`/api/admin/custom-event-groups/${id}`, { method: 'DELETE' });
+      if (res.ok) {
+        toast({ title: 'Deleted', description: 'Group has been removed' });
+        fetchGroups();
+      }
+    } catch (error) {
+      toast({ title: 'Error', description: 'Failed to delete group', variant: 'destructive' });
+    }
+  };
+
+  const handleDeleteParticipant = async (id: string) => {
+    if (!confirm('Are you sure you want to delete this participant?')) return;
     try {
       const res = await fetch(`/api/admin/custom-events/${id}`, { method: 'DELETE' });
       if (res.ok) {
-        toast({ title: 'Deleted', description: 'Event has been removed' });
-        fetchEvents();
+        toast({ title: 'Deleted', description: 'Participant has been removed' });
+        if (selectedGroup) fetchGroupDetails(selectedGroup.id);
       }
     } catch (error) {
-      toast({ title: 'Error', description: 'Failed to delete event', variant: 'destructive' });
+      toast({ title: 'Error', description: 'Failed to delete participant', variant: 'destructive' });
     }
   };
 
   const downloadVoucher = async (event: CustomEvent) => {
     try {
+      // Use group info if available, fallback to event info
+      const eventName = selectedGroup?.name || event.eventName || 'Event Voucher';
+      const eventDate = selectedGroup?.eventDate || event.eventDate || new Date().toISOString();
+      const logos = selectedGroup?.logos || event.logos || null;
+
       const doc = new jsPDF({
         orientation: 'portrait',
         unit: 'mm',
@@ -217,9 +297,9 @@ export default function AdminCustomEventsPage() {
 
       // Event Logos
       let currentY = 65;
-      if (event.logos) {
+      if (logos) {
         try {
-          const logoUrls = JSON.parse(event.logos) as string[];
+          const logoUrls = JSON.parse(logos) as string[];
           if (logoUrls.length > 0) {
             const logoWidth = 25;
             const logoGap = 10;
@@ -253,7 +333,7 @@ export default function AdminCustomEventsPage() {
       doc.setTextColor(brandColor);
       doc.setFontSize(16);
       doc.setFont('helvetica', 'bold');
-      doc.text(event.eventName.toUpperCase(), width / 2, currentY + 12, { align: 'center' });
+      doc.text(eventName.toUpperCase(), width / 2, currentY + 12, { align: 'center' });
 
       // Divider
       doc.setDrawColor(241, 245, 249);
@@ -276,7 +356,7 @@ export default function AdminCustomEventsPage() {
       doc.setTextColor(darkGray);
       doc.setFont('helvetica', 'bold');
       doc.text(event.participantName, valueX, detailsY);
-      doc.text(format(new Date(event.eventDate), 'dd MMMM yyyy'), valueX, detailsY + 10);
+      doc.text(format(new Date(eventDate), 'dd MMMM yyyy'), valueX, detailsY + 10);
       doc.text(`${event.pax} Orang`, valueX, detailsY + 20);
       
       doc.setTextColor(accentColor);
@@ -310,7 +390,7 @@ export default function AdminCustomEventsPage() {
       doc.setFillColor(brandColor);
       doc.rect(0, height - 5, width, 5, 'F');
 
-      doc.save(`Voucher-${event.eventName}-${event.participantName}.pdf`);
+      doc.save(`Voucher-${eventName}-${event.participantName}.pdf`);
       
       toast({ title: 'Success', description: 'Voucher downloaded successfully' });
     } catch (err) {
@@ -319,31 +399,64 @@ export default function AdminCustomEventsPage() {
     }
   };
 
-  const filteredEvents = events.filter(e => 
-    e.eventName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+  const filteredGroups = groups.filter(g => 
+    g.name.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  const filteredParticipants = selectedGroup?.events?.filter(e => 
     e.participantName.toLowerCase().includes(searchQuery.toLowerCase()) ||
     e.voucherCode.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  ) || [];
 
   return (
     <div className="space-y-8 pb-10">
+      {/* Header Section */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-        <div>
-          <h2 className="text-3xl font-black text-brand-dark uppercase tracking-tight">Custom Events</h2>
-          <p className="text-gray-500 font-medium">Manage custom event vouchers and participants</p>
+        <div className="flex items-center gap-4">
+          {viewMode === 'PARTICIPANTS' && (
+            <Button 
+              variant="ghost" 
+              className="rounded-full h-10 w-10 p-0 hover:bg-gray-100"
+              onClick={() => {
+                setViewMode('GROUPS');
+                setSelectedGroup(null);
+              }}
+            >
+              <ChevronLeft size={24} />
+            </Button>
+          )}
+          <div>
+            <h2 className="text-3xl font-black text-brand-dark uppercase tracking-tight flex items-center gap-2">
+              {viewMode === 'GROUPS' ? (
+                <>Custom Events <LayoutGrid size={24} className="text-gray-300" /></>
+              ) : (
+                selectedGroup?.name
+              )}
+            </h2>
+            <p className="text-gray-500 font-medium">
+              {viewMode === 'GROUPS' ? 'Manage event groups and grouping vouchers' : `Manage participants for ${selectedGroup?.name}`}
+            </p>
+          </div>
         </div>
-        <Button className="bg-brand hover:bg-brand-dark rounded-xl font-bold h-12 px-6 shadow-lg shadow-brand/20" onClick={() => setIsModalOpen(true)}>
-          <Plus size={20} className="mr-2" /> Create Custom Voucher
-        </Button>
+        
+        {viewMode === 'GROUPS' ? (
+          <Button className="bg-brand hover:bg-brand-dark rounded-xl font-bold h-12 px-6 shadow-lg shadow-brand/20" onClick={() => setIsGroupModalOpen(true)}>
+            <Plus size={20} className="mr-2" /> Create Event Group
+          </Button>
+        ) : (
+          <Button className="bg-brand hover:bg-brand-dark rounded-xl font-bold h-12 px-6 shadow-lg shadow-brand/20" onClick={() => setIsParticipantModalOpen(true)}>
+            <Plus size={20} className="mr-2" /> Add Participant
+          </Button>
+        )}
       </div>
 
-      <Card className="border-none shadow-xl overflow-hidden rounded-3xl">
+      <Card className="border-none shadow-xl overflow-hidden rounded-[32px]">
         <CardContent className="p-0">
           <div className="p-6 border-b border-gray-100 flex items-center gap-4 bg-gray-50/50">
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
               <Input 
-                placeholder="Search by event, name, or code..." 
+                placeholder={viewMode === 'GROUPS' ? "Search by group name..." : "Search by name or code..."}
                 className="pl-10 h-12 bg-white border-gray-200 rounded-2xl text-sm"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
@@ -352,243 +465,239 @@ export default function AdminCustomEventsPage() {
           </div>
 
           <div className="overflow-x-auto">
-            <table className="w-full text-sm text-left">
-              <thead className="text-[10px] font-black uppercase tracking-widest text-gray-400 bg-gray-50">
-                <tr>
-                  <th className="px-6 py-4">Event & Date</th>
-                  <th className="px-6 py-4">Participant</th>
-                  <th className="px-6 py-4">Voucher Info</th>
-                  <th className="px-6 py-4">Status</th>
-                  <th className="px-6 py-4 text-right">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-50">
-                {loading ? (
+            {viewMode === 'GROUPS' ? (
+              <table className="w-full text-sm text-left">
+                <thead className="text-[10px] font-black uppercase tracking-widest text-gray-400 bg-gray-50">
                   <tr>
-                    <td colSpan={5} className="px-6 py-20 text-center">
-                      <div className="flex flex-col items-center gap-2 text-gray-400">
-                        <Loader2 className="animate-spin" size={24} />
-                        <span className="font-bold uppercase tracking-widest text-xs">Loading Events...</span>
-                      </div>
-                    </td>
+                    <th className="px-6 py-4">Event Name & Date</th>
+                    <th className="px-6 py-4">Logos</th>
+                    <th className="px-6 py-4">Participants</th>
+                    <th className="px-6 py-4">Created</th>
+                    <th className="px-6 py-4 text-right">Actions</th>
                   </tr>
-                ) : filteredEvents.length === 0 ? (
+                </thead>
+                <tbody className="divide-y divide-gray-50">
+                  {loading ? (
+                    <tr><td colSpan={5} className="px-6 py-20 text-center"><Loader2 className="animate-spin mx-auto text-gray-400" /></td></tr>
+                  ) : filteredGroups.length === 0 ? (
+                    <tr><td colSpan={5} className="px-6 py-20 text-center text-gray-400 italic">No event groups found.</td></tr>
+                  ) : filteredGroups.map((group) => (
+                    <tr key={group.id} className="group hover:bg-gray-50/50 transition-colors cursor-pointer" onClick={() => fetchGroupDetails(group.id)}>
+                      <td className="px-6 py-4">
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 rounded-xl bg-brand-50 text-brand flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
+                            <Calendar size={20} />
+                          </div>
+                          <div>
+                            <p className="font-bold text-gray-900 leading-none mb-1">{group.name}</p>
+                            <p className="text-[10px] text-gray-400 font-bold uppercase">{format(new Date(group.eventDate), 'dd MMM yyyy')}</p>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="flex -space-x-2">
+                          {group.logos ? JSON.parse(group.logos).slice(0, 3).map((url: string, i: number) => (
+                            <div key={i} className="w-8 h-8 rounded-full border-2 border-white bg-white overflow-hidden shadow-sm">
+                              <img src={url} alt="Logo" className="w-full h-full object-contain" />
+                            </div>
+                          )) : <span className="text-gray-300 italic text-xs">No logos</span>}
+                          {group.logos && JSON.parse(group.logos).length > 3 && (
+                            <div className="w-8 h-8 rounded-full border-2 border-white bg-gray-100 flex items-center justify-center text-[8px] font-bold text-gray-500 shadow-sm">
+                              +{JSON.parse(group.logos).length - 3}
+                            </div>
+                          )}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="flex items-center gap-2 text-brand font-bold">
+                          <Users size={16} />
+                          <span>{group._count?.events || 0} Participants</span>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 text-gray-400 text-xs font-medium">
+                        {format(new Date(group.createdAt), 'dd/MM/yy')}
+                      </td>
+                      <td className="px-6 py-4 text-right" onClick={e => e.stopPropagation()}>
+                        <div className="flex justify-end gap-2">
+                          <Button variant="outline" size="icon" className="h-9 w-9 rounded-lg border-gray-200 text-brand hover:bg-brand-50" onClick={() => fetchGroupDetails(group.id)}>
+                            <ChevronRight size={16} />
+                          </Button>
+                          <Button variant="outline" size="icon" className="h-9 w-9 rounded-lg border-gray-200 text-red-500 hover:bg-red-50" onClick={() => handleDeleteGroup(group.id)}>
+                            <Trash2 size={16} />
+                          </Button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            ) : (
+              <table className="w-full text-sm text-left">
+                <thead className="text-[10px] font-black uppercase tracking-widest text-gray-400 bg-gray-50">
                   <tr>
-                    <td colSpan={5} className="px-6 py-20 text-center text-gray-400 font-medium italic">
-                      No custom events found.
-                    </td>
+                    <th className="px-6 py-4">Participant</th>
+                    <th className="px-6 py-4">Voucher Info</th>
+                    <th className="px-6 py-4">Status</th>
+                    <th className="px-6 py-4 text-right">Actions</th>
                   </tr>
-                ) : filteredEvents.map((event) => (
-                  <tr key={event.id} className="hover:bg-gray-50/50 transition-colors">
-                    <td className="px-6 py-4">
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-xl bg-brand-50 text-brand flex items-center justify-center shrink-0">
-                          <Calendar size={20} />
+                </thead>
+                <tbody className="divide-y divide-gray-50">
+                  {filteredParticipants.length === 0 ? (
+                    <tr><td colSpan={4} className="px-6 py-20 text-center text-gray-400 italic">No participants found in this group.</td></tr>
+                  ) : filteredParticipants.map((event) => (
+                    <tr key={event.id} className="hover:bg-gray-50/50 transition-colors">
+                      <td className="px-6 py-4">
+                        <div className="space-y-1">
+                          <p className="font-bold text-gray-900">{event.participantName}</p>
+                          <div className="flex flex-col text-xs text-gray-500 gap-0.5">
+                            <span className="flex items-center gap-1"><Mail size={10} /> {event.email}</span>
+                            <span className="flex items-center gap-1"><Phone size={10} /> {event.phoneNumber}</span>
+                          </div>
                         </div>
-                        <div>
-                          <p className="font-bold text-gray-900 leading-none mb-1">{event.eventName}</p>
-                          <p className="text-[10px] text-gray-400 font-bold uppercase">{format(new Date(event.eventDate), 'dd MMM yyyy')}</p>
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="space-y-1">
+                          <div className="flex items-center gap-2 text-brand font-mono font-bold tracking-wider">
+                            <Ticket size={14} /> {event.voucherCode}
+                          </div>
+                          <div className="flex items-center gap-2 text-xs text-gray-400 font-bold uppercase">
+                            <Users size={12} /> {event.pax} Pax
+                          </div>
                         </div>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="space-y-1">
-                        <div className="flex items-center gap-2 text-gray-700 font-bold">
-                          <User size={14} className="text-gray-400" />
-                          {event.participantName}
+                      </td>
+                      <td className="px-6 py-4">
+                        {event.status === 'USED' ? (
+                          <div className="flex items-center gap-1.5 text-green-600 font-bold text-[10px] uppercase tracking-wider bg-green-50 px-2.5 py-1 rounded-full w-fit">
+                            <CheckCircle2 size={12} /> Redeemed
+                          </div>
+                        ) : (
+                          <div className="flex items-center gap-1.5 text-brand font-bold text-[10px] uppercase tracking-wider bg-brand-50 px-2.5 py-1 rounded-full w-fit">
+                            <Ticket size={12} /> Active
+                          </div>
+                        )}
+                        {event.usedAt && <p className="text-[9px] text-gray-400 mt-1 ml-1">{format(new Date(event.usedAt), 'dd/MM HH:mm')}</p>}
+                      </td>
+                      <td className="px-6 py-4 text-right">
+                        <div className="flex justify-end gap-2">
+                          <Button variant="outline" size="icon" className="h-9 w-9 rounded-lg border-gray-200 text-brand hover:bg-brand-50" onClick={() => downloadVoucher(event)}>
+                            <Download size={16} />
+                          </Button>
+                          <Button variant="outline" size="icon" className="h-9 w-9 rounded-lg border-gray-200 text-red-500 hover:bg-red-50" onClick={() => handleDeleteParticipant(event.id)}>
+                            <Trash2 size={16} />
+                          </Button>
                         </div>
-                        <div className="flex items-center gap-2 text-xs text-gray-500">
-                          <Mail size={12} className="text-gray-400" />
-                          {event.email}
-                        </div>
-                        <div className="flex items-center gap-2 text-xs text-gray-500">
-                          <Phone size={12} className="text-gray-400" />
-                          {event.phoneNumber}
-                        </div>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="space-y-1">
-                        <div className="flex items-center gap-2">
-                          <Ticket size={14} className="text-brand" />
-                          <span className="font-mono font-bold text-brand tracking-wider">{event.voucherCode}</span>
-                        </div>
-                        <div className="flex items-center gap-2 text-xs text-gray-500">
-                          <Users size={12} className="text-gray-400" />
-                          {event.pax} Pax
-                        </div>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4">
-                      {event.status === 'USED' ? (
-                        <div className="flex items-center gap-1.5 text-green-600 font-bold text-[10px] uppercase tracking-wider bg-green-50 px-2.5 py-1 rounded-full w-fit">
-                          <CheckCircle2 size={12} />
-                          Redeemed
-                        </div>
-                      ) : (
-                        <div className="flex items-center gap-1.5 text-brand font-bold text-[10px] uppercase tracking-wider bg-brand-50 px-2.5 py-1 rounded-full w-fit">
-                          <Ticket size={12} />
-                          Active
-                        </div>
-                      )}
-                      {event.usedAt && (
-                        <p className="text-[9px] text-gray-400 mt-1 ml-1">{format(new Date(event.usedAt), 'dd/MM HH:mm')}</p>
-                      )}
-                    </td>
-                    <td className="px-6 py-4 text-right">
-                      <div className="flex justify-end gap-2">
-                        <Button 
-                          variant="outline" 
-                          size="icon" 
-                          className="h-9 w-9 rounded-lg border-gray-200 text-brand hover:text-brand-dark hover:bg-brand-50"
-                          onClick={() => downloadVoucher(event)}
-                          title="Download PDF"
-                        >
-                          <Download size={16} />
-                        </Button>
-                        <Button 
-                          variant="outline" 
-                          size="icon" 
-                          className="h-9 w-9 rounded-lg border-gray-200 text-red-500 hover:text-red-600 hover:bg-red-50"
-                          onClick={() => handleDelete(event.id)}
-                          title="Delete"
-                        >
-                          <Trash2 size={16} />
-                        </Button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
           </div>
         </CardContent>
       </Card>
 
-      {/* CREATE MODAL */}
-      {isModalOpen && (
+      {/* CREATE GROUP MODAL */}
+      {isGroupModalOpen && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
           <Card className="w-full max-w-lg rounded-[32px] overflow-hidden border-none shadow-2xl animate-in zoom-in-95 duration-200">
             <CardHeader className="bg-brand-dark text-white p-8 flex flex-row items-center justify-between space-y-0">
               <div>
-                <CardTitle className="text-2xl font-black uppercase tracking-tight italic">Create Event Voucher</CardTitle>
-                <p className="text-brand-100 text-xs font-bold uppercase tracking-widest mt-1">Add new participant manually</p>
+                <CardTitle className="text-2xl font-black uppercase tracking-tight italic">Create Event Group</CardTitle>
+                <p className="text-brand-100 text-xs font-bold uppercase tracking-widest mt-1">Group vouchers by event</p>
               </div>
-              <Button variant="ghost" className="text-white hover:bg-white/10 rounded-full h-10 w-10 p-0" onClick={() => setIsModalOpen(false)}>
+              <Button variant="ghost" className="text-white hover:bg-white/10 rounded-full h-10 w-10 p-0" onClick={() => setIsGroupModalOpen(false)}>
                 <X size={24} />
               </Button>
             </CardHeader>
             <CardContent className="p-8">
-              <form onSubmit={handleSubmit} className="space-y-5">
+              <form onSubmit={handleGroupSubmit} className="space-y-5">
                 <div className="space-y-2">
-                  <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Event Name</label>
+                  <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Group / Event Name</label>
                   <Input 
                     required
                     placeholder="e.g., Corporate Gathering PT. ABC"
-                    value={formData.eventName}
-                    onChange={e => setFormData({...formData, eventName: e.target.value})}
+                    value={groupFormData.name}
+                    onChange={e => setGroupFormData({...groupFormData, name: e.target.value})}
                     className="rounded-2xl bg-gray-50 border-transparent h-12 text-sm font-bold"
                   />
                 </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Event Date</label>
-                    <Input 
-                      required
-                      type="date"
-                      value={formData.eventDate}
-                      onChange={e => setFormData({...formData, eventDate: e.target.value})}
-                      className="rounded-2xl bg-gray-50 border-transparent h-12 text-sm font-bold"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Jumlah Pax</label>
-                    <Input 
-                      required
-                      type="number"
-                      min="1"
-                      value={formData.pax}
-                      onChange={e => setFormData({...formData, pax: parseInt(e.target.value)})}
-                      className="rounded-2xl bg-gray-50 border-transparent h-12 text-sm font-bold"
-                    />
-                  </div>
-                </div>
-
                 <div className="space-y-2">
-                  <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Participant Name</label>
+                  <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Event Date</label>
                   <Input 
                     required
-                    placeholder="Nama Lengkap Penanggung Jawab"
-                    value={formData.participantName}
-                    onChange={e => setFormData({...formData, participantName: e.target.value})}
+                    type="date"
+                    value={groupFormData.eventDate}
+                    onChange={e => setGroupFormData({...groupFormData, eventDate: e.target.value})}
                     className="rounded-2xl bg-gray-50 border-transparent h-12 text-sm font-bold"
                   />
                 </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Email</label>
-                    <Input 
-                      required
-                      type="email"
-                      placeholder="tamu@email.com"
-                      value={formData.email}
-                      onChange={e => setFormData({...formData, email: e.target.value})}
-                      className="rounded-2xl bg-gray-50 border-transparent h-12 text-sm font-bold"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Phone Number</label>
-                    <Input 
-                      required
-                      placeholder="08123456xxx"
-                      value={formData.phoneNumber}
-                      onChange={e => setFormData({...formData, phoneNumber: e.target.value})}
-                      className="rounded-2xl bg-gray-50 border-transparent h-12 text-sm font-bold"
-                    />
-                  </div>
-                </div>
-
                 <div className="space-y-3">
-                  <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Event Logos (Optional)</label>
+                  <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Event Logos (Common for all vouchers)</label>
                   <div className="flex flex-wrap gap-3">
-                    {formData.logos.map((url, idx) => (
+                    {groupFormData.logos.map((url, idx) => (
                       <div key={idx} className="relative group w-20 h-20 rounded-2xl overflow-hidden border-2 border-brand-50 bg-white">
                         <img src={url} alt="Logo" className="w-full h-full object-contain p-2" />
-                        <button 
-                          type="button"
-                          onClick={() => removeLogo(idx)}
-                          className="absolute inset-0 bg-red-500/80 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
-                        >
+                        <button type="button" onClick={() => removeLogo(idx)} className="absolute inset-0 bg-red-500/80 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
                           <Trash2 size={16} />
                         </button>
                       </div>
                     ))}
                     <label className="w-20 h-20 rounded-2xl border-2 border-dashed border-gray-200 hover:border-brand hover:bg-brand-50 flex flex-col items-center justify-center cursor-pointer transition-all text-gray-400 hover:text-brand">
-                      {uploading ? (
-                        <Loader2 size={20} className="animate-spin" />
-                      ) : (
-                        <>
-                          <Plus size={20} />
-                          <span className="text-[8px] font-bold uppercase mt-1">Upload</span>
-                        </>
-                      )}
+                      {uploading ? <Loader2 size={20} className="animate-spin" /> : <><Plus size={20} /><span className="text-[8px] font-bold uppercase mt-1">Upload</span></>}
                       <input type="file" multiple accept="image/*" className="hidden" onChange={handleFileUpload} disabled={uploading} />
                     </label>
                   </div>
                 </div>
+                <Button type="submit" className="w-full bg-brand hover:bg-brand-dark text-white rounded-2xl h-14 font-black uppercase tracking-widest mt-4 shadow-xl shadow-brand/20 transition-all hover:scale-[1.02]" disabled={submitting || uploading}>
+                  {submitting ? 'Creating...' : 'Create Group'}
+                </Button>
+              </form>
+            </CardContent>
+          </Card>
+        </div>
+      )}
 
-                <Button 
-                  type="submit" 
-                  className="w-full bg-brand hover:bg-brand-dark text-white rounded-2xl h-14 font-black uppercase tracking-widest mt-4 shadow-xl shadow-brand/20 transition-all hover:scale-[1.02]"
-                  disabled={submitting || uploading}
-                >
-                  {submitting ? (
-                    <><Loader2 className="animate-spin mr-2" size={20} /> Creating...</>
-                  ) : (
-                    'Generate Voucher'
-                  )}
+      {/* ADD PARTICIPANT MODAL */}
+      {isParticipantModalOpen && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
+          <Card className="w-full max-w-lg rounded-[32px] overflow-hidden border-none shadow-2xl animate-in zoom-in-95 duration-200">
+            <CardHeader className="bg-brand-dark text-white p-8 flex flex-row items-center justify-between space-y-0">
+              <div>
+                <CardTitle className="text-2xl font-black uppercase tracking-tight italic">Add Participant</CardTitle>
+                <p className="text-brand-100 text-xs font-bold uppercase tracking-widest mt-1">To: {selectedGroup?.name}</p>
+              </div>
+              <Button variant="ghost" className="text-white hover:bg-white/10 rounded-full h-10 w-10 p-0" onClick={() => setIsParticipantModalOpen(false)}>
+                <X size={24} />
+              </Button>
+            </CardHeader>
+            <CardContent className="p-8">
+              <form onSubmit={handleParticipantSubmit} className="space-y-5">
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Participant Name</label>
+                  <Input 
+                    required
+                    placeholder="Nama Lengkap Penanggung Jawab"
+                    value={participantFormData.participantName}
+                    onChange={e => setParticipantFormData({...participantFormData, participantName: e.target.value})}
+                    className="rounded-2xl bg-gray-50 border-transparent h-12 text-sm font-bold"
+                  />
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Jumlah Pax</label>
+                    <Input required type="number" min="1" value={participantFormData.pax} onChange={e => setParticipantFormData({...participantFormData, pax: parseInt(e.target.value)})} className="rounded-2xl bg-gray-50 border-transparent h-12 text-sm font-bold" />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Phone Number</label>
+                    <Input required placeholder="08123456xxx" value={participantFormData.phoneNumber} onChange={e => setParticipantFormData({...participantFormData, phoneNumber: e.target.value})} className="rounded-2xl bg-gray-50 border-transparent h-12 text-sm font-bold" />
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Email Address</label>
+                  <Input required type="email" placeholder="tamu@email.com" value={participantFormData.email} onChange={e => setParticipantFormData({...participantFormData, email: e.target.value})} className="rounded-2xl bg-gray-50 border-transparent h-12 text-sm font-bold" />
+                </div>
+                <Button type="submit" className="w-full bg-brand hover:bg-brand-dark text-white rounded-2xl h-14 font-black uppercase tracking-widest mt-4 shadow-xl shadow-brand/20 transition-all hover:scale-[1.02]" disabled={submitting}>
+                  {submitting ? 'Adding...' : 'Generate Voucher'}
                 </Button>
               </form>
             </CardContent>

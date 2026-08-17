@@ -29,10 +29,14 @@ export async function POST(req: Request) {
   if (!payload || payload.role !== 'ADMIN') return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
   try {
-    const { eventName, eventDate, participantName, pax, email, phoneNumber, logos } = await req.json();
+    const { eventName, eventDate, participantName, pax, email, phoneNumber, logos, groupId } = await req.json();
 
-    if (!eventName || !eventDate || !participantName || !email || !phoneNumber) {
-      return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
+    if (!participantName || !email || !phoneNumber) {
+      return NextResponse.json({ error: 'Missing required participant fields' }, { status: 400 });
+    }
+
+    if (!groupId && (!eventName || !eventDate)) {
+      return NextResponse.json({ error: 'Event name and date are required if no group is selected' }, { status: 400 });
     }
 
     // Generate a unique voucher code
@@ -40,8 +44,9 @@ export async function POST(req: Request) {
 
     const event = await prisma.customEvent.create({
       data: {
-        eventName,
-        eventDate: new Date(eventDate),
+        groupId,
+        eventName: eventName || null,
+        eventDate: eventDate ? new Date(eventDate) : null,
         participantName,
         pax: parseInt(pax) || 1,
         email,
