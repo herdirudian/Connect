@@ -422,11 +422,11 @@ export default function AdminCustomEventsPage() {
       doc.line(cardX + cardPadding, currentY + 18, width - cardX - cardPadding, currentY + 18);
 
       // Details Section
-      let currentDetailY = currentY + 28;
+      let currentDetailY = currentY + 25;
       const labelX = cardX + cardPadding;
       const valueX = cardX + 45;
 
-      doc.setFontSize(8.5);
+      doc.setFontSize(8);
       doc.setTextColor(slate400);
       doc.setFont('helvetica', 'bold');
       
@@ -436,7 +436,7 @@ export default function AdminCustomEventsPage() {
       doc.text(event.participantName, valueX, currentDetailY);
       
       // Row 2: Tanggal Event
-      currentDetailY += 8;
+      currentDetailY += 7;
       doc.setTextColor(slate400);
       doc.text('TANGGAL EVENT', labelX, currentDetailY);
       doc.setTextColor(darkGray);
@@ -444,7 +444,7 @@ export default function AdminCustomEventsPage() {
 
       // Row 3: Jam Acara (Optional)
       if (startTime && endTime) {
-        currentDetailY += 8;
+        currentDetailY += 7;
         doc.setTextColor(slate400);
         doc.text('JAM ACARA', labelX, currentDetailY);
         doc.setTextColor(darkGray);
@@ -452,38 +452,38 @@ export default function AdminCustomEventsPage() {
       }
 
       // Row 4: Jumlah Pax
-      currentDetailY += 8;
+      currentDetailY += 7;
       doc.setTextColor(slate400);
       doc.text('JUMLAH PAX', labelX, currentDetailY);
       doc.setTextColor(darkGray);
       doc.text(`${event.pax} Orang`, valueX, currentDetailY);
 
       // Row 5: Kode Voucher
-      currentDetailY += 8;
+      currentDetailY += 7;
       doc.setTextColor(slate400);
       doc.text('KODE VOUCHER', labelX, currentDetailY);
       doc.setTextColor(accentColor);
-      doc.setFontSize(11);
+      doc.setFontSize(10.5);
       doc.text(event.voucherCode, valueX, currentDetailY);
 
       // Description if exists
       if (descText) {
-        currentDetailY += 12;
+        currentDetailY += 10;
         doc.setTextColor(slate400);
-        doc.setFontSize(8);
+        doc.setFontSize(7.5);
         doc.setFont('helvetica', 'bold');
         doc.text('DESKRIPSI EVENT:', labelX, currentDetailY);
         doc.setTextColor(slate500);
         doc.setFont('helvetica', 'normal');
-        doc.text(splitDesc, labelX, currentDetailY + 5);
+        doc.text(splitDesc, labelX, currentDetailY + 4);
         currentDetailY += descHeight;
       } else {
-        currentDetailY += 5;
+        currentDetailY += 4;
       }
 
       // QR Code Area - Positioned inside card
-      const qrSize = 32;
-      const qrY = currentDetailY + 5;
+      const qrSize = 28; // Reduced size for better fit
+      const qrY = currentDetailY + 4;
       const qrDataUrl = await QRCode.toDataURL(event.voucherCode, { 
         margin: 1, 
         width: 200,
@@ -496,19 +496,19 @@ export default function AdminCustomEventsPage() {
 
       // Footer Instructions - Inside Card
       doc.setTextColor(slate500);
-      doc.setFontSize(7);
+      doc.setFontSize(6.5);
       doc.setFont('helvetica', 'normal');
-      doc.text('Scan QR Code ini di pintu masuk / outlet terkait.', width / 2, qrY + qrSize + 5, { align: 'center' });
+      doc.text('Scan QR Code ini di pintu masuk / outlet terkait.', width / 2, qrY + qrSize + 4, { align: 'center' });
 
       // Global Footer Section - Fixed distance from bottom
-      const footerBottomY = height - 12;
+      const footerBottomY = height - 10;
       doc.setTextColor(slate400);
-      doc.setFontSize(8);
+      doc.setFontSize(7.5);
       doc.setFont('helvetica', 'bold');
-      doc.text('SYARAT & KETENTUAN', width / 2, footerBottomY - 8, { align: 'center' });
+      doc.text('SYARAT & KETENTUAN', width / 2, footerBottomY - 7, { align: 'center' });
       
       doc.setFont('helvetica', 'normal');
-      doc.setFontSize(6.5);
+      doc.setFontSize(6);
       doc.text('Voucher ini bersifat personal dan hanya valid pada tanggal yang tertera.', width / 2, footerBottomY - 4, { align: 'center' });
       doc.text('Pihak manajemen berhak membatalkan voucher jika ditemukan indikasi kecurangan.', width / 2, footerBottomY - 1, { align: 'center' });
       
