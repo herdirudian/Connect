@@ -146,7 +146,7 @@ export default function PublicVoucherClaimPage() {
                         <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Nama Lengkap</label>
                         <Input 
                           required
-                          placeholder="Hendra Rusli"
+                          placeholder="Isi Nama Lengkap Anda"
                           value={voucherForm.fullName}
                           onChange={e => setVoucherForm({...voucherForm, fullName: e.target.value})}
                           className="rounded-2xl bg-gray-50 border-transparent focus:bg-white focus:ring-brand focus:border-brand transition-all h-14 text-sm font-bold px-6"
