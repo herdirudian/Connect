@@ -396,12 +396,11 @@ export default function AdminCustomEventsPage() {
       // Calculate dynamic height for description
       const descText = description || '';
       const splitDesc = doc.splitTextToSize(descText, cardWidth - (cardPadding * 2));
-      const descHeight = descText ? (splitDesc.length * 4) + 8 : 0;
+      const descHeight = descText ? (splitDesc.length * 4) + 6 : 0;
       
-      // Base height for static fields + QR area + Footer Instructions
-      const staticFieldsHeight = 62; 
-      const footerAreaHeight = 65; // Area for QR + Instructions + T&C
-      const cardHeight = staticFieldsHeight + descHeight + footerAreaHeight;
+      // Calculate card height dynamically
+      // Title(18) + Details(35) + Description(descHeight) + QR(40) + Footer(20) + Bottom Padding(10)
+      const cardHeight = 18 + 35 + descHeight + 40 + 20 + 5;
 
       doc.setFillColor(255, 255, 255);
       doc.roundedRect(cardX, currentY, cardWidth, cardHeight, 6, 6, 'F');
@@ -422,7 +421,7 @@ export default function AdminCustomEventsPage() {
       doc.line(cardX + cardPadding, currentY + 18, width - cardX - cardPadding, currentY + 18);
 
       // Details Section
-      let currentDetailY = currentY + 25;
+      let currentDetailY = currentY + 26;
       const labelX = cardX + cardPadding;
       const valueX = cardX + 45;
 
@@ -468,7 +467,7 @@ export default function AdminCustomEventsPage() {
 
       // Description if exists
       if (descText) {
-        currentDetailY += 8;
+        currentDetailY += 10;
         doc.setTextColor(slate400);
         doc.setFontSize(7.5);
         doc.setFont('helvetica', 'bold');
@@ -478,7 +477,7 @@ export default function AdminCustomEventsPage() {
         doc.text(splitDesc, labelX, currentDetailY + 4);
         currentDetailY += descHeight;
       } else {
-        currentDetailY += 2;
+        currentDetailY += 5;
       }
 
       // QR Code Area - Positioned inside card
