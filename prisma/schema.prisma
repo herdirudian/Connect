@@ -720,6 +720,26 @@ model ChildrensDayRegistration {
   @@index([parentPhone])
 }
 
+model CustomEvent {
+  id              String   @id @default(uuid())
+  eventName       String
+  eventDate       DateTime
+  participantName String
+  pax             Int      @default(1)
+  email           String
+  phoneNumber     String
+  voucherCode     String   @unique
+  status          String   @default("ACTIVE") // ACTIVE, USED, CANCELLED
+  usedAt          DateTime?
+  pdfUrl          String?  @db.Text
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([voucherCode])
+  @@index([email])
+  @@index([phoneNumber])
+}
+
 model AuditLog {
   id          String   @id @default(uuid())
   userId      String?  // Who performed the action (Admin/Staff)

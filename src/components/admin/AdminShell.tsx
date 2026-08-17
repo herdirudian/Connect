@@ -7,6 +7,7 @@ import { usePathname } from 'next/navigation';
 import { 
   LayoutDashboard, 
   CalendarCheck,
+  Calendar,
   Ticket, 
   Utensils, 
   Tent, 
@@ -113,6 +114,7 @@ export function AdminShell({ children, userPermissions }: AdminShellProps) {
                   {can(PERMISSIONS.MANAGE_REVIEWS) && <NavLink href="/admin/reviews" icon={MessageSquare} active={pathname.startsWith('/admin/reviews')}>Reviews</NavLink>}
                   {can(PERMISSIONS.MANAGE_REWARDS) && <NavLink href="/admin/rewards" icon={Gift} active={pathname.startsWith('/admin/rewards')}>Rewards System</NavLink>}
                   {can(PERMISSIONS.MANAGE_REWARDS) && <NavLink href="/admin/gamification" icon={Crown} active={pathname.startsWith('/admin/gamification')}>Gamification</NavLink>}
+                  {can(PERMISSIONS.MANAGE_PROMOS) && <NavLink href="/admin/custom-events" icon={Calendar} active={pathname.startsWith('/admin/custom-events')}>Custom Events</NavLink>}
                   {can(PERMISSIONS.MANAGE_USERS) && <NavLink href="/admin/community" icon={Users} active={pathname.startsWith('/admin/community')}>Community</NavLink>}
                   {can(PERMISSIONS.MANAGE_TIERS) && <NavLink href="/admin/tiers" icon={Crown} active={pathname.startsWith('/admin/tiers')}>Membership Tiers</NavLink>}
                   {can(PERMISSIONS.SCAN_TICKETS) && <NavLink href="/admin/scan" icon={ScanLine} active={pathname.startsWith('/admin/scan')}>Scan Voucher</NavLink>}

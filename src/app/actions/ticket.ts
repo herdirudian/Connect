@@ -6,7 +6,7 @@ import { revalidatePath } from 'next/cache';
 export type TicketValidationResult = {
   success: boolean;
   message: string;
-  type?: 'TICKET' | 'VOUCHER' | 'PROMO' | 'LIST';
+  type?: 'TICKET' | 'VOUCHER' | 'PROMO' | 'LIST' | 'EVENT';
   data?: any;
   ticket?: any;
   items?: any[];
@@ -418,6 +418,40 @@ export async function getTicketDetails(id: string): Promise<TicketValidationResu
         return { success: true, message: 'Promo Hari Anak found', type: 'PROMO', data: mappedTicket };
     }
 
+    // 5. Try to find as Custom Event
+    const customEvent = await prisma.customEvent.findFirst({
+        where: {
+            OR: [
+                { id: searchId },
+                { voucherCode: searchId },
+                { id: { startsWith: searchId } },
+                { id: searchId.toLowerCase() },
+                { id: { startsWith: searchId.toLowerCase() } }
+            ]
+        }
+    });
+
+    if (customEvent) {
+        const mappedTicket = {
+            id: customEvent.id,
+            title: customEvent.eventName,
+            description: `Event Date: ${customEvent.eventDate.toLocaleDateString()}`,
+            status: customEvent.status === 'USED' ? 'USED' : 'ACTIVE',
+            validUntil: customEvent.eventDate,
+            usedAt: customEvent.usedAt,
+            user: {
+                name: customEvent.participantName,
+                email: customEvent.email,
+                tier: 'EVENT_GUEST'
+            },
+            type: 'EVENT',
+            amount: 0,
+            pax: customEvent.pax,
+            items: [{ id: customEvent.id, name: customEvent.eventName, qty: customEvent.pax, price: 0 }]
+        };
+        return { success: true, message: 'Custom Event Voucher found', type: 'EVENT', data: mappedTicket };
+    }
+
     return { success: false, message: 'Ticket, Voucher, or Promo not found' };
   } catch (error) {
     console.error('Error fetching details:', error);
@@ -457,7 +491,7 @@ export async function getRedemptionHistory(limit: number = 20, dateStr?: string)
     lt: new Date(`${dateStr}T23:59:59.999`)
   } : undefined;
 
-  const [usedTickets, usedVouchers, promoTxs, usedBookings, usedChildrensDay] = await Promise.all([
+  const [usedTickets, usedVouchers, promoTxs, usedBookings, usedChildrensDay, usedCustomEvents] = await Promise.all([
     prisma.ticket.findMany({
       where: { 
         status: 'USED', 
@@ -496,6 +530,14 @@ export async function getRedemptionHistory(limit: number = 20, dateStr?: string)
     prisma.childrensDayRegistration.findMany({
       where: {
         isUsed: true,
+        usedAt: whereDate || { not: null }
+      },
+      orderBy: { usedAt: 'desc' },
+      take: limit,
+    }),
+    prisma.customEvent.findMany({
+      where: {
+        status: 'USED',
         usedAt: whereDate || { not: null }
       },
       orderBy: { usedAt: 'desc' },
@@ -609,6 +651,19 @@ export async function getRedemptionHistory(limit: number = 20, dateStr?: string)
         pax: 1,
         transactionId: c.id,
         usedAt: c.usedAt as Date,
+    })),
+    ...usedCustomEvents.map(ce => ({
+        id: ce.id,
+        type: 'EVENT' as const,
+        title: ce.eventName,
+        description: `Custom Event - ${ce.participantName}`,
+        userName: ce.participantName,
+        userEmail: ce.email,
+        amount: 0,
+        items: [{ name: ce.eventName, qty: ce.pax, price: 0 }],
+        pax: ce.pax,
+        transactionId: ce.id,
+        usedAt: ce.usedAt as Date,
     })),
   ];
 
@@ -798,6 +853,33 @@ export async function redeemTicket(id: string): Promise<TicketValidationResult> 
 
       revalidatePath('/admin/validate');
       return { success: true, message: 'Voucher Hari Anak berhasil diredeem', type: 'PROMO', data: mappedData };
+    }
+
+    // 5. Try Custom Event
+    const customEvent = await prisma.customEvent.findUnique({ where: { id } });
+    if (customEvent) {
+      if (customEvent.status !== 'ACTIVE') {
+        return { success: false, message: `Voucher is already ${customEvent.status}` };
+      }
+
+      const updated = await prisma.customEvent.update({
+        where: { id },
+        data: {
+          status: 'USED',
+          usedAt: new Date()
+        }
+      });
+
+      const mappedData = {
+        id: updated.id,
+        title: updated.eventName,
+        status: 'USED',
+        usedAt: updated.usedAt,
+        type: 'EVENT'
+      };
+
+      revalidatePath('/admin/validate');
+      return { success: true, message: 'Custom Event Voucher successfully redeemed', type: 'EVENT', data: mappedData };
     }
 
     return { success: false, message: 'Item not found' };
