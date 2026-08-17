@@ -428,16 +428,20 @@ export async function getTicketDetails(id: string): Promise<TicketValidationResu
                 { id: searchId.toLowerCase() },
                 { id: { startsWith: searchId.toLowerCase() } }
             ]
-        }
+        },
+        include: { group: true }
     });
 
     if (customEvent) {
+        const eventName = customEvent.group?.name || customEvent.eventName || 'Event Voucher';
+        const eventDate = customEvent.group?.eventDate || customEvent.eventDate;
+
         const mappedTicket = {
             id: customEvent.id,
-            title: customEvent.eventName,
-            description: `Event Date: ${customEvent.eventDate.toLocaleDateString()}`,
+            title: eventName,
+            description: `Event Date: ${eventDate ? eventDate.toLocaleDateString() : 'N/A'}`,
             status: customEvent.status === 'USED' ? 'USED' : 'ACTIVE',
-            validUntil: customEvent.eventDate,
+            validUntil: eventDate || new Date(),
             usedAt: customEvent.usedAt,
             user: {
                 name: customEvent.participantName,
@@ -447,7 +451,7 @@ export async function getTicketDetails(id: string): Promise<TicketValidationResu
             type: 'EVENT',
             amount: 0,
             pax: customEvent.pax,
-            items: [{ id: customEvent.id, name: customEvent.eventName, qty: customEvent.pax, price: 0 }]
+            items: [{ id: customEvent.id, name: eventName, qty: customEvent.pax, price: 0 }]
         };
         return { success: true, message: 'Custom Event Voucher found', type: 'EVENT', data: mappedTicket };
     }
@@ -540,6 +544,7 @@ export async function getRedemptionHistory(limit: number = 20, dateStr?: string)
         status: 'USED',
         usedAt: whereDate || { not: null }
       },
+      include: { group: true },
       orderBy: { usedAt: 'desc' },
       take: limit,
     })
@@ -652,19 +657,22 @@ export async function getRedemptionHistory(limit: number = 20, dateStr?: string)
         transactionId: c.id,
         usedAt: c.usedAt as Date,
     })),
-    ...usedCustomEvents.map(ce => ({
+    ...usedCustomEvents.map(ce => {
+      const eventName = ce.group?.name || ce.eventName || 'Event Voucher';
+      return {
         id: ce.id,
         type: 'EVENT' as const,
-        title: ce.eventName,
+        title: eventName,
         description: `Custom Event - ${ce.participantName}`,
         userName: ce.participantName,
         userEmail: ce.email,
         amount: 0,
-        items: [{ name: ce.eventName, qty: ce.pax, price: 0 }],
+        items: [{ name: eventName, qty: ce.pax, price: 0 }],
         pax: ce.pax,
         transactionId: ce.id,
         usedAt: ce.usedAt as Date,
-    })),
+      };
+    }),
   ];
 
   items.sort((a, b) => b.usedAt.getTime() - a.usedAt.getTime());
