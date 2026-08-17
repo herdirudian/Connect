@@ -326,33 +326,31 @@ export default function AdminCustomEventsPage() {
       doc.setFillColor(lightGray);
       doc.rect(0, 0, width, height, 'F');
 
-      // Top Banner
+      // Top Banner (Reduced height)
       doc.setFillColor(brandColor);
-      doc.rect(0, 0, width, 45, 'F');
+      doc.rect(0, 0, width, 30, 'F');
 
       // Decorative Line
       doc.setFillColor(accentColor);
-      doc.rect(0, 43, width, 2, 'F');
+      doc.rect(0, 28, width, 2, 'F');
 
-      // Title
+      // Title (Centered in smaller banner)
       doc.setTextColor(255, 255, 255);
       doc.setFont('helvetica', 'bold');
-      doc.setFontSize(22);
-      doc.text('E-VOUCHER EVENT', width / 2, 20, { align: 'center' });
+      doc.setFontSize(20);
+      doc.text('E-VOUCHER EVENT', width / 2, 18, { align: 'center' });
       
-      doc.setFontSize(9);
-      doc.setFont('helvetica', 'normal');
-      doc.text('THE LODGE MARIBAYA EXPERIENCE', width / 2, 28, { align: 'center' });
+      // Removed "THE LODGE MARIBAYA EXPERIENCE" sub-title
 
-      let currentY = 55;
+      let currentY = 38;
 
       // Event Logos Row
       if (logos) {
         try {
           const logoUrls = JSON.parse(logos) as string[];
           if (logoUrls.length > 0) {
-            const logoWidth = 22;
-            const logoHeight = 15;
+            const logoWidth = 20;
+            const logoHeight = 12;
             const logoGap = 8;
             const totalWidth = (logoUrls.length * logoWidth) + ((logoUrls.length - 1) * logoGap);
             let startX = (width - totalWidth) / 2;
@@ -362,7 +360,7 @@ export default function AdminCustomEventsPage() {
               doc.addImage(base64, 'PNG', startX, currentY, logoWidth, logoHeight, undefined, 'FAST');
               startX += logoWidth + logoGap;
             }
-            currentY += 22;
+            currentY += 18;
           }
         } catch (e) {
           console.error('Error adding logos to PDF:', e);
@@ -378,7 +376,9 @@ export default function AdminCustomEventsPage() {
       const descText = description || '';
       const splitDesc = doc.splitTextToSize(descText, cardWidth - (cardPadding * 2));
       const descHeight = descText ? (splitDesc.length * 4) + 5 : 0;
-      const baseCardHeight = 105;
+      
+      // Base height for static fields + QR area
+      const baseCardHeight = 95; 
       const cardHeight = baseCardHeight + descHeight;
 
       doc.setFillColor(255, 255, 255);
@@ -414,7 +414,7 @@ export default function AdminCustomEventsPage() {
       doc.text(event.participantName, valueX, currentDetailY);
       
       // Row 2: Tanggal Event
-      currentDetailY += 9;
+      currentDetailY += 8;
       doc.setTextColor(slate400);
       doc.text('TANGGAL EVENT', labelX, currentDetailY);
       doc.setTextColor(darkGray);
@@ -422,7 +422,7 @@ export default function AdminCustomEventsPage() {
 
       // Row 3: Jam Acara (Optional)
       if (startTime && endTime) {
-        currentDetailY += 9;
+        currentDetailY += 8;
         doc.setTextColor(slate400);
         doc.text('JAM ACARA', labelX, currentDetailY);
         doc.setTextColor(darkGray);
@@ -430,14 +430,14 @@ export default function AdminCustomEventsPage() {
       }
 
       // Row 4: Jumlah Pax
-      currentDetailY += 9;
+      currentDetailY += 8;
       doc.setTextColor(slate400);
       doc.text('JUMLAH PAX', labelX, currentDetailY);
       doc.setTextColor(darkGray);
       doc.text(`${event.pax} Orang`, valueX, currentDetailY);
 
       // Row 5: Kode Voucher
-      currentDetailY += 9;
+      currentDetailY += 8;
       doc.setTextColor(slate400);
       doc.text('KODE VOUCHER', labelX, currentDetailY);
       doc.setTextColor(accentColor);
@@ -446,7 +446,7 @@ export default function AdminCustomEventsPage() {
 
       // Description if exists
       if (descText) {
-        currentDetailY += 12;
+        currentDetailY += 10;
         doc.setTextColor(slate400);
         doc.setFontSize(8);
         doc.setFont('helvetica', 'bold');
@@ -458,7 +458,7 @@ export default function AdminCustomEventsPage() {
       }
 
       // QR Code Area
-      const qrSize = 35;
+      const qrSize = 30; // Reduced size slightly for better fit
       const qrY = currentDetailY + 10;
       const qrDataUrl = await QRCode.toDataURL(event.voucherCode, { 
         margin: 1, 
