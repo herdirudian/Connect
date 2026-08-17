@@ -142,6 +142,10 @@ export default function AdminScanPage() {
         title = item.promo?.title || 'Partner Promo';
         description = item.promo?.description || '';
         Icon = Tag;
+    } else if (type === 'EVENT') {
+        title = item.title || 'Event Voucher';
+        description = item.description || '';
+        Icon = Calendar;
     } else { // TICKET
         title = item.title || (item.reward?.name) || 'Ticket';
         description = item.description || (item.reward?.description) || '';
@@ -189,8 +193,16 @@ export default function AdminScanPage() {
                             className="bg-white border border-gray-200 p-4 rounded-xl shadow-sm hover:border-brand hover:shadow-md transition-all cursor-pointer flex items-center justify-between group"
                         >
                             <div className="flex items-center gap-4">
-                                <div className={`w-12 h-12 rounded-full flex items-center justify-center ${item.type === 'VOUCHER' ? 'bg-purple-100 text-purple-600' : item.type === 'PROMO' ? 'bg-orange-100 text-orange-600' : 'bg-blue-100 text-blue-600'}`}>
-                                    {item.type === 'VOUCHER' ? <Gift className="h-6 w-6" /> : item.type === 'PROMO' ? <Tag className="h-6 w-6" /> : <Ticket className="h-6 w-6" />}
+                                <div className={`w-12 h-12 rounded-full flex items-center justify-center ${
+                                    item.type === 'VOUCHER' ? 'bg-purple-100 text-purple-600' : 
+                                    item.type === 'PROMO' ? 'bg-orange-100 text-orange-600' : 
+                                    item.type === 'EVENT' ? 'bg-green-100 text-green-600' :
+                                    'bg-blue-100 text-blue-600'
+                                }`}>
+                                    {item.type === 'VOUCHER' ? <Gift className="h-6 w-6" /> : 
+                                     item.type === 'PROMO' ? <Tag className="h-6 w-6" /> : 
+                                     item.type === 'EVENT' ? <Calendar className="h-6 w-6" /> :
+                                     <Ticket className="h-6 w-6" />}
                                 </div>
                                 <div>
                                     <p className="font-bold text-gray-900">{item.reward?.name || item.title || (item.promo?.title) || 'Item'}</p>
@@ -372,9 +384,9 @@ export default function AdminScanPage() {
                 <div key={`${h.type}-${h.id}-${h.usedAt}`} className="flex items-center justify-between bg-white border border-gray-200 rounded-lg p-3">
                   <div className="flex items-center gap-3">
                     <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
-                      h.type === 'VOUCHER' ? 'bg-purple-100 text-purple-600' : h.type === 'PROMO' ? 'bg-orange-100 text-orange-600' : 'bg-blue-100 text-blue-600'
+                      h.type === 'VOUCHER' ? 'bg-purple-100 text-purple-600' : h.type === 'PROMO' ? 'bg-orange-100 text-orange-600' : h.type === 'EVENT' ? 'bg-green-100 text-green-600' : 'bg-blue-100 text-blue-600'
                     }`}>
-                      {h.type === 'VOUCHER' ? <Gift className="h-4 w-4" /> : h.type === 'PROMO' ? <Tag className="h-4 w-4" /> : <Ticket className="h-4 w-4" />}
+                      {h.type === 'VOUCHER' ? <Gift className="h-4 w-4" /> : h.type === 'PROMO' ? <Tag className="h-4 w-4" /> : h.type === 'EVENT' ? <Calendar className="h-4 w-4" /> : <Ticket className="h-4 w-4" />}
                     </div>
                     <div>
                       <p className="font-bold text-gray-900 text-sm">{h.title}</p>

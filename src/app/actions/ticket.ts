@@ -14,7 +14,7 @@ export type TicketValidationResult = {
 
 export type RedemptionHistoryItem = {
   id: string;
-  type: 'TICKET' | 'VOUCHER' | 'PROMO';
+  type: 'TICKET' | 'VOUCHER' | 'PROMO' | 'EVENT';
   title: string;
   description?: string;
   userName: string;
