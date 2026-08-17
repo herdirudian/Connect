@@ -18,7 +18,9 @@ import {
   CheckCircle2,
   XCircle,
   X,
-  Loader2
+  Loader2,
+  Upload,
+  Image as ImageIcon
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
@@ -34,6 +36,7 @@ interface CustomEvent {
   email: string;
   phoneNumber: string;
   voucherCode: string;
+  logos?: string | null;
   status: string;
   usedAt: string | null;
   createdAt: string;
@@ -45,6 +48,7 @@ export default function AdminCustomEventsPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [uploading, setUploading] = useState(false);
   const { toast } = useToast();
 
   const [formData, setFormData] = useState({
@@ -53,7 +57,8 @@ export default function AdminCustomEventsPage() {
     participantName: '',
     pax: 1,
     email: '',
-    phoneNumber: ''
+    phoneNumber: '',
+    logos: [] as string[]
   });
 
   useEffect(() => {
@@ -72,6 +77,44 @@ export default function AdminCustomEventsPage() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+
+    setUploading(true);
+    try {
+      const uploadPromises = Array.from(files).map(async (file) => {
+        const formData = new FormData();
+        formData.append('file', file);
+        const res = await fetch('/api/upload', {
+          method: 'POST',
+          body: formData
+        });
+        if (!res.ok) throw new Error('Upload failed');
+        const data = await res.json();
+        return data.url;
+      });
+
+      const urls = await Promise.all(uploadPromises);
+      setFormData(prev => ({
+        ...prev,
+        logos: [...prev.logos, ...urls]
+      }));
+      toast({ title: 'Success', description: `${urls.length} logo(s) uploaded` });
+    } catch (error) {
+      toast({ title: 'Error', description: 'Failed to upload logos', variant: 'destructive' });
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const removeLogo = (index: number) => {
+    setFormData(prev => ({
+      ...prev,
+      logos: prev.logos.filter((_, i) => i !== index)
+    }));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -93,7 +136,8 @@ export default function AdminCustomEventsPage() {
           participantName: '',
           pax: 1,
           email: '',
-          phoneNumber: ''
+          phoneNumber: '',
+          logos: []
         });
         fetchEvents();
       } else {
@@ -128,64 +172,147 @@ export default function AdminCustomEventsPage() {
         format: 'a5'
       });
 
+      const width = doc.internal.pageSize.getWidth();
+      const height = doc.internal.pageSize.getHeight();
+
       // Colors
       const brandColor = '#1a4332'; // The Lodge Green
       const accentColor = '#eab308'; // Yellow
+      const lightGray = '#f8fafc';
+      const darkGray = '#334155';
+
+      // Helper for images
+      const getImageBase64 = async (url: string): Promise<string> => {
+        const response = await fetch(url);
+        const blob = await response.blob();
+        return new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onloadend = () => resolve(reader.result as string);
+          reader.onerror = reject;
+          reader.readAsDataURL(blob);
+        });
+      };
 
       // Background
+      doc.setFillColor(lightGray);
+      doc.rect(0, 0, width, height, 'F');
+
+      // Top Banner
       doc.setFillColor(brandColor);
-      doc.rect(0, 0, 148, 40, 'F');
+      doc.rect(0, 0, width, 50, 'F');
+
+      // Decorative Line
+      doc.setFillColor(accentColor);
+      doc.rect(0, 48, width, 2, 'F');
 
       // Title
       doc.setTextColor(255, 255, 255);
       doc.setFont('helvetica', 'bold');
-      doc.setFontSize(22);
-      doc.text('E-VOUCHER EVENT', 74, 20, { align: 'center' });
+      doc.setFontSize(24);
+      doc.text('E-VOUCHER EVENT', width / 2, 22, { align: 'center' });
       
       doc.setFontSize(10);
-      doc.text('THE LODGE MARIBAYA EXPERIENCE', 74, 30, { align: 'center' });
+      doc.setFont('helvetica', 'normal');
+      doc.text('THE LODGE MARIBAYA EXPERIENCE', width / 2, 32, { align: 'center' });
 
-      // Event Info Section
-      doc.setTextColor(0, 0, 0);
-      doc.setFontSize(14);
-      doc.text(event.eventName.toUpperCase(), 74, 55, { align: 'center' });
+      // Event Logos
+      let currentY = 65;
+      if (event.logos) {
+        try {
+          const logoUrls = JSON.parse(event.logos) as string[];
+          if (logoUrls.length > 0) {
+            const logoWidth = 25;
+            const logoGap = 10;
+            const totalWidth = (logoUrls.length * logoWidth) + ((logoUrls.length - 1) * logoGap);
+            let startX = (width - totalWidth) / 2;
 
+            for (const url of logoUrls) {
+              const base64 = await getImageBase64(url);
+              doc.addImage(base64, 'PNG', startX, currentY, logoWidth, 20, undefined, 'FAST');
+              startX += logoWidth + logoGap;
+            }
+            currentY += 30;
+          }
+        } catch (e) {
+          console.error('Error adding logos to PDF:', e);
+        }
+      }
+
+      // Card Container
+      const cardX = 15;
+      const cardWidth = width - (cardX * 2);
+      doc.setFillColor(255, 255, 255);
+      doc.roundedRect(cardX, currentY, cardWidth, 95, 5, 5, 'F');
+      
+      // Shadow Effect (simplified)
       doc.setDrawColor(230, 230, 230);
-      doc.line(20, 60, 128, 60);
+      doc.setLineWidth(0.1);
+      doc.roundedRect(cardX, currentY, cardWidth, 95, 5, 5, 'D');
 
-      // Details
-      doc.setFontSize(10);
-      doc.setTextColor(100, 100, 100);
-      doc.text('NAMA PESERTA', 25, 75);
-      doc.text('TANGGAL EVENT', 25, 85);
-      doc.text('JUMLAH PAX', 25, 95);
-      doc.text('KODE VOUCHER', 25, 105);
-
-      doc.setTextColor(0, 0, 0);
-      doc.setFont('helvetica', 'bold');
-      doc.text(event.participantName, 65, 75);
-      doc.text(format(new Date(event.eventDate), 'dd MMMM yyyy'), 65, 85);
-      doc.text(`${event.pax} Orang`, 65, 95);
+      // Event Name
       doc.setTextColor(brandColor);
-      doc.text(event.voucherCode, 65, 105);
+      doc.setFontSize(16);
+      doc.setFont('helvetica', 'bold');
+      doc.text(event.eventName.toUpperCase(), width / 2, currentY + 12, { align: 'center' });
+
+      // Divider
+      doc.setDrawColor(241, 245, 249);
+      doc.line(cardX + 10, currentY + 18, width - cardX - 10, currentY + 18);
+
+      // Details Grid
+      const detailsY = currentY + 30;
+      const labelX = cardX + 12;
+      const valueX = cardX + 50;
+
+      doc.setFontSize(9);
+      doc.setTextColor(148, 163, 184); // slate-400
+      doc.setFont('helvetica', 'bold');
+      
+      doc.text('NAMA PESERTA', labelX, detailsY);
+      doc.text('TANGGAL EVENT', labelX, detailsY + 10);
+      doc.text('JUMLAH PAX', labelX, detailsY + 20);
+      doc.text('KODE VOUCHER', labelX, detailsY + 30);
+
+      doc.setTextColor(darkGray);
+      doc.setFont('helvetica', 'bold');
+      doc.text(event.participantName, valueX, detailsY);
+      doc.text(format(new Date(event.eventDate), 'dd MMMM yyyy'), valueX, detailsY + 10);
+      doc.text(`${event.pax} Orang`, valueX, detailsY + 20);
+      
+      doc.setTextColor(accentColor);
+      doc.setFontSize(12);
+      doc.text(event.voucherCode, valueX, detailsY + 30);
 
       // QR Code
-      const qrDataUrl = await QRCode.toDataURL(event.voucherCode, { margin: 1, width: 200 });
-      doc.addImage(qrDataUrl, 'PNG', 49, 115, 50, 50);
+      const qrDataUrl = await QRCode.toDataURL(event.voucherCode, { 
+        margin: 1, 
+        width: 200,
+        color: {
+          dark: brandColor,
+          light: '#ffffff'
+        }
+      });
+      doc.addImage(qrDataUrl, 'PNG', width / 2 - 20, detailsY + 38, 40, 40);
 
-      // Footer
-      doc.setFont('helvetica', 'normal');
+      // Footer Section
+      const footerY = height - 25;
+      doc.setTextColor(100, 116, 139); // slate-500
       doc.setFontSize(8);
-      doc.setTextColor(150, 150, 150);
-      doc.text('Tunjukkan E-Voucher ini kepada petugas loket untuk discan.', 74, 175, { align: 'center' });
-      doc.text('Valid hanya pada tanggal yang tertera.', 74, 180, { align: 'center' });
+      doc.setFont('helvetica', 'bold');
+      doc.text('SYARAT & KETENTUAN', width / 2, footerY, { align: 'center' });
       
+      doc.setFont('helvetica', 'normal');
       doc.setFontSize(7);
-      doc.text(`Generated at: ${new Date().toLocaleString()}`, 74, 200, { align: 'center' });
+      doc.text('Tunjukkan E-Voucher ini kepada petugas loket untuk discan.', width / 2, footerY + 5, { align: 'center' });
+      doc.text('Valid hanya pada tanggal yang tertera dan satu kali penggunaan.', width / 2, footerY + 8, { align: 'center' });
+      
+      // Bottom Branding
+      doc.setFillColor(brandColor);
+      doc.rect(0, height - 5, width, 5, 'F');
 
       doc.save(`Voucher-${event.eventName}-${event.participantName}.pdf`);
       
-      toast({ title: 'Downloaded', description: 'PDF Voucher has been generated' });
+      toast({ title: 'Success', description: 'Voucher downloaded successfully' });
     } catch (err) {
       console.error(err);
       toast({ title: 'Error', description: 'Failed to generate PDF', variant: 'destructive' });
@@ -423,10 +550,39 @@ export default function AdminCustomEventsPage() {
                   </div>
                 </div>
 
+                <div className="space-y-3">
+                  <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Event Logos (Optional)</label>
+                  <div className="flex flex-wrap gap-3">
+                    {formData.logos.map((url, idx) => (
+                      <div key={idx} className="relative group w-20 h-20 rounded-2xl overflow-hidden border-2 border-brand-50 bg-white">
+                        <img src={url} alt="Logo" className="w-full h-full object-contain p-2" />
+                        <button 
+                          type="button"
+                          onClick={() => removeLogo(idx)}
+                          className="absolute inset-0 bg-red-500/80 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                        >
+                          <Trash2 size={16} />
+                        </button>
+                      </div>
+                    ))}
+                    <label className="w-20 h-20 rounded-2xl border-2 border-dashed border-gray-200 hover:border-brand hover:bg-brand-50 flex flex-col items-center justify-center cursor-pointer transition-all text-gray-400 hover:text-brand">
+                      {uploading ? (
+                        <Loader2 size={20} className="animate-spin" />
+                      ) : (
+                        <>
+                          <Plus size={20} />
+                          <span className="text-[8px] font-bold uppercase mt-1">Upload</span>
+                        </>
+                      )}
+                      <input type="file" multiple accept="image/*" className="hidden" onChange={handleFileUpload} disabled={uploading} />
+                    </label>
+                  </div>
+                </div>
+
                 <Button 
                   type="submit" 
                   className="w-full bg-brand hover:bg-brand-dark text-white rounded-2xl h-14 font-black uppercase tracking-widest mt-4 shadow-xl shadow-brand/20 transition-all hover:scale-[1.02]"
-                  disabled={submitting}
+                  disabled={submitting || uploading}
                 >
                   {submitting ? (
                     <><Loader2 className="animate-spin mr-2" size={20} /> Creating...</>

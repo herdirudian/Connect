@@ -732,6 +732,7 @@ model CustomEvent {
   status          String   @default("ACTIVE") // ACTIVE, USED, CANCELLED
   usedAt          DateTime?
   pdfUrl          String?  @db.Text
+  logos           String?  @db.Text // JSON string for logo URLs
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 

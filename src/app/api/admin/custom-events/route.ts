@@ -29,7 +29,7 @@ export async function POST(req: Request) {
   if (!payload || payload.role !== 'ADMIN') return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
   try {
-    const { eventName, eventDate, participantName, pax, email, phoneNumber } = await req.json();
+    const { eventName, eventDate, participantName, pax, email, phoneNumber, logos } = await req.json();
 
     if (!eventName || !eventDate || !participantName || !email || !phoneNumber) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
@@ -47,6 +47,7 @@ export async function POST(req: Request) {
         email,
         phoneNumber,
         voucherCode,
+        logos: logos ? JSON.stringify(logos) : null,
         status: 'ACTIVE'
       }
     });
