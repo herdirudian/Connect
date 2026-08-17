@@ -295,6 +295,8 @@ export default function AdminCustomEventsPage() {
       const accentColor = '#eab308'; // Yellow
       const lightGray = '#f8fafc';
       const darkGray = '#334155';
+      const slate400 = '#94a3b8';
+      const slate500 = '#64748b';
 
       // Helper for images
       const getImageBase64 = async (url: string): Promise<string> => {
@@ -314,39 +316,41 @@ export default function AdminCustomEventsPage() {
 
       // Top Banner
       doc.setFillColor(brandColor);
-      doc.rect(0, 0, width, 50, 'F');
+      doc.rect(0, 0, width, 45, 'F');
 
       // Decorative Line
       doc.setFillColor(accentColor);
-      doc.rect(0, 48, width, 2, 'F');
+      doc.rect(0, 43, width, 2, 'F');
 
       // Title
       doc.setTextColor(255, 255, 255);
       doc.setFont('helvetica', 'bold');
-      doc.setFontSize(24);
-      doc.text('E-VOUCHER EVENT', width / 2, 22, { align: 'center' });
+      doc.setFontSize(22);
+      doc.text('E-VOUCHER EVENT', width / 2, 20, { align: 'center' });
       
-      doc.setFontSize(10);
+      doc.setFontSize(9);
       doc.setFont('helvetica', 'normal');
-      doc.text('THE LODGE MARIBAYA EXPERIENCE', width / 2, 32, { align: 'center' });
+      doc.text('THE LODGE MARIBAYA EXPERIENCE', width / 2, 28, { align: 'center' });
 
-      // Event Logos
-      let currentY = 65;
+      let currentY = 55;
+
+      // Event Logos Row
       if (logos) {
         try {
           const logoUrls = JSON.parse(logos) as string[];
           if (logoUrls.length > 0) {
-            const logoWidth = 25;
-            const logoGap = 10;
+            const logoWidth = 22;
+            const logoHeight = 15;
+            const logoGap = 8;
             const totalWidth = (logoUrls.length * logoWidth) + ((logoUrls.length - 1) * logoGap);
             let startX = (width - totalWidth) / 2;
 
             for (const url of logoUrls) {
               const base64 = await getImageBase64(url);
-              doc.addImage(base64, 'PNG', startX, currentY, logoWidth, 20, undefined, 'FAST');
+              doc.addImage(base64, 'PNG', startX, currentY, logoWidth, logoHeight, undefined, 'FAST');
               startX += logoWidth + logoGap;
             }
-            currentY += 30;
+            currentY += 22;
           }
         } catch (e) {
           console.error('Error adding logos to PDF:', e);
@@ -354,51 +358,53 @@ export default function AdminCustomEventsPage() {
       }
 
       // Card Container
-      const cardX = 15;
+      const cardX = 12;
       const cardWidth = width - (cardX * 2);
+      const cardPadding = 10;
       doc.setFillColor(255, 255, 255);
-      doc.roundedRect(cardX, currentY, cardWidth, 95, 5, 5, 'F');
+      doc.roundedRect(cardX, currentY, cardWidth, 105, 6, 6, 'F');
       
-      // Shadow Effect (simplified)
-      doc.setDrawColor(230, 230, 230);
-      doc.setLineWidth(0.1);
-      doc.roundedRect(cardX, currentY, cardWidth, 95, 5, 5, 'D');
+      // Card Border
+      doc.setDrawColor(226, 232, 240); // slate-200
+      doc.setLineWidth(0.2);
+      doc.roundedRect(cardX, currentY, cardWidth, 105, 6, 6, 'D');
 
-      // Event Name
+      // Event Name Title
       doc.setTextColor(brandColor);
-      doc.setFontSize(16);
+      doc.setFontSize(14);
       doc.setFont('helvetica', 'bold');
       doc.text(eventName.toUpperCase(), width / 2, currentY + 12, { align: 'center' });
 
       // Divider
       doc.setDrawColor(241, 245, 249);
-      doc.line(cardX + 10, currentY + 18, width - cardX - 10, currentY + 18);
+      doc.line(cardX + cardPadding, currentY + 18, width - cardX - cardPadding, currentY + 18);
 
-      // Details Grid
-      const detailsY = currentY + 30;
-      const labelX = cardX + 12;
-      const valueX = cardX + 50;
+      // Details Section
+      const detailsStartY = currentY + 28;
+      const labelX = cardX + cardPadding;
+      const valueX = cardX + 45;
 
-      doc.setFontSize(9);
-      doc.setTextColor(148, 163, 184); // slate-400
+      doc.setFontSize(8.5);
+      doc.setTextColor(slate400);
       doc.setFont('helvetica', 'bold');
       
-      doc.text('NAMA PESERTA', labelX, detailsY);
-      doc.text('TANGGAL EVENT', labelX, detailsY + 10);
-      doc.text('JUMLAH PAX', labelX, detailsY + 20);
-      doc.text('KODE VOUCHER', labelX, detailsY + 30);
+      doc.text('NAMA PESERTA', labelX, detailsStartY);
+      doc.text('TANGGAL EVENT', labelX, detailsStartY + 9);
+      doc.text('JUMLAH PAX', labelX, detailsStartY + 18);
+      doc.text('KODE VOUCHER', labelX, detailsStartY + 27);
 
       doc.setTextColor(darkGray);
-      doc.setFont('helvetica', 'bold');
-      doc.text(event.participantName, valueX, detailsY);
-      doc.text(format(new Date(eventDate), 'dd MMMM yyyy'), valueX, detailsY + 10);
-      doc.text(`${event.pax} Orang`, valueX, detailsY + 20);
+      doc.text(event.participantName, valueX, detailsStartY);
+      doc.text(format(new Date(eventDate), 'dd MMMM yyyy'), valueX, detailsStartY + 9);
+      doc.text(`${event.pax} Orang`, valueX, detailsStartY + 18);
       
       doc.setTextColor(accentColor);
-      doc.setFontSize(12);
-      doc.text(event.voucherCode, valueX, detailsY + 30);
+      doc.setFontSize(11);
+      doc.text(event.voucherCode, valueX, detailsStartY + 27);
 
-      // QR Code
+      // QR Code Area
+      const qrSize = 35;
+      const qrY = detailsStartY + 35;
       const qrDataUrl = await QRCode.toDataURL(event.voucherCode, { 
         margin: 1, 
         width: 200,
@@ -407,23 +413,29 @@ export default function AdminCustomEventsPage() {
           light: '#ffffff'
         }
       });
-      doc.addImage(qrDataUrl, 'PNG', width / 2 - 20, detailsY + 38, 40, 40);
+      doc.addImage(qrDataUrl, 'PNG', (width - qrSize) / 2, qrY, qrSize, qrSize);
 
-      // Footer Section
-      const footerY = height - 25;
-      doc.setTextColor(100, 116, 139); // slate-500
+      // Footer Instructions (Inside Card or Below)
+      doc.setTextColor(slate500);
+      doc.setFontSize(7);
+      doc.setFont('helvetica', 'normal');
+      doc.text('Scan QR Code ini di pintu masuk / outlet terkait.', width / 2, qrY + qrSize + 5, { align: 'center' });
+
+      // Global Footer Section
+      const footerY = height - 18;
+      doc.setTextColor(slate400);
       doc.setFontSize(8);
       doc.setFont('helvetica', 'bold');
       doc.text('SYARAT & KETENTUAN', width / 2, footerY, { align: 'center' });
       
       doc.setFont('helvetica', 'normal');
-      doc.setFontSize(7);
-      doc.text('Tunjukkan E-Voucher ini kepada petugas loket untuk discan.', width / 2, footerY + 5, { align: 'center' });
-      doc.text('Valid hanya pada tanggal yang tertera dan satu kali penggunaan.', width / 2, footerY + 8, { align: 'center' });
+      doc.setFontSize(6.5);
+      doc.text('Voucher ini bersifat personal dan hanya valid pada tanggal yang tertera.', width / 2, footerY + 4, { align: 'center' });
+      doc.text('Pihak manajemen berhak membatalkan voucher jika ditemukan indikasi kecurangan.', width / 2, footerY + 7, { align: 'center' });
       
-      // Bottom Branding
+      // Bottom Branding Strip
       doc.setFillColor(brandColor);
-      doc.rect(0, height - 5, width, 5, 'F');
+      doc.rect(0, height - 3, width, 3, 'F');
 
       doc.save(`Voucher-${eventName}-${event.participantName}.pdf`);
       
