@@ -23,7 +23,8 @@ import {
   Image as ImageIcon,
   ChevronLeft,
   ChevronRight,
-  LayoutGrid
+  LayoutGrid,
+  Edit2
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
@@ -67,6 +68,8 @@ export default function AdminCustomEventsPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [isGroupModalOpen, setIsGroupModalOpen] = useState(false);
   const [isParticipantModalOpen, setIsParticipantModalOpen] = useState(false);
+  const [editingGroupId, setEditingGroupId] = useState<string | null>(null);
+  const [editingParticipantId, setEditingParticipantId] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [uploading, setUploading] = useState(false);
   const { toast } = useToast();
@@ -87,6 +90,28 @@ export default function AdminCustomEventsPage() {
   useEffect(() => {
     fetchGroups();
   }, []);
+
+  const openEditGroup = (e: React.MouseEvent, group: CustomEventGroup) => {
+    e.stopPropagation();
+    setEditingGroupId(group.id);
+    setGroupFormData({
+      name: group.name,
+      eventDate: format(new Date(group.eventDate), 'yyyy-MM-dd'),
+      logos: group.logos ? JSON.parse(group.logos) : []
+    });
+    setIsGroupModalOpen(true);
+  };
+
+  const openEditParticipant = (participant: CustomEvent) => {
+    setEditingParticipantId(participant.id);
+    setParticipantFormData({
+      participantName: participant.participantName,
+      pax: participant.pax,
+      email: participant.email,
+      phoneNumber: participant.phoneNumber
+    });
+    setIsParticipantModalOpen(true);
+  };
 
   const fetchGroups = async () => {
     try {
@@ -161,23 +186,28 @@ export default function AdminCustomEventsPage() {
     e.preventDefault();
     setSubmitting(true);
     try {
-      const res = await fetch('/api/admin/custom-event-groups', {
-        method: 'POST',
+      const url = editingGroupId 
+        ? `/api/admin/custom-event-groups/${editingGroupId}`
+        : '/api/admin/custom-event-groups';
+      
+      const res = await fetch(url, {
+        method: editingGroupId ? 'PUT' : 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(groupFormData)
       });
 
       if (res.ok) {
-        toast({ title: 'Success', description: 'Event Group created successfully' });
+        toast({ title: 'Success', description: `Event Group ${editingGroupId ? 'updated' : 'created'} successfully` });
         setIsGroupModalOpen(false);
+        setEditingGroupId(null);
         setGroupFormData({ name: '', eventDate: '', logos: [] });
         fetchGroups();
       } else {
         const err = await res.json();
-        toast({ title: 'Error', description: err.error || 'Failed to create group', variant: 'destructive' });
+        toast({ title: 'Error', description: err.error || 'Failed to save group', variant: 'destructive' });
       }
     } catch (error) {
-      toast({ title: 'Error', description: 'Failed to create group', variant: 'destructive' });
+      toast({ title: 'Error', description: 'Failed to save group', variant: 'destructive' });
     } finally {
       setSubmitting(false);
     }
@@ -185,29 +215,34 @@ export default function AdminCustomEventsPage() {
 
   const handleParticipantSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!selectedGroup) return;
+    if (!selectedGroup && !editingParticipantId) return;
     setSubmitting(true);
     try {
-      const res = await fetch('/api/admin/custom-events', {
-        method: 'POST',
+      const url = editingParticipantId
+        ? `/api/admin/custom-events/${editingParticipantId}`
+        : '/api/admin/custom-events';
+
+      const res = await fetch(url, {
+        method: editingParticipantId ? 'PUT' : 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           ...participantFormData,
-          groupId: selectedGroup.id
+          groupId: selectedGroup?.id
         })
       });
 
       if (res.ok) {
-        toast({ title: 'Success', description: 'Participant added successfully' });
+        toast({ title: 'Success', description: `Participant ${editingParticipantId ? 'updated' : 'added'} successfully` });
         setIsParticipantModalOpen(false);
+        setEditingParticipantId(null);
         setParticipantFormData({ participantName: '', pax: 1, email: '', phoneNumber: '' });
-        fetchGroupDetails(selectedGroup.id);
+        if (selectedGroup) fetchGroupDetails(selectedGroup.id);
       } else {
         const err = await res.json();
-        toast({ title: 'Error', description: err.error || 'Failed to add participant', variant: 'destructive' });
+        toast({ title: 'Error', description: err.error || 'Failed to save participant', variant: 'destructive' });
       }
     } catch (error) {
-      toast({ title: 'Error', description: 'Failed to add participant', variant: 'destructive' });
+      toast({ title: 'Error', description: 'Failed to save participant', variant: 'destructive' });
     } finally {
       setSubmitting(false);
     }
@@ -522,6 +557,9 @@ export default function AdminCustomEventsPage() {
                           <Button variant="outline" size="icon" className="h-9 w-9 rounded-lg border-gray-200 text-brand hover:bg-brand-50" onClick={() => fetchGroupDetails(group.id)}>
                             <ChevronRight size={16} />
                           </Button>
+                          <Button variant="outline" size="icon" className="h-9 w-9 rounded-lg border-gray-200 text-amber-600 hover:bg-amber-50" onClick={(e) => openEditGroup(e, group)}>
+                            <Edit2 size={16} />
+                          </Button>
                           <Button variant="outline" size="icon" className="h-9 w-9 rounded-lg border-gray-200 text-red-500 hover:bg-red-50" onClick={() => handleDeleteGroup(group.id)}>
                             <Trash2 size={16} />
                           </Button>
@@ -582,6 +620,9 @@ export default function AdminCustomEventsPage() {
                           <Button variant="outline" size="icon" className="h-9 w-9 rounded-lg border-gray-200 text-brand hover:bg-brand-50" onClick={() => downloadVoucher(event)}>
                             <Download size={16} />
                           </Button>
+                          <Button variant="outline" size="icon" className="h-9 w-9 rounded-lg border-gray-200 text-amber-600 hover:bg-amber-50" onClick={() => openEditParticipant(event)}>
+                            <Edit2 size={16} />
+                          </Button>
                           <Button variant="outline" size="icon" className="h-9 w-9 rounded-lg border-gray-200 text-red-500 hover:bg-red-50" onClick={() => handleDeleteParticipant(event.id)}>
                             <Trash2 size={16} />
                           </Button>
@@ -602,10 +643,14 @@ export default function AdminCustomEventsPage() {
           <Card className="w-full max-w-lg rounded-[32px] overflow-hidden border-none shadow-2xl animate-in zoom-in-95 duration-200">
             <CardHeader className="bg-brand-dark text-white p-8 flex flex-row items-center justify-between space-y-0">
               <div>
-                <CardTitle className="text-2xl font-black uppercase tracking-tight italic">Create Event Group</CardTitle>
-                <p className="text-brand-100 text-xs font-bold uppercase tracking-widest mt-1">Group vouchers by event</p>
+                <CardTitle className="text-2xl font-black uppercase tracking-tight italic">{editingGroupId ? 'Edit Event Group' : 'Create Event Group'}</CardTitle>
+                <p className="text-brand-100 text-xs font-bold uppercase tracking-widest mt-1">{editingGroupId ? 'Update group details' : 'Group vouchers by event'}</p>
               </div>
-              <Button variant="ghost" className="text-white hover:bg-white/10 rounded-full h-10 w-10 p-0" onClick={() => setIsGroupModalOpen(false)}>
+              <Button variant="ghost" className="text-white hover:bg-white/10 rounded-full h-10 w-10 p-0" onClick={() => {
+                setIsGroupModalOpen(false);
+                setEditingGroupId(null);
+                setGroupFormData({ name: '', eventDate: '', logos: [] });
+              }}>
                 <X size={24} />
               </Button>
             </CardHeader>
@@ -649,7 +694,7 @@ export default function AdminCustomEventsPage() {
                   </div>
                 </div>
                 <Button type="submit" className="w-full bg-brand hover:bg-brand-dark text-white rounded-2xl h-14 font-black uppercase tracking-widest mt-4 shadow-xl shadow-brand/20 transition-all hover:scale-[1.02]" disabled={submitting || uploading}>
-                  {submitting ? 'Creating...' : 'Create Group'}
+                  {submitting ? 'Saving...' : (editingGroupId ? 'Update Group' : 'Create Group')}
                 </Button>
               </form>
             </CardContent>
@@ -657,16 +702,20 @@ export default function AdminCustomEventsPage() {
         </div>
       )}
 
-      {/* ADD PARTICIPANT MODAL */}
+      {/* ADD/EDIT PARTICIPANT MODAL */}
       {isParticipantModalOpen && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
           <Card className="w-full max-w-lg rounded-[32px] overflow-hidden border-none shadow-2xl animate-in zoom-in-95 duration-200">
             <CardHeader className="bg-brand-dark text-white p-8 flex flex-row items-center justify-between space-y-0">
               <div>
-                <CardTitle className="text-2xl font-black uppercase tracking-tight italic">Add Participant</CardTitle>
+                <CardTitle className="text-2xl font-black uppercase tracking-tight italic">{editingParticipantId ? 'Edit Participant' : 'Add Participant'}</CardTitle>
                 <p className="text-brand-100 text-xs font-bold uppercase tracking-widest mt-1">To: {selectedGroup?.name}</p>
               </div>
-              <Button variant="ghost" className="text-white hover:bg-white/10 rounded-full h-10 w-10 p-0" onClick={() => setIsParticipantModalOpen(false)}>
+              <Button variant="ghost" className="text-white hover:bg-white/10 rounded-full h-10 w-10 p-0" onClick={() => {
+                setIsParticipantModalOpen(false);
+                setEditingParticipantId(null);
+                setParticipantFormData({ participantName: '', pax: 1, email: '', phoneNumber: '' });
+              }}>
                 <X size={24} />
               </Button>
             </CardHeader>
@@ -697,7 +746,7 @@ export default function AdminCustomEventsPage() {
                   <Input required type="email" placeholder="tamu@email.com" value={participantFormData.email} onChange={e => setParticipantFormData({...participantFormData, email: e.target.value})} className="rounded-2xl bg-gray-50 border-transparent h-12 text-sm font-bold" />
                 </div>
                 <Button type="submit" className="w-full bg-brand hover:bg-brand-dark text-white rounded-2xl h-14 font-black uppercase tracking-widest mt-4 shadow-xl shadow-brand/20 transition-all hover:scale-[1.02]" disabled={submitting}>
-                  {submitting ? 'Adding...' : 'Generate Voucher'}
+                  {submitting ? 'Saving...' : (editingParticipantId ? 'Update Participant' : 'Generate Voucher')}
                 </Button>
               </form>
             </CardContent>
