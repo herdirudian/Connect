@@ -46,7 +46,7 @@ export async function PUT(
 
   try {
     const { id } = await params;
-    const { name, eventDate, logos } = await req.json();
+    const { name, eventDate, logos, description, startTime, endTime } = await req.json();
 
     if (!name || !eventDate) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
@@ -56,6 +56,9 @@ export async function PUT(
       where: { id },
       data: {
         name,
+        description,
+        startTime,
+        endTime,
         eventDate: new Date(eventDate),
         logos: logos ? JSON.stringify(logos) : null
       }
@@ -68,7 +71,7 @@ export async function PUT(
         action: 'UPDATE_CUSTOM_EVENT_GROUP',
         entityType: 'CustomEventGroup',
         entityId: id,
-        details: JSON.stringify({ name, eventDate })
+        details: JSON.stringify({ name, eventDate, startTime, endTime })
       }
     });
 

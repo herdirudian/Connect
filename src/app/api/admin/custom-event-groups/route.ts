@@ -33,7 +33,7 @@ export async function POST(req: Request) {
   if (!payload || payload.role !== 'ADMIN') return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
   try {
-    const { name, eventDate, logos } = await req.json();
+    const { name, eventDate, logos, description, startTime, endTime } = await req.json();
 
     if (!name || !eventDate) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
@@ -42,6 +42,9 @@ export async function POST(req: Request) {
     const group = await prisma.customEventGroup.create({
       data: {
         name,
+        description,
+        startTime,
+        endTime,
         eventDate: new Date(eventDate),
         logos: logos ? JSON.stringify(logos) : null
       }
@@ -54,7 +57,7 @@ export async function POST(req: Request) {
         action: 'CREATE_CUSTOM_EVENT_GROUP',
         entityType: 'CustomEventGroup',
         entityId: group.id,
-        details: JSON.stringify({ name, eventDate })
+        details: JSON.stringify({ name, eventDate, startTime, endTime })
       }
     });
 

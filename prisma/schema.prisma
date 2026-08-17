@@ -723,7 +723,10 @@ model ChildrensDayRegistration {
 model CustomEventGroup {
   id              String   @id @default(uuid())
   name            String
+  description     String?  @db.Text
   eventDate       DateTime
+  startTime       String?  // e.g. "09:00"
+  endTime         String?  // e.g. "17:00"
   logos           String?  @db.Text // JSON string for logo URLs
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt

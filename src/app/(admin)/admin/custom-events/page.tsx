@@ -34,7 +34,10 @@ import QRCode from 'qrcode';
 interface CustomEventGroup {
   id: string;
   name: string;
+  description: string | null;
   eventDate: string;
+  startTime: string | null;
+  endTime: string | null;
   logos: string | null;
   createdAt: string;
   _count?: {
@@ -76,7 +79,10 @@ export default function AdminCustomEventsPage() {
 
   const [groupFormData, setGroupFormData] = useState({
     name: '',
+    description: '',
     eventDate: '',
+    startTime: '',
+    endTime: '',
     logos: [] as string[]
   });
 
@@ -96,7 +102,10 @@ export default function AdminCustomEventsPage() {
     setEditingGroupId(group.id);
     setGroupFormData({
       name: group.name,
+      description: group.description || '',
       eventDate: format(new Date(group.eventDate), 'yyyy-MM-dd'),
+      startTime: group.startTime || '',
+      endTime: group.endTime || '',
       logos: group.logos ? JSON.parse(group.logos) : []
     });
     setIsGroupModalOpen(true);
@@ -200,7 +209,7 @@ export default function AdminCustomEventsPage() {
         toast({ title: 'Success', description: `Event Group ${editingGroupId ? 'updated' : 'created'} successfully` });
         setIsGroupModalOpen(false);
         setEditingGroupId(null);
-        setGroupFormData({ name: '', eventDate: '', logos: [] });
+        setGroupFormData({ name: '', description: '', eventDate: '', startTime: '', endTime: '', logos: [] });
         fetchGroups();
       } else {
         const err = await res.json();
@@ -279,6 +288,9 @@ export default function AdminCustomEventsPage() {
       // Use group info if available, fallback to event info
       const eventName = selectedGroup?.name || event.eventName || 'Event Voucher';
       const eventDate = selectedGroup?.eventDate || event.eventDate || new Date().toISOString();
+      const startTime = selectedGroup?.startTime || '';
+      const endTime = selectedGroup?.endTime || '';
+      const description = selectedGroup?.description || '';
       const logos = selectedGroup?.logos || event.logos || null;
 
       const doc = new jsPDF({
@@ -361,13 +373,21 @@ export default function AdminCustomEventsPage() {
       const cardX = 12;
       const cardWidth = width - (cardX * 2);
       const cardPadding = 10;
+      
+      // Calculate dynamic height for description
+      const descText = description || '';
+      const splitDesc = doc.splitTextToSize(descText, cardWidth - (cardPadding * 2));
+      const descHeight = descText ? (splitDesc.length * 4) + 5 : 0;
+      const baseCardHeight = 105;
+      const cardHeight = baseCardHeight + descHeight;
+
       doc.setFillColor(255, 255, 255);
-      doc.roundedRect(cardX, currentY, cardWidth, 105, 6, 6, 'F');
+      doc.roundedRect(cardX, currentY, cardWidth, cardHeight, 6, 6, 'F');
       
       // Card Border
       doc.setDrawColor(226, 232, 240); // slate-200
       doc.setLineWidth(0.2);
-      doc.roundedRect(cardX, currentY, cardWidth, 105, 6, 6, 'D');
+      doc.roundedRect(cardX, currentY, cardWidth, cardHeight, 6, 6, 'D');
 
       // Event Name Title
       doc.setTextColor(brandColor);
@@ -380,7 +400,7 @@ export default function AdminCustomEventsPage() {
       doc.line(cardX + cardPadding, currentY + 18, width - cardX - cardPadding, currentY + 18);
 
       // Details Section
-      const detailsStartY = currentY + 28;
+      let detailsStartY = currentY + 28;
       const labelX = cardX + cardPadding;
       const valueX = cardX + 45;
 
@@ -390,21 +410,42 @@ export default function AdminCustomEventsPage() {
       
       doc.text('NAMA PESERTA', labelX, detailsStartY);
       doc.text('TANGGAL EVENT', labelX, detailsStartY + 9);
+      
+      if (startTime && endTime) {
+        doc.text('JAM ACARA', labelX, detailsStartY + 18);
+        doc.setTextColor(darkGray);
+        doc.text(`${startTime} - ${endTime} WIB`, valueX, detailsStartY + 18);
+        doc.setTextColor(slate400);
+        detailsStartY += 9;
+      }
+
       doc.text('JUMLAH PAX', labelX, detailsStartY + 18);
       doc.text('KODE VOUCHER', labelX, detailsStartY + 27);
 
       doc.setTextColor(darkGray);
-      doc.text(event.participantName, valueX, detailsStartY);
-      doc.text(format(new Date(eventDate), 'dd MMMM yyyy'), valueX, detailsStartY + 9);
+      doc.text(event.participantName, valueX, detailsStartY - 9 + 9); // NAMA PESERTA
+      doc.text(format(new Date(eventDate), 'dd MMMM yyyy'), valueX, detailsStartY); // TANGGAL
       doc.text(`${event.pax} Orang`, valueX, detailsStartY + 18);
       
       doc.setTextColor(accentColor);
       doc.setFontSize(11);
       doc.text(event.voucherCode, valueX, detailsStartY + 27);
 
+      // Description if exists
+      if (descText) {
+        const descY = detailsStartY + 38;
+        doc.setTextColor(slate400);
+        doc.setFontSize(8);
+        doc.text('DESKRIPSI EVENT:', labelX, descY);
+        doc.setTextColor(slate500);
+        doc.setFont('helvetica', 'normal');
+        doc.text(splitDesc, labelX, descY + 5);
+        detailsStartY += descHeight;
+      }
+
       // QR Code Area
       const qrSize = 35;
-      const qrY = detailsStartY + 35;
+      const qrY = detailsStartY + 38;
       const qrDataUrl = await QRCode.toDataURL(event.voucherCode, { 
         margin: 1, 
         width: 200,
@@ -415,7 +456,7 @@ export default function AdminCustomEventsPage() {
       });
       doc.addImage(qrDataUrl, 'PNG', (width - qrSize) / 2, qrY, qrSize, qrSize);
 
-      // Footer Instructions (Inside Card or Below)
+      // Footer Instructions
       doc.setTextColor(slate500);
       doc.setFontSize(7);
       doc.setFont('helvetica', 'normal');
@@ -679,14 +720,43 @@ export default function AdminCustomEventsPage() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Event Date</label>
-                  <Input 
-                    required
-                    type="date"
-                    value={groupFormData.eventDate}
-                    onChange={e => setGroupFormData({...groupFormData, eventDate: e.target.value})}
-                    className="rounded-2xl bg-gray-50 border-transparent h-12 text-sm font-bold"
+                  <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Event Description (Optional)</label>
+                  <textarea 
+                    placeholder="Detail acara, lokasi spesifik, atau instruksi tambahan..."
+                    value={groupFormData.description}
+                    onChange={e => setGroupFormData({...groupFormData, description: e.target.value})}
+                    className="w-full rounded-2xl bg-gray-50 border-transparent p-4 text-sm font-bold min-h-[100px] focus:outline-none focus:ring-2 focus:ring-brand/20"
                   />
+                </div>
+                <div className="grid grid-cols-3 gap-4">
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Date</label>
+                    <Input 
+                      required
+                      type="date"
+                      value={groupFormData.eventDate}
+                      onChange={e => setGroupFormData({...groupFormData, eventDate: e.target.value})}
+                      className="rounded-2xl bg-gray-50 border-transparent h-12 text-sm font-bold"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Start Time</label>
+                    <Input 
+                      type="time"
+                      value={groupFormData.startTime}
+                      onChange={e => setGroupFormData({...groupFormData, startTime: e.target.value})}
+                      className="rounded-2xl bg-gray-50 border-transparent h-12 text-sm font-bold"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">End Time</label>
+                    <Input 
+                      type="time"
+                      value={groupFormData.endTime}
+                      onChange={e => setGroupFormData({...groupFormData, endTime: e.target.value})}
+                      className="rounded-2xl bg-gray-50 border-transparent h-12 text-sm font-bold"
+                    />
+                  </div>
                 </div>
                 <div className="space-y-3">
                   <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Event Logos (Common for all vouchers)</label>
