@@ -400,7 +400,7 @@ export default function AdminCustomEventsPage() {
       doc.line(cardX + cardPadding, currentY + 18, width - cardX - cardPadding, currentY + 18);
 
       // Details Section
-      let detailsStartY = currentY + 28;
+      let currentDetailY = currentY + 28;
       const labelX = cardX + cardPadding;
       const valueX = cardX + 45;
 
@@ -408,44 +408,58 @@ export default function AdminCustomEventsPage() {
       doc.setTextColor(slate400);
       doc.setFont('helvetica', 'bold');
       
-      doc.text('NAMA PESERTA', labelX, detailsStartY);
-      doc.text('TANGGAL EVENT', labelX, detailsStartY + 9);
+      // Row 1: Nama Peserta
+      doc.text('NAMA PESERTA', labelX, currentDetailY);
+      doc.setTextColor(darkGray);
+      doc.text(event.participantName, valueX, currentDetailY);
       
+      // Row 2: Tanggal Event
+      currentDetailY += 9;
+      doc.setTextColor(slate400);
+      doc.text('TANGGAL EVENT', labelX, currentDetailY);
+      doc.setTextColor(darkGray);
+      doc.text(format(new Date(eventDate), 'dd MMMM yyyy'), valueX, currentDetailY);
+
+      // Row 3: Jam Acara (Optional)
       if (startTime && endTime) {
-        doc.text('JAM ACARA', labelX, detailsStartY + 18);
-        doc.setTextColor(darkGray);
-        doc.text(`${startTime} - ${endTime} WIB`, valueX, detailsStartY + 18);
+        currentDetailY += 9;
         doc.setTextColor(slate400);
-        detailsStartY += 9;
+        doc.text('JAM ACARA', labelX, currentDetailY);
+        doc.setTextColor(darkGray);
+        doc.text(`${startTime} - ${endTime} WIB`, valueX, currentDetailY);
       }
 
-      doc.text('JUMLAH PAX', labelX, detailsStartY + 18);
-      doc.text('KODE VOUCHER', labelX, detailsStartY + 27);
-
+      // Row 4: Jumlah Pax
+      currentDetailY += 9;
+      doc.setTextColor(slate400);
+      doc.text('JUMLAH PAX', labelX, currentDetailY);
       doc.setTextColor(darkGray);
-      doc.text(event.participantName, valueX, detailsStartY - 9 + 9); // NAMA PESERTA
-      doc.text(format(new Date(eventDate), 'dd MMMM yyyy'), valueX, detailsStartY); // TANGGAL
-      doc.text(`${event.pax} Orang`, valueX, detailsStartY + 18);
-      
+      doc.text(`${event.pax} Orang`, valueX, currentDetailY);
+
+      // Row 5: Kode Voucher
+      currentDetailY += 9;
+      doc.setTextColor(slate400);
+      doc.text('KODE VOUCHER', labelX, currentDetailY);
       doc.setTextColor(accentColor);
       doc.setFontSize(11);
-      doc.text(event.voucherCode, valueX, detailsStartY + 27);
+      doc.text(event.voucherCode, valueX, currentDetailY);
 
       // Description if exists
       if (descText) {
-        const descY = detailsStartY + 38;
+        currentDetailY += 12;
         doc.setTextColor(slate400);
         doc.setFontSize(8);
-        doc.text('DESKRIPSI EVENT:', labelX, descY);
+        doc.setFont('helvetica', 'bold');
+        doc.text('DESKRIPSI EVENT:', labelX, currentDetailY);
         doc.setTextColor(slate500);
         doc.setFont('helvetica', 'normal');
-        doc.text(splitDesc, labelX, descY + 5);
-        detailsStartY += descHeight;
+        doc.text(splitDesc, labelX, currentDetailY + 5);
+        currentDetailY += descHeight;
       }
 
       // QR Code Area
       const qrSize = 35;
-      const qrY = detailsStartY + 38;
+      const qrY = currentDetailY + 10;
       const qrDataUrl = await QRCode.toDataURL(event.voucherCode, { 
         margin: 1, 
         width: 200,
