@@ -482,8 +482,8 @@ export default function AdminCustomEventsPage() {
       }
 
       // QR Code Area - Positioned inside card
-      const qrSize = 28; // Reduced size for better fit
-      const qrY = currentDetailY + 4;
+      const qrSize = 34; // Slightly enlarged as requested
+      const qrY = currentDetailY + 6;
       const qrDataUrl = await QRCode.toDataURL(event.voucherCode, { 
         margin: 1, 
         width: 200,
@@ -494,24 +494,25 @@ export default function AdminCustomEventsPage() {
       });
       doc.addImage(qrDataUrl, 'PNG', (width - qrSize) / 2, qrY, qrSize, qrSize);
 
-      // Footer Instructions - Inside Card
+      // Footer Section - Precise Alignment
+      const footerStartY = qrY + qrSize + 8;
+      
       doc.setTextColor(slate500);
-      doc.setFontSize(6.5);
+      doc.setFontSize(7);
       doc.setFont('helvetica', 'normal');
-      doc.text('Scan QR Code ini di pintu masuk / outlet terkait.', width / 2, qrY + qrSize + 4, { align: 'center' });
+      doc.text('Scan QR Code ini di pintu masuk / outlet terkait.', width / 2, footerStartY, { align: 'center' });
 
-      // Global Footer Section - Fixed distance from bottom
-      const footerBottomY = height - 10;
       doc.setTextColor(slate400);
-      doc.setFontSize(7.5);
+      doc.setFontSize(8);
       doc.setFont('helvetica', 'bold');
-      doc.text('SYARAT & KETENTUAN', width / 2, footerBottomY - 7, { align: 'center' });
+      doc.text('SYARAT & KETENTUAN', width / 2, footerStartY + 6, { align: 'center' });
       
       doc.setFont('helvetica', 'normal');
-      doc.setFontSize(6);
-      doc.text('Voucher ini bersifat personal dan hanya valid pada tanggal yang tertera.', width / 2, footerBottomY - 4, { align: 'center' });
-      doc.text('Pihak manajemen berhak membatalkan voucher jika ditemukan indikasi kecurangan.', width / 2, footerBottomY - 1, { align: 'center' });
+      doc.setFontSize(7);
+      doc.text('Voucher ini bersifat personal dan hanya valid pada tanggal yang tertera.', width / 2, footerStartY + 10, { align: 'center' });
       
+      // Removed: "Pihak manajemen berhak membatalkan voucher jika ditemukan indikasi kecurangan."
+
       // Bottom Branding Strip
       doc.setFillColor(brandColor);
       doc.rect(0, height - 3, width, 3, 'F');
