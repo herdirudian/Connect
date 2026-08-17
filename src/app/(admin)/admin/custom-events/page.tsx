@@ -310,15 +310,22 @@ export default function AdminCustomEventsPage() {
       const slate400 = '#94a3b8';
       const slate500 = '#64748b';
 
-      // Helper for images
-      const getImageBase64 = async (url: string): Promise<string> => {
+      // Helper for images with dimensions
+      const getImageData = async (url: string): Promise<{ base64: string, width: number, height: number }> => {
         const response = await fetch(url);
         const blob = await response.blob();
-        return new Promise((resolve, reject) => {
+        const base64 = await new Promise<string>((resolve, reject) => {
           const reader = new FileReader();
           reader.onloadend = () => resolve(reader.result as string);
           reader.onerror = reject;
           reader.readAsDataURL(blob);
+        });
+
+        return new Promise((resolve, reject) => {
+          const img = new Image();
+          img.onload = () => resolve({ base64, width: img.width, height: img.height });
+          img.onerror = reject;
+          img.src = base64;
         });
       };
 
@@ -340,30 +347,44 @@ export default function AdminCustomEventsPage() {
       doc.setFontSize(20);
       doc.text('E-VOUCHER EVENT', width / 2, 18, { align: 'center' });
       
-      // Removed "THE LODGE MARIBAYA EXPERIENCE" sub-title
-
       let currentY = 38;
 
-      // Event Logos Row
+      // Event Logos Row - Fixed Proportions
       if (logos) {
         try {
           const logoUrls = JSON.parse(logos) as string[];
           if (logoUrls.length > 0) {
-            const logoWidth = 20;
-            const logoHeight = 12;
-            const logoGap = 8;
-            const totalWidth = (logoUrls.length * logoWidth) + ((logoUrls.length - 1) * logoGap);
+            const maxLogoWidth = 25;
+            const maxLogoHeight = 15;
+            const logoGap = 10;
+            
+            // First pass: calculate total width to center
+            const logoData = await Promise.all(logoUrls.map(url => getImageData(url)));
+            const logoSpecs = logoData.map(data => {
+              const ratio = data.width / data.height;
+              let w = maxLogoWidth;
+              let h = w / ratio;
+              if (h > maxLogoHeight) {
+                h = maxLogoHeight;
+                w = h * ratio;
+              }
+              return { ...data, drawW: w, drawH: h };
+            });
+
+            const totalWidth = logoSpecs.reduce((sum, spec) => sum + spec.drawW, 0) + (logoSpecs.length - 1) * logoGap;
             let startX = (width - totalWidth) / 2;
 
-            for (const url of logoUrls) {
-              const base64 = await getImageBase64(url);
-              doc.addImage(base64, 'PNG', startX, currentY, logoWidth, logoHeight, undefined, 'FAST');
-              startX += logoWidth + logoGap;
+            for (const spec of logoSpecs) {
+              // Center vertically within maxLogoHeight
+              const yPos = currentY + (maxLogoHeight - spec.drawH) / 2;
+              doc.addImage(spec.base64, 'PNG', startX, yPos, spec.drawW, spec.drawH, undefined, 'FAST');
+              startX += spec.drawW + logoGap;
             }
-            currentY += 18;
+            currentY += maxLogoHeight + 8;
           }
         } catch (e) {
           console.error('Error adding logos to PDF:', e);
+          currentY += 5;
         }
       }
 
@@ -375,11 +396,12 @@ export default function AdminCustomEventsPage() {
       // Calculate dynamic height for description
       const descText = description || '';
       const splitDesc = doc.splitTextToSize(descText, cardWidth - (cardPadding * 2));
-      const descHeight = descText ? (splitDesc.length * 4) + 5 : 0;
+      const descHeight = descText ? (splitDesc.length * 4) + 8 : 0;
       
-      // Base height for static fields + QR area
-      const baseCardHeight = 95; 
-      const cardHeight = baseCardHeight + descHeight;
+      // Base height for static fields + QR area + Instructions
+      const staticFieldsHeight = 65; 
+      const qrAreaHeight = 45;
+      const cardHeight = staticFieldsHeight + descHeight + qrAreaHeight;
 
       doc.setFillColor(255, 255, 255);
       doc.roundedRect(cardX, currentY, cardWidth, cardHeight, 6, 6, 'F');
@@ -446,7 +468,7 @@ export default function AdminCustomEventsPage() {
 
       // Description if exists
       if (descText) {
-        currentDetailY += 10;
+        currentDetailY += 12;
         doc.setTextColor(slate400);
         doc.setFontSize(8);
         doc.setFont('helvetica', 'bold');
@@ -455,11 +477,13 @@ export default function AdminCustomEventsPage() {
         doc.setFont('helvetica', 'normal');
         doc.text(splitDesc, labelX, currentDetailY + 5);
         currentDetailY += descHeight;
+      } else {
+        currentDetailY += 5;
       }
 
-      // QR Code Area
-      const qrSize = 30; // Reduced size slightly for better fit
-      const qrY = currentDetailY + 10;
+      // QR Code Area - Positioned inside card
+      const qrSize = 32;
+      const qrY = currentDetailY + 5;
       const qrDataUrl = await QRCode.toDataURL(event.voucherCode, { 
         margin: 1, 
         width: 200,
@@ -470,23 +494,23 @@ export default function AdminCustomEventsPage() {
       });
       doc.addImage(qrDataUrl, 'PNG', (width - qrSize) / 2, qrY, qrSize, qrSize);
 
-      // Footer Instructions
+      // Footer Instructions - Inside Card
       doc.setTextColor(slate500);
       doc.setFontSize(7);
       doc.setFont('helvetica', 'normal');
       doc.text('Scan QR Code ini di pintu masuk / outlet terkait.', width / 2, qrY + qrSize + 5, { align: 'center' });
 
-      // Global Footer Section
-      const footerY = height - 18;
+      // Global Footer Section - Fixed distance from bottom
+      const footerBottomY = height - 12;
       doc.setTextColor(slate400);
       doc.setFontSize(8);
       doc.setFont('helvetica', 'bold');
-      doc.text('SYARAT & KETENTUAN', width / 2, footerY, { align: 'center' });
+      doc.text('SYARAT & KETENTUAN', width / 2, footerBottomY - 8, { align: 'center' });
       
       doc.setFont('helvetica', 'normal');
       doc.setFontSize(6.5);
-      doc.text('Voucher ini bersifat personal dan hanya valid pada tanggal yang tertera.', width / 2, footerY + 4, { align: 'center' });
-      doc.text('Pihak manajemen berhak membatalkan voucher jika ditemukan indikasi kecurangan.', width / 2, footerY + 7, { align: 'center' });
+      doc.text('Voucher ini bersifat personal dan hanya valid pada tanggal yang tertera.', width / 2, footerBottomY - 4, { align: 'center' });
+      doc.text('Pihak manajemen berhak membatalkan voucher jika ditemukan indikasi kecurangan.', width / 2, footerBottomY - 1, { align: 'center' });
       
       // Bottom Branding Strip
       doc.setFillColor(brandColor);
