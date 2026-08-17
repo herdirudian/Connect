@@ -398,10 +398,10 @@ export default function AdminCustomEventsPage() {
       const splitDesc = doc.splitTextToSize(descText, cardWidth - (cardPadding * 2));
       const descHeight = descText ? (splitDesc.length * 4) + 8 : 0;
       
-      // Base height for static fields + QR area + Instructions
-      const staticFieldsHeight = 65; 
-      const qrAreaHeight = 45;
-      const cardHeight = staticFieldsHeight + descHeight + qrAreaHeight;
+      // Base height for static fields + QR area + Footer Instructions
+      const staticFieldsHeight = 62; 
+      const footerAreaHeight = 65; // Area for QR + Instructions + T&C
+      const cardHeight = staticFieldsHeight + descHeight + footerAreaHeight;
 
       doc.setFillColor(255, 255, 255);
       doc.roundedRect(cardX, currentY, cardWidth, cardHeight, 6, 6, 'F');
@@ -468,7 +468,7 @@ export default function AdminCustomEventsPage() {
 
       // Description if exists
       if (descText) {
-        currentDetailY += 8; // Reduced from 10
+        currentDetailY += 8;
         doc.setTextColor(slate400);
         doc.setFontSize(7.5);
         doc.setFont('helvetica', 'bold');
@@ -478,12 +478,12 @@ export default function AdminCustomEventsPage() {
         doc.text(splitDesc, labelX, currentDetailY + 4);
         currentDetailY += descHeight;
       } else {
-        currentDetailY += 2; // Reduced from 4
+        currentDetailY += 2;
       }
 
       // QR Code Area - Positioned inside card
       const qrSize = 34; 
-      const qrY = currentDetailY + 2; // Reduced from 6
+      const qrY = currentDetailY + 2;
       const qrDataUrl = await QRCode.toDataURL(event.voucherCode, { 
         margin: 1, 
         width: 200,
@@ -494,8 +494,8 @@ export default function AdminCustomEventsPage() {
       });
       doc.addImage(qrDataUrl, 'PNG', (width - qrSize) / 2, qrY, qrSize, qrSize);
 
-      // Footer Section - Precise Alignment & Moved Up
-      const footerStartY = qrY + qrSize + 5; // Reduced from 8
+      // Footer Section - INSIDE CARD
+      const footerStartY = qrY + qrSize + 6;
       
       doc.setTextColor(slate500);
       doc.setFontSize(7);
@@ -505,11 +505,11 @@ export default function AdminCustomEventsPage() {
       doc.setTextColor(slate400);
       doc.setFontSize(8);
       doc.setFont('helvetica', 'bold');
-      doc.text('SYARAT & KETENTUAN', width / 2, footerStartY + 5, { align: 'center' });
+      doc.text('SYARAT & KETENTUAN', width / 2, footerStartY + 6, { align: 'center' });
       
       doc.setFont('helvetica', 'normal');
       doc.setFontSize(7);
-      doc.text('Voucher ini bersifat personal dan hanya valid pada tanggal yang tertera.', width / 2, footerStartY + 9, { align: 'center' });
+      doc.text('Voucher ini bersifat personal dan hanya valid pada tanggal yang tertera.', width / 2, footerStartY + 10, { align: 'center' });
       
       // Removed: "Pihak manajemen berhak membatalkan voucher jika ditemukan indikasi kecurangan."
 
