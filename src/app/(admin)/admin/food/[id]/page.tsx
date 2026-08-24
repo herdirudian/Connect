@@ -6,6 +6,12 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Plus, Trash2, Edit2, ArrowLeft, Loader2, XCircle } from 'lucide-react';
 import { useRouter } from 'next/navigation';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 interface MenuItem {
   id: string;
@@ -98,7 +104,6 @@ export default function AdminRestaurantMenuPage({ params }: { params: Promise<{ 
     });
     setEditingId(item.id);
     setIsAdding(true);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
   async function handleFileUpload(e: React.ChangeEvent<HTMLInputElement>) {
@@ -203,150 +208,145 @@ export default function AdminRestaurantMenuPage({ params }: { params: Promise<{ 
         <div className="ml-auto">
              <Button 
                 onClick={() => {
-                    if (isAdding) {
-                        resetForm();
-                    } else {
-                        setIsAdding(true);
-                    }
+                    resetForm();
+                    setIsAdding(true);
                 }} 
             >
-                {isAdding ? <><XCircle size={16} className="mr-2" /> Cancel</> : <><Plus size={16} className="mr-2" /> Add Item</>}
+                <Plus size={16} className="mr-2" /> Add Item
             </Button>
         </div>
       </div>
 
-      {isAdding && (
-        <Card className="mb-6 border-gray-200 shadow-md animate-in fade-in slide-in-from-top-4">
-          <CardHeader>
-            <CardTitle>{editingId ? 'Edit Menu Item' : 'Add New Menu Item'}</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">Name</label>
-                  <Input 
-                    value={formData.name}
-                    onChange={(e) => setFormData({...formData, name: e.target.value})}
-                    placeholder="e.g. Nasi Goreng"
-                    required
-                  />
-                </div>
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">Category</label>
-                  <select 
-                    className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-                    value={formData.category}
-                    onChange={(e) => setFormData({...formData, category: e.target.value})}
-                  >
-                    <option value="Main Course">Main Course</option>
-                    <option value="Appetizer">Appetizer</option>
-                    <option value="Dessert">Dessert</option>
-                    <option value="Beverage">Beverage</option>
-                    <option value="Snack">Snack</option>
-                  </select>
-                </div>
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">Price (IDR)</label>
-                  <Input 
-                    type="number"
-                    value={formData.price}
-                    onChange={(e) => setFormData({...formData, price: e.target.value})}
-                    placeholder="e.g. 35000"
-                    required
-                  />
-                </div>
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">Original Price (Optional)</label>
-                  <Input 
-                    type="number"
-                    value={formData.originalPrice}
-                    onChange={(e) => setFormData({...formData, originalPrice: e.target.value})}
-                    placeholder="e.g. 50000"
-                  />
-                  <p className="text-xs text-gray-500">Fill this to show a discount.</p>
-                </div>
-                <div className="space-y-2">
-                    <label className="text-sm font-medium">Availability</label>
-                    <div className="flex items-center space-x-2 mt-2">
-                        <input 
-                            type="checkbox" 
-                            id="available" 
-                            checked={formData.available} 
-                            onChange={(e) => setFormData({...formData, available: e.target.checked})}
-                            className="h-4 w-4 rounded border-gray-300 text-brand focus:ring-brand"
-                        />
-                        <label htmlFor="available" className="text-sm font-medium text-gray-700">Available</label>
-                    </div>
-                </div>
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">Sold Out (manual)</label>
+      <Dialog open={isAdding} onOpenChange={setIsAdding}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>{editingId ? 'Edit Menu Item' : 'Add New Menu Item'}</DialogTitle>
+          </DialogHeader>
+          <form onSubmit={handleSubmit} className="space-y-4 py-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Name</label>
+                <Input 
+                  value={formData.name}
+                  onChange={(e) => setFormData({...formData, name: e.target.value})}
+                  placeholder="e.g. Nasi Goreng"
+                  required
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Category</label>
+                <select 
+                  className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                  value={formData.category}
+                  onChange={(e) => setFormData({...formData, category: e.target.value})}
+                >
+                  <option value="Main Course">Main Course</option>
+                  <option value="Appetizer">Appetizer</option>
+                  <option value="Dessert">Dessert</option>
+                  <option value="Beverage">Beverage</option>
+                  <option value="Snack">Snack</option>
+                </select>
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Price (IDR)</label>
+                <Input 
+                  type="number"
+                  value={formData.price}
+                  onChange={(e) => setFormData({...formData, price: e.target.value})}
+                  placeholder="e.g. 35000"
+                  required
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Original Price (Optional)</label>
+                <Input 
+                  type="number"
+                  value={formData.originalPrice}
+                  onChange={(e) => setFormData({...formData, originalPrice: e.target.value})}
+                  placeholder="e.g. 50000"
+                />
+                <p className="text-xs text-gray-500">Fill this to show a discount.</p>
+              </div>
+              <div className="space-y-2">
+                  <label className="text-sm font-medium">Availability</label>
                   <div className="flex items-center space-x-2 mt-2">
                       <input 
                           type="checkbox" 
-                          id="soldOut" 
-                          checked={formData.soldOut as boolean} 
-                          onChange={(e) => setFormData({...formData, soldOut: e.target.checked})}
+                          id="available" 
+                          checked={formData.available} 
+                          onChange={(e) => setFormData({...formData, available: e.target.checked})}
                           className="h-4 w-4 rounded border-gray-300 text-brand focus:ring-brand"
                       />
-                      <label htmlFor="soldOut" className="text-sm font-medium text-gray-700">Mark as Sold Out</label>
+                      <label htmlFor="available" className="text-sm font-medium text-gray-700">Available</label>
                   </div>
-                </div>
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">Stock (optional)</label>
-                  <Input 
-                    type="number"
-                    value={formData.stock as string}
-                    onChange={(e) => setFormData({...formData, stock: e.target.value})}
-                    placeholder="Leave empty for always ready"
-                  />
-                  <p className="text-xs text-gray-500">Kosongkan artinya selalu ready. Isi 0 untuk habis.</p>
-                </div>
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">Minimal Order (Qty)</label>
-                  <Input
-                    type="number"
-                    value={formData.minOrderQty as string}
-                    onChange={(e) => setFormData({ ...formData, minOrderQty: e.target.value })}
-                    min={1}
-                    placeholder="1"
-                  />
-                  <p className="text-xs text-gray-500">Minimal jumlah pembelian untuk item ini.</p>
-                </div>
-                <div className="space-y-2 md:col-span-2">
-                  <label className="text-sm font-medium">Description</label>
-                  <Input 
-                    value={formData.description}
-                    onChange={(e) => setFormData({...formData, description: e.target.value})}
-                    placeholder="Brief description"
-                  />
-                </div>
-                <div className="space-y-2 md:col-span-2">
-                  <label className="text-sm font-medium">Image</label>
-                  <div className="flex gap-2">
-                    <Input 
-                        type="file" 
-                        accept="image/*"
-                        onChange={handleFileUpload}
-                        disabled={uploading}
-                        className="cursor-pointer"
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Sold Out (manual)</label>
+                <div className="flex items-center space-x-2 mt-2">
+                    <input 
+                        type="checkbox" 
+                        id="soldOut" 
+                        checked={formData.soldOut as boolean} 
+                        onChange={(e) => setFormData({...formData, soldOut: e.target.checked})}
+                        className="h-4 w-4 rounded border-gray-300 text-brand focus:ring-brand"
                     />
-                    {uploading && <Loader2 className="animate-spin h-10 w-10 text-brand" />}
-                  </div>
-                  {formData.imageUrl && (
-                    <div className="mt-2 relative h-32 w-32 rounded-md overflow-hidden border border-gray-200">
-                        <img src={formData.imageUrl} alt="Preview" className="h-full w-full object-cover" />
-                    </div>
-                  )}
+                    <label htmlFor="soldOut" className="text-sm font-medium text-gray-700">Mark as Sold Out</label>
                 </div>
               </div>
-              <Button type="submit" className="w-full bg-brand hover:bg-brand-dark text-white">
-                {editingId ? 'Update Item' : 'Save Item'}
-              </Button>
-            </form>
-          </CardContent>
-        </Card>
-      )}
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Stock (optional)</label>
+                <Input 
+                  type="number"
+                  value={formData.stock as string}
+                  onChange={(e) => setFormData({...formData, stock: e.target.value})}
+                  placeholder="Leave empty for always ready"
+                />
+                <p className="text-xs text-gray-500">Kosongkan artinya selalu ready. Isi 0 untuk habis.</p>
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Minimal Order (Qty)</label>
+                <Input
+                  type="number"
+                  value={formData.minOrderQty as string}
+                  onChange={(e) => setFormData({ ...formData, minOrderQty: e.target.value })}
+                  min={1}
+                  placeholder="1"
+                />
+                <p className="text-xs text-gray-500">Minimal jumlah pembelian untuk item ini.</p>
+              </div>
+              <div className="space-y-2 md:col-span-2">
+                <label className="text-sm font-medium">Description</label>
+                <Input 
+                  value={formData.description}
+                  onChange={(e) => setFormData({...formData, description: e.target.value})}
+                  placeholder="Brief description"
+                />
+              </div>
+              <div className="space-y-2 md:col-span-2">
+                <label className="text-sm font-medium">Image</label>
+                <div className="flex gap-2">
+                  <Input 
+                      type="file" 
+                      accept="image/*"
+                      onChange={handleFileUpload}
+                      disabled={uploading}
+                      className="cursor-pointer"
+                  />
+                  {uploading && <Loader2 className="animate-spin h-10 w-10 text-brand" />}
+                </div>
+                {formData.imageUrl && (
+                  <div className="mt-2 relative h-32 w-32 rounded-md overflow-hidden border border-gray-200">
+                      <img src={formData.imageUrl} alt="Preview" className="h-full w-full object-cover" />
+                  </div>
+                )}
+              </div>
+            </div>
+            <Button type="submit" className="w-full bg-brand hover:bg-brand-dark text-white">
+              {editingId ? 'Update Item' : 'Save Item'}
+            </Button>
+          </form>
+        </DialogContent>
+      </Dialog>
 
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
         {menuItems.map((item) => (
