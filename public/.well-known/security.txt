@@ -1,0 +1,5 @@
+Contact: mailto:it@thelodgegroup.id
+Expires: 2027-08-24T23:00:00.000Z
+Preferred-Languages: id, en
+Canonical: https://family.thelodgegroup.id/.well-known/security.txt
+Policy: https://family.thelodgegroup.id/security-policy
