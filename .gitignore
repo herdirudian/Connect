@@ -43,4 +43,7 @@ next-env.d.ts
 # reports
 PentestTools-WebsiteScanner-report*.pdf
 
+# uploads
+/public/uploads/
+
 /src/generated/prisma

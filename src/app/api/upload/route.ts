@@ -25,7 +25,9 @@ export async function POST(request: Request) {
 
     // Create unique filename
     const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
-    const filename = file.name.replace(/\.[^/.]+$/, "") + '-' + uniqueSuffix + path.extname(file.name);
+    const originalName = file.name.replace(/\.[^/.]+$/, "");
+    const sanitizedName = originalName.replace(/[^a-z0-9]/gi, '-').toLowerCase();
+    const filename = `${sanitizedName}-${uniqueSuffix}${path.extname(file.name)}`;
     
     // Save to public/uploads/avatars
     const uploadDir = path.join(process.cwd(), 'public/uploads/avatars');
