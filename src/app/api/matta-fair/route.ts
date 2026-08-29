@@ -13,18 +13,24 @@ export async function POST(req: Request) {
       );
     }
 
-    /* 
-    // Save to database (Optional: Add MattaFairRegistration model to schema if needed)
-    try {
-      // For now, we skip database logging to avoid build errors 
-      // as the model ContactMessage does not exist in the schema.
-    } catch (dbError) {
-      console.error('Database logging failed:', dbError);
-    }
-    */
-
     // Generate unique QR code for Matta Fair redemption
     const qrCode = `MTF-${Date.now()}-${Math.random().toString(36).substring(2, 7).toUpperCase()}`;
+
+    // Save to database
+    try {
+      await prisma.mattaFairRegistration.create({
+        data: {
+          fullName: fullName,
+          whatsapp: whatsapp,
+          email: email,
+          city: city,
+          voucherCode: qrCode,
+        }
+      });
+    } catch (dbError) {
+      console.error('Database logging failed:', dbError);
+      // Continue even if DB fails, as long as email is sent
+    }
 
     // Send the e-voucher email
     await sendMattaFairVoucherEmail(email, fullName, qrCode);

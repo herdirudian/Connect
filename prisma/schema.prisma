@@ -775,3 +775,19 @@ model AuditLog {
   @@index([entityType, entityId])
   @@index([createdAt])
 }
+
+model MattaFairRegistration {
+  id              String   @id @default(cuid())
+  fullName        String
+  whatsapp        String
+  email           String
+  city            String
+  voucherCode     String   @unique
+  isUsed          Boolean  @default(false)
+  usedAt          DateTime?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([email])
+  @@index([voucherCode])
+}

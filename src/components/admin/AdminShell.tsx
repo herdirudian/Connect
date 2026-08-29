@@ -91,6 +91,7 @@ export function AdminShell({ children, userPermissions }: AdminShellProps) {
                   {can(PERMISSIONS.MANAGE_PROMOS) && <NavLink href="/admin/childrens-day-biodef" icon={Users} active={pathname.startsWith('/admin/childrens-day-biodef')}>Promo Biodef</NavLink>}
                   {can(PERMISSIONS.MANAGE_PROMOS) && <NavLink href="/admin/special-giveaway-biodef" icon={Gift} active={pathname.startsWith('/admin/special-giveaway-biodef')}>Giveaway Biodef</NavLink>}
                   {can(PERMISSIONS.MANAGE_PROMOS) && <NavLink href="/admin/vouchers" icon={Ticket} active={pathname.startsWith('/admin/vouchers')}>Voucher Klaim</NavLink>}
+                  {can(PERMISSIONS.MANAGE_PROMOS) && <NavLink href="/admin/matta-fair" icon={Gift} active={pathname.startsWith('/admin/matta-fair')}>Matta Fair Rewards</NavLink>}
                   {can(PERMISSIONS.VIEW_REPORTS) && <NavLink href="/admin/reports/daily-sales" icon={LayoutDashboard} active={pathname.startsWith('/admin/reports')}>Reports System</NavLink>}
                 </nav>
             </div>

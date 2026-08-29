@@ -456,6 +456,40 @@ export async function getTicketDetails(id: string): Promise<TicketValidationResu
         return { success: true, message: 'Custom Event Voucher found', type: 'EVENT', data: mappedTicket };
     }
 
+    // 6. Try to find as Matta Fair Registration
+    const mattaFair = await prisma.mattaFairRegistration.findFirst({
+        where: {
+            OR: [
+                { id: searchId },
+                { voucherCode: searchId },
+                { id: { startsWith: searchId } },
+                { id: searchId.toLowerCase() },
+                { id: { startsWith: searchId.toLowerCase() } }
+            ]
+        }
+    });
+
+    if (mattaFair) {
+        const mappedTicket = {
+            id: mattaFair.id,
+            title: 'MATTA FAIR E-Voucher Rewards',
+            description: `City: ${mattaFair.city}`,
+            status: mattaFair.isUsed ? 'USED' : 'ACTIVE',
+            validUntil: new Date('2027-08-31T23:59:59'),
+            usedAt: mattaFair.usedAt,
+            user: {
+                name: mattaFair.fullName,
+                email: mattaFair.email,
+                tier: 'MATTA_GUEST'
+            },
+            type: 'PROMO',
+            amount: 0,
+            pax: 1,
+            items: [{ id: mattaFair.id, name: 'MATTA FAIR Rewards (Free Access, Sky Tree, etc)', qty: 1, price: 0 }]
+        };
+        return { success: true, message: 'Matta Fair Voucher found', type: 'PROMO', data: mappedTicket };
+    }
+
     return { success: false, message: 'Ticket, Voucher, or Promo not found' };
   } catch (error) {
     console.error('Error fetching details:', error);
@@ -495,7 +529,7 @@ export async function getRedemptionHistory(limit: number = 20, dateStr?: string)
     lt: new Date(`${dateStr}T23:59:59.999`)
   } : undefined;
 
-  const [usedTickets, usedVouchers, promoTxs, usedBookings, usedChildrensDay, usedCustomEvents] = await Promise.all([
+  const [usedTickets, usedVouchers, promoTxs, usedBookings, usedChildrensDay, usedCustomEvents, usedMattaFair] = await Promise.all([
     prisma.ticket.findMany({
       where: { 
         status: 'USED', 
@@ -545,6 +579,14 @@ export async function getRedemptionHistory(limit: number = 20, dateStr?: string)
         usedAt: whereDate || { not: null }
       },
       include: { group: true },
+      orderBy: { usedAt: 'desc' },
+      take: limit,
+    }),
+    prisma.mattaFairRegistration.findMany({
+      where: {
+        isUsed: true,
+        usedAt: whereDate || { not: null }
+      },
       orderBy: { usedAt: 'desc' },
       take: limit,
     })
@@ -673,6 +715,19 @@ export async function getRedemptionHistory(limit: number = 20, dateStr?: string)
         usedAt: ce.usedAt as Date,
       };
     }),
+    ...usedMattaFair.map(m => ({
+        id: m.id,
+        type: 'PROMO' as const,
+        title: 'MATTA FAIR E-Voucher Rewards',
+        description: `City: ${m.city}`,
+        userName: m.fullName,
+        userEmail: m.email,
+        amount: 0,
+        items: [{ name: 'MATTA FAIR Rewards (Free Access, Sky Tree, etc)', qty: 1, price: 0 }],
+        pax: 1,
+        transactionId: m.id,
+        usedAt: m.usedAt as Date,
+    })),
   ];
 
   items.sort((a, b) => b.usedAt.getTime() - a.usedAt.getTime());
@@ -871,7 +926,7 @@ export async function redeemTicket(id: string): Promise<TicketValidationResult> 
       }
 
       const updated = await prisma.customEvent.update({
-        where: { id },
+        where: { id: customEvent.id },
         data: {
           status: 'USED',
           usedAt: new Date()
@@ -888,6 +943,33 @@ export async function redeemTicket(id: string): Promise<TicketValidationResult> 
 
       revalidatePath('/admin/validate');
       return { success: true, message: 'Custom Event Voucher successfully redeemed', type: 'EVENT', data: mappedData };
+    }
+
+    // 6. Try Matta Fair Registration
+    const mattaFair = await prisma.mattaFairRegistration.findUnique({ where: { id } });
+    if (mattaFair) {
+      if (mattaFair.isUsed) {
+        return { success: false, message: 'Voucher Matta Fair sudah pernah digunakan' };
+      }
+
+      const updated = await prisma.mattaFairRegistration.update({
+        where: { id },
+        data: {
+          isUsed: true,
+          usedAt: new Date()
+        }
+      });
+
+      const mappedData = {
+        id: updated.id,
+        title: 'MATTA FAIR E-Voucher Rewards',
+        status: 'USED',
+        usedAt: updated.usedAt,
+        type: 'PROMO'
+      };
+
+      revalidatePath('/admin/validate');
+      return { success: true, message: 'Voucher Matta Fair berhasil diredeem', type: 'PROMO', data: mappedData };
     }
 
     return { success: false, message: 'Item not found' };
