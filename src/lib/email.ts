@@ -1,6 +1,7 @@
 import nodemailer from 'nodemailer';
 import QRCode from 'qrcode';
 import jsPDF from 'jspdf';
+import path from 'path';
 
 const transporter = nodemailer.createTransport({
   host: process.env.SMTP_HOST,
@@ -712,7 +713,7 @@ export async function sendMattaFairVoucherEmail(to: string, fullName: string, qr
       attachments: [
         {
           filename: 'logo.png',
-          path: 'c:/xampp/htdocs/familythelodge/public/logotlm.png',
+          path: path.join(process.cwd(), 'public', 'logotlm.png'),
           cid: 'logo'
         },
         {
