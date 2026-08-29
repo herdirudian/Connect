@@ -23,8 +23,11 @@ export async function POST(req: Request) {
     }
     */
 
+    // Generate unique QR code for Matta Fair redemption
+    const qrCode = `MTF-${Date.now()}-${Math.random().toString(36).substring(2, 7).toUpperCase()}`;
+
     // Send the e-voucher email
-    await sendMattaFairVoucherEmail(email, fullName);
+    await sendMattaFairVoucherEmail(email, fullName, qrCode);
 
     return NextResponse.json({ 
       message: 'Registration successful! Please check your email for the e-voucher.' 
