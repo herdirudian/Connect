@@ -3,9 +3,10 @@
 import React, { useState } from 'react';
 import Image from 'next/image';
 import { CheckCircle2, Gift, MapPin, Phone, Mail, User, ArrowRight, Globe } from 'lucide-react';
-import { toast } from 'sonner';
+import { useToast } from '@/hooks/use-toast';
 
 export default function MattaFairPage() {
+  const { toast } = useToast();
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
     fullName: '',
@@ -28,13 +29,24 @@ export default function MattaFairPage() {
       const data = await response.json();
 
       if (response.ok) {
-        toast.success(data.message);
+        toast({
+          title: "Registration Successful",
+          description: data.message,
+        });
         setFormData({ fullName: '', whatsapp: '', email: '', city: '' });
       } else {
-        toast.error(data.message || 'Something went wrong');
+        toast({
+          title: "Error",
+          description: data.message || 'Something went wrong',
+          variant: "destructive",
+        });
       }
     } catch (error) {
-      toast.error('Connection error. Please try again.');
+      toast({
+        title: "Connection Error",
+        description: "Please check your internet connection and try again.",
+        variant: "destructive",
+      });
     } finally {
       setLoading(false);
     }
