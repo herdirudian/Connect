@@ -650,3 +650,61 @@ export async function sendVoucherClaimEmail(to: string, fullName: string, vouche
     throw new Error('Gagal mengirim email voucher');
   }
 }
+
+export async function sendMattaFairVoucherEmail(to: string, fullName: string) {
+  const mailOptions = {
+    from: process.env.FROM_EMAIL,
+    to,
+    subject: 'E-Voucher The Lodge Maribaya x MATTA Fair',
+    html: `
+      <div style="font-family: Arial, sans-serif; padding: 20px; color: #333; max-width: 600px; margin: 0 auto; border: 1px solid #eee; border-radius: 10px;">
+        <div style="text-align: center; margin-bottom: 20px;">
+          <img src="${APP_URL}/logotlm.png" alt="The Lodge Maribaya" style="height: 48px; margin-bottom: 8px;" />
+          <h2 style="color: #1b5e20; margin: 0;">E-Voucher Rewards</h2>
+          <p style="color: #666; font-size: 14px;">The Lodge Maribaya x MATTA Fair</p>
+        </div>
+        
+        <p>Hi <strong>${fullName}</strong>,</p>
+        <p>Thank you for participating in the MATTA Fair. Here is your special E-Voucher for your visit to The Lodge Maribaya:</p>
+        
+        <div style="background-color: #f9f9f9; padding: 30px; border-radius: 15px; text-align: center; border: 2px dashed #1b5e20; margin: 20px 0;">
+          <p style="margin-top: 0; font-size: 14px; color: #666;">PROMO CODE:</p>
+          <h1 style="letter-spacing: 5px; color: #1b5e20; font-size: 36px; margin: 10px 0;">MATTA</h1>
+          <p style="color: #c62828; font-size: 14px; font-weight: bold;">SPECIAL REWARDS</p>
+        </div>
+
+        <div style="margin-top: 30px; padding: 20px; background-color: #fff8e1; border-radius: 10px; font-size: 13px;">
+          <h3 style="margin-top: 0; color: #f57f17;">Voucher Benefits:</h3>
+          <ul style="padding-left: 20px; margin-bottom: 0;">
+            <li><strong>Validity:</strong> September 7, 2026 - August 31, 2027</li>
+            <li><strong>Free Access</strong> to The Lodge Maribaya</li>
+            <li><strong>Free Sky Tree</strong> ride</li>
+            <li><strong>20% Discount</strong> on F&B</li>
+            <li><strong>10% Discount</strong> on stay at Camp & Village</li>
+          </ul>
+        </div>
+
+        <div style="margin-top: 20px; font-size: 13px; color: #666;">
+          <p><strong>Terms & Conditions:</strong></p>
+          <ul style="padding-left: 20px;">
+            <li>Please show this email at our ticket counter upon arrival.</li>
+            <li>Discount for stay can be claimed by using code <strong>MATTA</strong> on our website.</li>
+            <li>Official Website: <a href="https://thelodgegroup.id/" style="color: #1b5e20; font-weight: bold;">thelodgegroup.id</a></li>
+          </ul>
+        </div>
+
+        <p style="margin-top: 40px; font-size: 12px; color: #888; text-align: center; border-top: 1px solid #eee; padding-top: 20px;">
+          &copy; ${new Date().getFullYear()} The Lodge Maribaya. All rights reserved.
+        </p>
+      </div>
+    `,
+  };
+
+  try {
+    await transporter.sendMail(mailOptions);
+    console.log(`Matta Fair voucher email sent to ${to}`);
+  } catch (error) {
+    console.error('Error sending Matta Fair voucher email:', error);
+    throw new Error('Failed to send e-voucher email');
+  }
+}
