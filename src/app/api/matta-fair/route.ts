@@ -13,21 +13,15 @@ export async function POST(req: Request) {
       );
     }
 
-    // Save to database (optional, but good for tracking)
-    // We'll use a generic contact or lead table if exists, or just send email
+    /* 
+    // Save to database (Optional: Add MattaFairRegistration model to schema if needed)
     try {
-      await prisma.contactMessage.create({
-        data: {
-          name: fullName,
-          email: email,
-          subject: 'MATTA FAIR REGISTRATION',
-          message: `WhatsApp: ${whatsapp} | City: ${city}`,
-        }
-      });
+      // For now, we skip database logging to avoid build errors 
+      // as the model ContactMessage does not exist in the schema.
     } catch (dbError) {
       console.error('Database logging failed:', dbError);
-      // Continue even if DB fails
     }
+    */
 
     // Send the e-voucher email
     await sendMattaFairVoucherEmail(email, fullName);
