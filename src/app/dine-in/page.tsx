@@ -5,10 +5,11 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Loader2, Utensils } from 'lucide-react';
+import { ArrowLeft, Loader2, QrCode, Search, Utensils } from 'lucide-react';
 import Image from 'next/image';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { PAYMENT_METHODS, calculateFee } from '@/lib/fees';
+import QRCode from 'qrcode';
 
 type Restaurant = {
   id: string;
@@ -54,6 +55,20 @@ export default function DineInPage() {
   const [checkoutOpen, setCheckoutOpen] = useState(false);
   const [checkoutQuantities, setCheckoutQuantities] = useState<Record<string, number>>({});
   const [selectedMethod, setSelectedMethod] = useState<string>('');
+
+  const categoryStats = useMemo(() => {
+    const stats: Record<string, { count: number; minPrice: number; image?: string }> = {};
+    menu.forEach(item => {
+      const cat = item.category || 'Other';
+      if (!stats[cat]) {
+        stats[cat] = { count: 0, minPrice: item.price, image: item.imageUrl };
+      }
+      stats[cat].count++;
+      if (item.price < stats[cat].minPrice) stats[cat].minPrice = item.price;
+      if (!stats[cat].image && item.imageUrl) stats[cat].image = item.imageUrl;
+    });
+    return stats;
+  }, [menu]);
 
   useEffect(() => {
     fetchRestaurants();
@@ -405,32 +420,61 @@ export default function DineInPage() {
             </CardContent>
           </Card>
 
-          <Card className="border border-gray-100 shadow-sm bg-white rounded-2xl">
-            <CardHeader>
-              <CardTitle className="text-xl font-black text-brand-dark uppercase tracking-tight">Menu</CardTitle>
+          <Card className="border border-gray-100 shadow-sm bg-white rounded-2xl overflow-hidden">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
+              <CardTitle className="text-xl font-black text-brand-dark uppercase tracking-tight">
+                {selectedCategory === 'ALL' && !searchQuery ? 'Menu Categories' : `Menu: ${selectedCategory}`}
+              </CardTitle>
+              {(selectedCategory !== 'ALL' || !!searchQuery) && (
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  onClick={() => { setSelectedCategory('ALL'); setSearchQuery(''); }}
+                  className="text-brand font-bold hover:text-brand-dark hover:bg-brand-50"
+                >
+                  <ArrowLeft className="h-4 w-4 mr-2" /> Back to Categories
+                </Button>
+              )}
             </CardHeader>
             <CardContent>
-              {categories.length > 0 && (
-                <div className="mb-4 flex flex-wrap gap-2 items-center">
-                  <span className="text-xs font-bold text-gray-500 uppercase tracking-wider">Filter Kategori</span>
-                  {categories.map((cat) => (
+              {menu.length === 0 ? (
+                <div className="text-center py-20 text-gray-400 font-medium">Menu belum tersedia</div>
+              ) : selectedCategory === 'ALL' && !searchQuery ? (
+                /* Category Grid View */
+                <div className="grid gap-4 grid-cols-2 sm:grid-cols-3 lg:grid-cols-4">
+                  {categories.filter(c => c !== 'ALL').map((cat) => (
                     <button
                       key={cat}
-                      className={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider border transition ${
-                        selectedCategory === cat ? 'bg-brand-50 text-brand-dark border-brand' : 'bg-white text-gray-700 border-gray-200 hover:bg-gray-50'
-                      }`}
                       onClick={() => setSelectedCategory(cat)}
+                      className="group relative flex flex-col bg-white border-2 border-gray-100 rounded-3xl overflow-hidden hover:border-brand transition-all hover:shadow-lg text-left"
                     >
-                      {cat === 'ALL' ? 'All' : cat}
+                      <div className="aspect-[4/3] relative bg-gray-50 overflow-hidden">
+                        {categoryStats[cat]?.image ? (
+                          <Image src={categoryStats[cat].image!} alt={cat} fill className="object-cover group-hover:scale-105 transition-transform duration-500" />
+                        ) : (
+                          <div className="flex items-center justify-center h-full text-gray-200">
+                            <Utensils size={40} />
+                          </div>
+                        )}
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-60 group-hover:opacity-80 transition-opacity" />
+                        <div className="absolute bottom-3 left-3 right-3 text-white">
+                          <div className="text-xs font-black uppercase tracking-tighter opacity-80">Category</div>
+                          <div className="text-lg font-black uppercase leading-tight truncate">{cat}</div>
+                        </div>
+                      </div>
+                      <div className="p-3 bg-white flex justify-between items-center">
+                        <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">{categoryStats[cat]?.count || 0} Items</span>
+                        <div className="bg-brand-50 text-brand-dark p-1.5 rounded-xl group-hover:bg-brand group-hover:text-white transition-colors">
+                          <ArrowLeft className="h-3 w-3 rotate-180" />
+                        </div>
+                      </div>
                     </button>
                   ))}
                 </div>
-              )}
-              {menu.length === 0 ? (
-                <div className="text-gray-500">Menu belum tersedia</div>
               ) : filteredMenu.length === 0 ? (
-                <div className="text-gray-500">Item menu tidak ditemukan.</div>
+                <div className="text-center py-20 text-gray-400 font-medium">Item menu tidak ditemukan.</div>
               ) : (
+                /* Items View */
                 <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
                   {filteredMenu.map((item) => (
                     <Card key={item.id} className="flex flex-col hover:shadow-md transition-shadow border-2 rounded-2xl overflow-hidden">
