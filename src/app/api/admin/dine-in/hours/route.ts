@@ -18,9 +18,24 @@ function sanitizeHHMM(v?: string) {
   return `${String(h).padStart(2, '0')}:${String(min).padStart(2, '0')}`;
 }
 
-export async function GET() {
+export async function GET(req: Request) {
   if (!await isAdmin()) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   try {
+    const { searchParams } = new URL(req.url);
+    const restaurantId = searchParams.get('restaurantId');
+
+    if (restaurantId) {
+      const restaurant = await prisma.restaurant.findUnique({
+        where: { id: restaurantId },
+        select: { openingTime: true, closingTime: true }
+      });
+      return NextResponse.json({ 
+        open: restaurant?.openingTime || '07:00', 
+        close: restaurant?.closingTime || '22:00' 
+      });
+    }
+
+    // Legacy/Global fallback
     const rows: any[] = await prisma.$queryRaw`SELECT \`key\`, value FROM SystemSetting WHERE \`key\` IN ('DINE_IN_OPEN', 'DINE_IN_CLOSE')`;
     const map = new Map(rows.map(r => [r.key, r.value]));
     const open = sanitizeHHMM(map.get('DINE_IN_OPEN') || undefined) || '07:00';
@@ -34,11 +49,20 @@ export async function GET() {
 export async function POST(req: Request) {
   if (!await isAdmin()) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   try {
-    const { open, close } = await req.json() as { open: string; close: string };
+    const { open, close, restaurantId } = await req.json() as { open: string; close: string; restaurantId?: string };
     const o = sanitizeHHMM(open);
     const c = sanitizeHHMM(close);
     if (!o || !c) return NextResponse.json({ error: 'Format jam harus HH:mm' }, { status: 400 });
 
+    if (restaurantId) {
+      await prisma.restaurant.update({
+        where: { id: restaurantId },
+        data: { openingTime: o, closingTime: c }
+      });
+      return NextResponse.json({ success: true, open: o, close: c });
+    }
+
+    // Global save (Legacy)
     await prisma.$executeRaw`
       INSERT INTO SystemSetting (\`key\`, value, description, updatedAt, createdAt)
       VALUES ('DINE_IN_OPEN', ${o}, 'Jam buka Dine In', NOW(), NOW())

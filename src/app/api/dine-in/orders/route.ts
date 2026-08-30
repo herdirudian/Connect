@@ -36,8 +36,11 @@ export async function POST(req: Request) {
     // Resolve table number by slug if provided
     let finalTableNumber = tableNumber || '';
     if (tableSlug) {
-      const [table] = await prisma.$queryRaw<Array<{ number: string; active: number | boolean }>>`SELECT number, active FROM DineInTable WHERE slug = ${tableSlug} LIMIT 1`;
-      if (!table || (table.active !== 1 && table.active !== true)) {
+      const table = await prisma.dineInTable.findUnique({
+        where: { slug: tableSlug },
+        select: { number: true, active: true }
+      });
+      if (!table || !table.active) {
         return NextResponse.json({ error: 'Meja tidak valid atau tidak aktif' }, { status: 400 });
       }
       finalTableNumber = table.number;
@@ -46,9 +49,23 @@ export async function POST(req: Request) {
     // Prepare food price map
     const restaurant = await prisma.restaurant.findUnique({
       where: { id: restaurantId },
-      select: { allowOrders: true, allowDineIn: true }
+      select: { allowOrders: true, allowDineIn: true, openingTime: true, closingTime: true }
     });
     if (!restaurant) return NextResponse.json({ error: 'Restoran tidak ditemukan' }, { status: 404 });
+
+    // Validate operating hours
+    if (restaurant.openingTime && restaurant.closingTime) {
+      const [oh, om] = restaurant.openingTime.split(':').map(Number);
+      const [ch, cm] = restaurant.closingTime.split(':').map(Number);
+      const nowJakarta = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Jakarta' }));
+      const nowMinutes = nowJakarta.getHours() * 60 + nowJakarta.getMinutes();
+      const openMinutes = oh * 60 + om;
+      const closeMinutes = ch * 60 + cm;
+      if (nowMinutes < openMinutes || nowMinutes >= closeMinutes) {
+        return NextResponse.json({ error: `Restoran sedang tutup. Jam operasional: ${restaurant.openingTime} - ${restaurant.closingTime}` }, { status: 400 });
+      }
+    }
+
     if (!restaurant.allowOrders) return NextResponse.json({ error: 'Pemesanan makanan sedang tidak tersedia' }, { status: 400 });
     if (restaurant.allowDineIn === false) return NextResponse.json({ error: 'Restoran ini tidak tersedia untuk layanan Dine In' }, { status: 400 });
 

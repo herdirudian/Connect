@@ -71,37 +71,45 @@ export default function DineInPage() {
   }, []);
 
   useEffect(() => {
-    fetchHours();
-  }, []);
-
-  useEffect(() => {
     const id = setInterval(() => setNowTick((v) => v + 1), 60_000);
     return () => clearInterval(id);
   }, []);
-
-  async function fetchHours() {
-    try {
-      const res = await fetch('/api/dine-in/hours');
-      const data = await res.json();
-      if (data?.open && data?.close) setHours({ open: data.open, close: data.close });
-    } catch {}
-  }
   async function fetchTable(slug: string) {
     try {
       const res = await fetch(`/api/dine-in/tables/${encodeURIComponent(slug)}`);
       if (res.ok) {
         const data = await res.json();
         setTableNumber(data.number || '');
+        if (data.restaurant) {
+          setSelectedRestaurant(data.restaurant);
+          if (data.restaurant.openingTime && data.restaurant.closingTime) {
+            setHours({ open: data.restaurant.openingTime, close: data.restaurant.closingTime });
+          }
+        }
       }
     } catch (e) {
       console.error(e);
     }
   }
+
   useEffect(() => {
-    if (selectedRestaurant) {
+    if (selectedRestaurant && !tableSlug) {
+      fetchMenu(selectedRestaurant.id);
+      fetchRestaurantHours(selectedRestaurant.id);
+    } else if (selectedRestaurant && tableSlug) {
       fetchMenu(selectedRestaurant.id);
     }
-  }, [selectedRestaurant]);
+  }, [selectedRestaurant, tableSlug]);
+
+  async function fetchRestaurantHours(restaurantId: string) {
+    try {
+      const res = await fetch(`/api/admin/dine-in/hours?restaurantId=${restaurantId}`);
+      if (res.ok) {
+        const data = await res.json();
+        if (data?.open && data?.close) setHours({ open: data.open, close: data.close });
+      }
+    } catch {}
+  }
 
   async function fetchRestaurants() {
     try {

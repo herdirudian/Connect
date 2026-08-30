@@ -335,10 +335,14 @@ model Restaurant {
   allowDineIn       Boolean @default(true)
   minOrderAmount    Float   @default(0)
   
+  openingTime       String? // e.g. "08:00"
+  closingTime       String? // e.g. "22:00"
+  
   menuItems     MenuItem[]
   reservations  RestaurantReservation[]
   orders        FoodOrder[]
   reviews       Review[]
+  dineInTables  DineInTable[]
   
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
@@ -675,12 +679,14 @@ model RoomServiceRoom {
 }
 
 model DineInTable {
-  id        String   @id @default(uuid())
-  number    String
-  slug      String   @unique
-  active    Boolean  @default(true)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id           String      @id @default(uuid())
+  restaurantId String?
+  restaurant   Restaurant? @relation(fields: [restaurantId], references: [id])
+  number       String
+  slug         String      @unique
+  active       Boolean     @default(true)
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
 }
 
 model VoucherClaim {
