@@ -39,7 +39,7 @@ export default function AdminDineInPage() {
       const res = await fetch('/api/restaurants');
       const data = await res.json();
       if (Array.isArray(data)) {
-        setRestaurants(data.filter(r => r.active));
+        setRestaurants(data);
         if (data.length > 0) setSelectedId(data[0].id);
       }
     } catch (e) {
