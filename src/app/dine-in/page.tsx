@@ -317,45 +317,47 @@ export default function DineInPage() {
         </div>
       ) : (
         <>
-          <Card className="border border-gray-100 shadow-sm bg-white rounded-2xl">
-            <CardHeader>
-              <CardTitle className="text-xl font-black text-brand-dark uppercase tracking-tight">Pilih Restoran</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid gap-3 sm:grid-cols-2">
-                {!isOpenNow ? (
-                  <div className="text-sm text-gray-600 sm:col-span-2">
-                    Layanan Dine In sedang tutup. Pilihan restoran akan muncul otomatis saat jam operasional dimulai.
-                  </div>
-                ) : (
-                  <>
-                    {restaurants.map((r) => (
-                      <button
-                        key={r.id}
-                        className={`p-4 rounded-xl text-left transition border-2 ${
-                          selectedRestaurant?.id === r.id ? 'border-brand bg-brand-50' : 'border-gray-200 hover:bg-gray-50'
-                        }`}
-                        onClick={() => setSelectedRestaurant(r)}
-                        disabled={r.status !== 'Open' || r.allowOrders === false}
-                      >
-                        <div className="flex items-center gap-3">
-                          <Utensils size={18} />
-                          <div className="font-bold text-gray-900">{r.name}</div>
-                        </div>
-                        <div className="text-[11px] font-bold uppercase tracking-wider mt-2">
-                          <span className={`${r.status === 'Open' ? 'text-green-600' : 'text-red-600'}`}>
-                            {r.status === 'Open' ? 'Buka' : 'Tutup'}
-                          </span>
-                          <span className="text-gray-500 ml-1">• {r.allowOrders === false ? 'Pemesanan ditutup' : 'Pemesanan tersedia'}</span>
-                        </div>
-                      </button>
-                    ))}
-                    {restaurants.length === 0 && <div className="text-gray-500 sm:col-span-2">Tidak ada restoran yang buka</div>}
-                  </>
-                )}
-              </div>
-            </CardContent>
-          </Card>
+          {!tableSlug && (
+            <Card className="border border-gray-100 shadow-sm bg-white rounded-2xl">
+              <CardHeader>
+                <CardTitle className="text-xl font-black text-brand-dark uppercase tracking-tight">Pilih Restoran</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid gap-3 sm:grid-cols-2">
+                  {!isOpenNow ? (
+                    <div className="text-sm text-gray-600 sm:col-span-2">
+                      Layanan Dine In sedang tutup. Pilihan restoran akan muncul otomatis saat jam operasional dimulai.
+                    </div>
+                  ) : (
+                    <>
+                      {restaurants.map((r) => (
+                        <button
+                          key={r.id}
+                          className={`p-4 rounded-xl text-left transition border-2 ${
+                            selectedRestaurant?.id === r.id ? 'border-brand bg-brand-50' : 'border-gray-200 hover:bg-gray-50'
+                          }`}
+                          onClick={() => setSelectedRestaurant(r)}
+                          disabled={r.status !== 'Open' || r.allowOrders === false}
+                        >
+                          <div className="flex items-center gap-3">
+                            <Utensils size={18} />
+                            <div className="font-bold text-gray-900">{r.name}</div>
+                          </div>
+                          <div className="text-[11px] font-bold uppercase tracking-wider mt-2">
+                            <span className={`${r.status === 'Open' ? 'text-green-600' : 'text-red-600'}`}>
+                              {r.status === 'Open' ? 'Buka' : 'Tutup'}
+                            </span>
+                            <span className="text-gray-500 ml-1">• {r.allowOrders === false ? 'Pemesanan ditutup' : 'Pemesanan tersedia'}</span>
+                          </div>
+                        </button>
+                      ))}
+                      {restaurants.length === 0 && <div className="text-gray-500 sm:col-span-2">Tidak ada restoran yang buka</div>}
+                    </>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          )}
 
           <Card className="border border-gray-100 shadow-sm bg-white rounded-2xl">
             <CardHeader>
