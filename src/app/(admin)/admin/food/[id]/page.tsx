@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, use } from 'react';
+import { useState, useEffect, use, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -49,6 +49,12 @@ export default function AdminRestaurantMenuPage({ params }: { params: Promise<{ 
     minOrderQty: '1'
   });
   const [uploading, setUploading] = useState(false);
+  
+  const allCategories = useMemo(() => {
+    const defaults = ['Main Course', 'Appetizer', 'Dessert', 'Beverage', 'Snack'];
+    const existing = menuItems.map(item => item.category);
+    return Array.from(new Set([...defaults, ...existing])).filter(Boolean).sort();
+  }, [menuItems]);
 
   useEffect(() => {
     fetchData();
@@ -235,17 +241,19 @@ export default function AdminRestaurantMenuPage({ params }: { params: Promise<{ 
               </div>
               <div className="space-y-2">
                 <label className="text-sm font-medium">Category</label>
-                <select 
-                  className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                <Input 
+                  list="category-list"
                   value={formData.category}
                   onChange={(e) => setFormData({...formData, category: e.target.value})}
-                >
-                  <option value="Main Course">Main Course</option>
-                  <option value="Appetizer">Appetizer</option>
-                  <option value="Dessert">Dessert</option>
-                  <option value="Beverage">Beverage</option>
-                  <option value="Snack">Snack</option>
-                </select>
+                  placeholder="Select or type new category"
+                  required
+                />
+                <datalist id="category-list">
+                  {allCategories.map(cat => (
+                    <option key={cat} value={cat} />
+                  ))}
+                </datalist>
+                <p className="text-[10px] text-gray-500 italic">Tip: You can type a new category here.</p>
               </div>
               <div className="space-y-2">
                 <label className="text-sm font-medium">Price (IDR)</label>
