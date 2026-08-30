@@ -89,6 +89,12 @@ export default function DineInPage() {
       if (slug) {
         setTableSlug(slug);
         fetchTable(slug);
+      } else {
+        // Clear state if no slug
+        setTableSlug(null);
+        setTableNumber('');
+        // Do NOT auto-select restaurant if no table, let user pick
+        setSelectedRestaurant(null);
       }
     } catch {}
   }, []);
@@ -145,7 +151,7 @@ export default function DineInPage() {
       const list: Restaurant[] = Array.isArray(data) ? data : [];
       const active = list.filter((r) => r.status === 'Open' && r.allowDineIn !== false);
       setRestaurants(active);
-      if (active.length > 0) setSelectedRestaurant(active[0]);
+      // Removed auto-selection of the first restaurant
     } catch (e) {
       console.error(e);
     } finally {
