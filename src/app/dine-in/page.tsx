@@ -36,7 +36,6 @@ export default function DineInPage() {
   const [restaurants, setRestaurants] = useState<Restaurant[]>([]);
   const [selectedRestaurant, setSelectedRestaurant] = useState<Restaurant | null>(null);
   const [menu, setMenu] = useState<MenuItem[]>([]);
-  const [categories, setCategories] = useState<string[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<string>('ALL');
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [loading, setLoading] = useState(true);
@@ -55,6 +54,15 @@ export default function DineInPage() {
   const [checkoutOpen, setCheckoutOpen] = useState(false);
   const [checkoutQuantities, setCheckoutQuantities] = useState<Record<string, number>>({});
   const [selectedMethod, setSelectedMethod] = useState<string>('');
+
+  const categories = useMemo(() => {
+    const uniq = Array.from(
+      new Set(
+        menu.map(i => (typeof i.category === 'string' ? i.category.trim() : '')).filter(Boolean)
+      )
+    ).sort() as string[];
+    return ['ALL', ...uniq];
+  }, [menu]);
 
   const categoryStats = useMemo(() => {
     const stats: Record<string, { count: number; minPrice: number; image?: string }> = {};
@@ -91,7 +99,9 @@ export default function DineInPage() {
   }, []);
   async function fetchTable(slug: string) {
     try {
-      const res = await fetch(`/api/dine-in/tables/${encodeURIComponent(slug)}`);
+      const res = await fetch(`/api/dine-in/tables/${encodeURIComponent(slug)}`, {
+        cache: 'no-store'
+      });
       if (res.ok) {
         const data = await res.json();
         setTableNumber(data.number || '');
@@ -128,7 +138,9 @@ export default function DineInPage() {
 
   async function fetchRestaurants() {
     try {
-      const res = await fetch('/api/restaurants');
+      const res = await fetch('/api/restaurants', {
+        cache: 'no-store'
+      });
       const data = await res.json();
       const list: Restaurant[] = Array.isArray(data) ? data : [];
       const active = list.filter((r) => r.status === 'Open' && r.allowDineIn !== false);
@@ -143,16 +155,12 @@ export default function DineInPage() {
 
   async function fetchMenu(id: string) {
     try {
-      const res = await fetch(`/api/restaurants/${id}`);
+      const res = await fetch(`/api/restaurants/${id}`, {
+        cache: 'no-store'
+      });
       const data = await res.json();
       const items: MenuItem[] = data?.menuItems || [];
       setMenu(items);
-      const uniq = Array.from(
-        new Set(
-          items.map(i => (typeof i.category === 'string' ? i.category : '')).filter(Boolean)
-        )
-      ) as string[];
-      setCategories(['ALL', ...uniq]);
       setSelectedCategory('ALL');
       setQuantities({});
       setItemNotes({});
