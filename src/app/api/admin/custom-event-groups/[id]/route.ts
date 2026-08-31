@@ -46,7 +46,7 @@ export async function PUT(
 
   try {
     const { id } = await params;
-    const { name, eventDate, logos, description, startTime, endTime } = await req.json();
+    const { name, eventDate, logos, description, startTime, endTime, emailSubject, emailBody, emailAttachments } = await req.json();
 
     if (!name || !eventDate) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
@@ -60,7 +60,10 @@ export async function PUT(
         startTime,
         endTime,
         eventDate: new Date(eventDate),
-        logos: logos ? JSON.stringify(logos) : null
+        logos: logos ? JSON.stringify(logos) : null,
+        emailSubject,
+        emailBody,
+        emailAttachments: emailAttachments ? JSON.stringify(emailAttachments) : null
       }
     });
 

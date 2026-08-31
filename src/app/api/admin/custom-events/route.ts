@@ -3,6 +3,7 @@ import { prisma } from '@/lib/prisma';
 import { cookies } from 'next/headers';
 import { verifyToken } from '@/lib/auth';
 import crypto from 'crypto';
+import { sendCustomEventVoucherEmail } from '@/lib/email';
 
 export async function GET() {
   const cookieStore = await cookies();
@@ -67,6 +68,37 @@ export async function POST(req: Request) {
         details: JSON.stringify({ eventName, participantName, voucherCode })
       }
     });
+
+    // Send Auto Email if email is provided
+    try {
+      let groupInfo = null;
+      if (groupId) {
+        groupInfo = await prisma.customEventGroup.findUnique({
+          where: { id: groupId }
+        });
+      }
+
+      await sendCustomEventVoucherEmail(
+        email,
+        participantName,
+        voucherCode,
+        parseInt(pax) || 1,
+        {
+          name: groupInfo?.name || eventName || 'Event Voucher',
+          eventDate: groupInfo?.eventDate || eventDate || new Date(),
+          startTime: groupInfo?.startTime,
+          endTime: groupInfo?.endTime,
+          description: groupInfo?.description,
+          logos: groupInfo?.logos || logos,
+          emailSubject: groupInfo?.emailSubject,
+          emailBody: groupInfo?.emailBody,
+          emailAttachments: groupInfo?.emailAttachments
+        }
+      );
+    } catch (emailError) {
+      console.error('Failed to send auto email after participant creation:', emailError);
+      // We don't return error here because the participant is already created
+    }
 
     return NextResponse.json(event);
   } catch (error) {

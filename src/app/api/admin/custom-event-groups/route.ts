@@ -33,7 +33,7 @@ export async function POST(req: Request) {
   if (!payload || payload.role !== 'ADMIN') return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
   try {
-    const { name, eventDate, logos, description, startTime, endTime } = await req.json();
+    const { name, eventDate, logos, description, startTime, endTime, emailSubject, emailBody, emailAttachments } = await req.json();
 
     if (!name || !eventDate) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
@@ -46,7 +46,10 @@ export async function POST(req: Request) {
         startTime,
         endTime,
         eventDate: new Date(eventDate),
-        logos: logos ? JSON.stringify(logos) : null
+        logos: logos ? JSON.stringify(logos) : null,
+        emailSubject,
+        emailBody,
+        emailAttachments: emailAttachments ? JSON.stringify(emailAttachments) : null
       }
     });
 

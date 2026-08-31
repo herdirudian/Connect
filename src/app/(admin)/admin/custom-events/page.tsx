@@ -39,6 +39,9 @@ interface CustomEventGroup {
   startTime: string | null;
   endTime: string | null;
   logos: string | null;
+  emailSubject?: string | null;
+  emailBody?: string | null;
+  emailAttachments?: string | null;
   createdAt: string;
   _count?: {
     events: number;
@@ -83,7 +86,10 @@ export default function AdminCustomEventsPage() {
     eventDate: '',
     startTime: '',
     endTime: '',
-    logos: [] as string[]
+    logos: [] as string[],
+    emailSubject: '',
+    emailBody: '',
+    emailAttachments: [] as string[]
   });
 
   const [participantFormData, setParticipantFormData] = useState({
@@ -106,7 +112,10 @@ export default function AdminCustomEventsPage() {
       eventDate: format(new Date(group.eventDate), 'yyyy-MM-dd'),
       startTime: group.startTime || '',
       endTime: group.endTime || '',
-      logos: group.logos ? JSON.parse(group.logos) : []
+      logos: group.logos ? JSON.parse(group.logos) : [],
+      emailSubject: group.emailSubject || '',
+      emailBody: group.emailBody || '',
+      emailAttachments: group.emailAttachments ? JSON.parse(group.emailAttachments) : []
     });
     setIsGroupModalOpen(true);
   };
@@ -209,7 +218,7 @@ export default function AdminCustomEventsPage() {
         toast({ title: 'Success', description: `Event Group ${editingGroupId ? 'updated' : 'created'} successfully` });
         setIsGroupModalOpen(false);
         setEditingGroupId(null);
-        setGroupFormData({ name: '', description: '', eventDate: '', startTime: '', endTime: '', logos: [] });
+        setGroupFormData({ name: '', description: '', eventDate: '', startTime: '', endTime: '', logos: [], emailSubject: '', emailBody: '', emailAttachments: [] });
         fetchGroups();
       } else {
         const err = await res.json();
@@ -813,6 +822,76 @@ export default function AdminCustomEventsPage() {
                     </label>
                   </div>
                 </div>
+
+                <div className="pt-4 border-t border-gray-100 space-y-5">
+                  <h3 className="text-sm font-black text-brand-dark uppercase tracking-wider">E-Voucher Email Settings</h3>
+                  
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Email Subject</label>
+                    <Input 
+                      placeholder="e.g., Your E-Voucher for Corporate Gathering"
+                      value={groupFormData.emailSubject}
+                      onChange={e => setGroupFormData({...groupFormData, emailSubject: e.target.value})}
+                      className="rounded-2xl bg-gray-50 border-transparent h-12 text-sm font-bold"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Email Body Content</label>
+                    <textarea 
+                      placeholder="Pesan tambahan yang akan muncul di email voucher..."
+                      value={groupFormData.emailBody}
+                      onChange={e => setGroupFormData({...groupFormData, emailBody: e.target.value})}
+                      className="w-full rounded-2xl bg-gray-50 border-transparent p-4 text-sm font-bold min-h-[120px] focus:outline-none focus:ring-2 focus:ring-brand/20"
+                    />
+                  </div>
+
+                  <div className="space-y-3">
+                    <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Email Attachments (PDF/Images)</label>
+                    <div className="flex flex-wrap gap-3">
+                      {groupFormData.emailAttachments.map((url, idx) => (
+                        <div key={idx} className="relative group w-20 h-20 rounded-2xl overflow-hidden border-2 border-blue-50 bg-white flex items-center justify-center">
+                          {url.toLowerCase().endsWith('.pdf') ? (
+                            <div className="flex flex-col items-center">
+                              <Download size={20} className="text-blue-500" />
+                              <span className="text-[8px] font-bold mt-1">PDF</span>
+                            </div>
+                          ) : (
+                            <img src={url} alt="Attachment" className="w-full h-full object-cover" />
+                          )}
+                          <button type="button" onClick={() => setGroupFormData(prev => ({ ...prev, emailAttachments: prev.emailAttachments.filter((_, i) => i !== idx) }))} className="absolute inset-0 bg-red-500/80 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                            <Trash2 size={16} />
+                          </button>
+                        </div>
+                      ))}
+                      <label className="w-20 h-20 rounded-2xl border-2 border-dashed border-gray-200 hover:border-blue-500 hover:bg-blue-50 flex flex-col items-center justify-center cursor-pointer transition-all text-gray-400 hover:text-blue-500">
+                        {uploading ? <Loader2 size={20} className="animate-spin" /> : <><Upload size={20} /><span className="text-[8px] font-bold uppercase mt-1">Add File</span></>}
+                        <input type="file" multiple className="hidden" onChange={async (e) => {
+                          const files = e.target.files;
+                          if (!files || files.length === 0) return;
+                          setUploading(true);
+                          try {
+                            const uploadPromises = Array.from(files).map(async (file) => {
+                              const formData = new FormData();
+                              formData.append('file', file);
+                              const res = await fetch('/api/upload', { method: 'POST', body: formData });
+                              if (!res.ok) throw new Error('Upload failed');
+                              const data = await res.json();
+                              return data.url;
+                            });
+                            const urls = await Promise.all(uploadPromises);
+                            setGroupFormData(prev => ({ ...prev, emailAttachments: [...prev.emailAttachments, ...urls] }));
+                          } catch (error) {
+                            toast({ title: 'Error', description: 'Failed to upload attachments', variant: 'destructive' });
+                          } finally {
+                            setUploading(false);
+                          }
+                        }} disabled={uploading} />
+                      </label>
+                    </div>
+                  </div>
+                </div>
+
                 <Button type="submit" className="w-full bg-brand hover:bg-brand-dark text-white rounded-2xl h-14 font-black uppercase tracking-widest mt-4 shadow-xl shadow-brand/20 transition-all hover:scale-[1.02]" disabled={submitting || uploading}>
                   {submitting ? 'Saving...' : (editingGroupId ? 'Update Group' : 'Create Group')}
                 </Button>

@@ -732,3 +732,260 @@ export async function sendMattaFairVoucherEmail(to: string, fullName: string, qr
     throw new Error('Failed to send e-voucher email');
   }
 }
+
+export async function sendCustomEventVoucherEmail(
+  to: string,
+  participantName: string,
+  voucherCode: string,
+  pax: number,
+  group: {
+    name: string;
+    eventDate: Date | string;
+    startTime?: string | null;
+    endTime?: string | null;
+    description?: string | null;
+    logos?: string | null;
+    emailSubject?: string | null;
+    emailBody?: string | null;
+    emailAttachments?: string | null;
+  }
+) {
+  try {
+    const qrCodeDataUrl = await QRCode.toDataURL(voucherCode, {
+      margin: 1,
+      width: 200,
+      color: {
+        dark: '#1a4332',
+        light: '#ffffff'
+      }
+    });
+
+    // Generate PDF Voucher
+    const doc = new jsPDF({
+      orientation: 'portrait',
+      unit: 'mm',
+      format: 'a5'
+    });
+
+    const width = doc.internal.pageSize.getWidth();
+    const height = doc.internal.pageSize.getHeight();
+    const brandColor = '#1a4332';
+    const accentColor = '#eab308';
+    const lightGray = '#f8fafc';
+    const darkGray = '#334155';
+    const slate400 = '#94a3b8';
+    const slate500 = '#64748b';
+
+    // Background
+    doc.setFillColor(lightGray);
+    doc.rect(0, 0, width, height, 'F');
+
+    // Top Banner
+    doc.setFillColor(brandColor);
+    doc.rect(0, 0, width, 30, 'F');
+
+    // Decorative Line
+    doc.setFillColor(accentColor);
+    doc.rect(0, 28, width, 2, 'F');
+
+    // Title
+    doc.setTextColor(255, 255, 255);
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(20);
+    doc.text('E-VOUCHER EVENT', width / 2, 18, { align: 'center' });
+
+    let currentY = 38;
+
+    // Handle Logos
+    if (group.logos) {
+      try {
+        const logoUrls = JSON.parse(group.logos) as string[];
+        if (logoUrls.length > 0) {
+          const maxLogoWidth = 25;
+          const maxLogoHeight = 15;
+          const logoGap = 10;
+
+          // Note: In Node.js, we need to fetch the images
+          const logoData = await Promise.all(logoUrls.map(async (url) => {
+            try {
+              const fullUrl = url.startsWith('http') ? url : `${APP_URL}${url.startsWith('/') ? '' : '/'}${url}`;
+              const response = await fetch(fullUrl);
+              const buffer = await response.arrayBuffer();
+              const base64 = Buffer.from(buffer).toString('base64');
+              return { base64: `data:image/png;base64,${base64}` };
+            } catch (e) {
+              console.error(`Failed to fetch logo: ${url}`, e);
+              return null;
+            }
+          }));
+
+          const validLogos = logoData.filter(l => l !== null);
+          if (validLogos.length > 0) {
+            const totalWidth = (validLogos.length * maxLogoWidth) + ((validLogos.length - 1) * logoGap);
+            let startX = (width - totalWidth) / 2;
+
+            for (const logo of validLogos) {
+              doc.addImage(logo!.base64, 'PNG', startX, currentY, maxLogoWidth, maxLogoHeight, undefined, 'FAST');
+              startX += maxLogoWidth + logoGap;
+            }
+            currentY += maxLogoHeight + 8;
+          }
+        }
+      } catch (e) {
+        console.error('Error adding logos to PDF:', e);
+      }
+    }
+
+    // Card Container
+    const cardX = 12;
+    const cardWidth = width - (cardX * 2);
+    const cardPadding = 10;
+    
+    const descText = group.description || '';
+    const splitDesc = doc.splitTextToSize(descText, cardWidth - (cardPadding * 2));
+    const descHeight = descText ? (splitDesc.length * 4) + 6 : 0;
+    const cardHeight = 18 + 35 + descHeight + 40 + 20 + 5;
+
+    doc.setFillColor(255, 255, 255);
+    doc.roundedRect(cardX, currentY, cardWidth, cardHeight, 6, 6, 'F');
+    
+    doc.setDrawColor(226, 232, 240);
+    doc.setLineWidth(0.2);
+    doc.roundedRect(cardX, currentY, cardWidth, cardHeight, 6, 6, 'D');
+
+    // Event Name Title
+    doc.setTextColor(brandColor);
+    doc.setFontSize(14);
+    doc.setFont('helvetica', 'bold');
+    doc.text(group.name.toUpperCase(), width / 2, currentY + 12, { align: 'center' });
+
+    // Divider
+    doc.setDrawColor(241, 245, 249);
+    doc.line(cardX + cardPadding, currentY + 18, width - cardX - cardPadding, currentY + 18);
+
+    // Details Section
+    let currentDetailY = currentY + 26;
+    const labelX = cardX + cardPadding;
+    const valueX = cardX + 45;
+
+    doc.setFontSize(8);
+    doc.setTextColor(slate400);
+    doc.setFont('helvetica', 'bold');
+    
+    doc.text('NAMA PESERTA', labelX, currentDetailY);
+    doc.setTextColor(darkGray);
+    doc.text(participantName, valueX, currentDetailY);
+    
+    currentDetailY += 7;
+    doc.setTextColor(slate400);
+    doc.text('TANGGAL EVENT', labelX, currentDetailY);
+    doc.setTextColor(darkGray);
+    const eventDateStr = typeof group.eventDate === 'string' ? group.eventDate : group.eventDate.toISOString();
+    doc.text(new Date(eventDateStr).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' }), valueX, currentDetailY);
+
+    if (group.startTime && group.endTime) {
+      currentDetailY += 7;
+      doc.setTextColor(slate400);
+      doc.text('JAM ACARA', labelX, currentDetailY);
+      doc.setTextColor(darkGray);
+      doc.text(`${group.startTime} - ${group.endTime} WIB`, valueX, currentDetailY);
+    }
+
+    currentDetailY += 7;
+    doc.setTextColor(slate400);
+    doc.text('JUMLAH PAX', labelX, currentDetailY);
+    doc.setTextColor(darkGray);
+    doc.text(`${pax} Orang`, valueX, currentDetailY);
+
+    currentDetailY += 7;
+    doc.setTextColor(slate400);
+    doc.text('KODE VOUCHER', labelX, currentDetailY);
+    doc.setTextColor(accentColor);
+    doc.setFontSize(10.5);
+    doc.text(voucherCode, valueX, currentDetailY);
+
+    if (descText) {
+      currentDetailY += 10;
+      doc.setTextColor(slate400);
+      doc.setFontSize(7.5);
+      doc.setFont('helvetica', 'bold');
+      doc.text('DESKRIPSI EVENT:', labelX, currentDetailY);
+      doc.setTextColor(slate500);
+      doc.setFont('helvetica', 'normal');
+      doc.text(splitDesc, labelX, currentDetailY + 4);
+      currentDetailY += descHeight;
+    }
+
+    const qrSize = 34; 
+    const qrY = currentDetailY + 5;
+    doc.addImage(qrCodeDataUrl, 'PNG', (width - qrSize) / 2, qrY, qrSize, qrSize);
+
+    const footerStartY = qrY + qrSize + 6;
+    doc.setTextColor(slate500);
+    doc.setFontSize(7);
+    doc.text('Scan QR Code ini di pintu masuk / outlet terkait.', width / 2, footerStartY, { align: 'center' });
+
+    doc.setFillColor(brandColor);
+    doc.rect(0, height - 3, width, 3, 'F');
+
+    const pdfBuffer = Buffer.from(doc.output('arraybuffer'));
+
+    // Prepare Email
+    const subject = group.emailSubject || `E-Voucher Event: ${group.name}`;
+    const bodyHtml = `
+      <div style="font-family: Arial, sans-serif; padding: 20px; color: #333; max-width: 600px; margin: 0 auto; border: 1px solid #eee; border-radius: 10px;">
+        <div style="text-align: center; margin-bottom: 20px;">
+          <img src="${APP_URL}/logotlm.png" alt="The Lodge Maribaya" style="height: 48px; margin-bottom: 8px;" />
+          <h2 style="color: #1b5e20; margin: 0;">The Lodge Maribaya</h2>
+        </div>
+        <div style="background-color: #f9f9f9; padding: 20px; border-radius: 8px;">
+          <p>Halo <strong>${participantName}</strong>,</p>
+          <p>Terima kasih telah bergabung dalam event <strong>${group.name}</strong>.</p>
+          <div style="white-space: pre-wrap; margin: 15px 0; color: #555;">${group.emailBody || 'Terlampir adalah e-voucher Anda untuk event tersebut. Silakan tunjukkan voucher ini saat kedatangan.'}</div>
+          
+          <div style="background-color: white; padding: 15px; border-radius: 8px; margin: 20px 0; border: 1px dashed #2e7d32; text-align: center;">
+            <p style="margin: 0; color: #666; font-size: 14px;">Kode Voucher Anda:</p>
+            <h2 style="color: #1b5e20; margin: 5px 0;">${voucherCode}</h2>
+            <p style="margin: 0; color: #888; font-size: 12px;">(Voucher PDF Terlampir)</p>
+          </div>
+        </div>
+        <p style="margin-top: 20px; font-size: 12px; color: #888; text-align: center;">
+          &copy; ${new Date().getFullYear()} The Lodge Maribaya. All rights reserved.
+        </p>
+      </div>
+    `;
+
+    // Handle Custom Attachments
+    const customAttachments = group.emailAttachments ? JSON.parse(group.emailAttachments) : [];
+    const attachments = [
+      {
+        filename: `Voucher-${group.name}-${participantName}.pdf`,
+        content: pdfBuffer,
+        contentType: 'application/pdf'
+      },
+      ...customAttachments.map((url: string) => {
+        const isRemote = url.startsWith('http');
+        const filename = path.basename(url.split('?')[0]);
+        return {
+          filename,
+          path: isRemote ? url : path.join(process.cwd(), 'public', url)
+        };
+      })
+    ];
+
+    await transporter.sendMail({
+      from: process.env.FROM_EMAIL,
+      to,
+      subject,
+      html: bodyHtml,
+      attachments
+    });
+
+    console.log(`Custom event voucher email sent to ${to}`);
+  } catch (error) {
+    console.error('Error sending custom event voucher email:', error);
+    // We don't want to throw error here to avoid blocking participant creation, 
+    // but in this case the user wants it to be part of the process.
+    throw error;
+  }
+}

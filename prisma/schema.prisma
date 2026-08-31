@@ -734,6 +734,12 @@ model CustomEventGroup {
   startTime       String?  // e.g. "09:00"
   endTime         String?  // e.g. "17:00"
   logos           String?  @db.Text // JSON string for logo URLs
+  
+  // Email Settings
+  emailSubject    String?
+  emailBody       String?  @db.Text
+  emailAttachments String? @db.Text // JSON string for attachment URLs (PDF, Image, etc.)
+
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
   events          CustomEvent[]
