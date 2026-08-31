@@ -930,18 +930,23 @@ export async function sendCustomEventVoucherEmail(
 
     const pdfBuffer = Buffer.from(doc.output('arraybuffer'));
 
-    // Prepare Email
-    const subject = group.emailSubject || `E-Voucher Event: ${group.name}`;
+    // Prepare Email Content with Placeholders
+    const replacePlaceholders = (text: string) => {
+      if (!text) return text;
+      return text.replace(/\{\{name\}\}/g, participantName);
+    };
+
+    const subject = replacePlaceholders(group.emailSubject || `E-Voucher Event: ${group.name}`);
+    const processedBody = replacePlaceholders(group.emailBody || 'Terlampir adalah e-voucher Anda untuk event tersebut. Silakan tunjukkan voucher ini saat kedatangan.');
+
     const bodyHtml = `
       <div style="font-family: Arial, sans-serif; padding: 20px; color: #333; max-width: 600px; margin: 0 auto; border: 1px solid #eee; border-radius: 10px;">
         <div style="text-align: center; margin-bottom: 20px;">
-          <img src="${APP_URL}/logotlm.png" alt="The Lodge Maribaya" style="height: 48px; margin-bottom: 8px;" />
+          <img src="cid:logo" alt="The Lodge Maribaya" style="height: 48px; margin-bottom: 8px;" />
           <h2 style="color: #1b5e20; margin: 0;">The Lodge Maribaya</h2>
         </div>
         <div style="background-color: #f9f9f9; padding: 20px; border-radius: 8px;">
-          <p>Halo <strong>${participantName}</strong>,</p>
-          <p>Terima kasih telah bergabung dalam event <strong>${group.name}</strong>.</p>
-          <div style="white-space: pre-wrap; margin: 15px 0; color: #555;">${group.emailBody || 'Terlampir adalah e-voucher Anda untuk event tersebut. Silakan tunjukkan voucher ini saat kedatangan.'}</div>
+          <div style="white-space: pre-wrap; color: #333; font-size: 15px; line-height: 1.6;">${processedBody}</div>
           
           <div style="background-color: white; padding: 15px; border-radius: 8px; margin: 20px 0; border: 1px dashed #2e7d32; text-align: center;">
             <p style="margin: 0; color: #666; font-size: 14px;">Kode Voucher Anda:</p>
@@ -958,6 +963,11 @@ export async function sendCustomEventVoucherEmail(
     // Handle Custom Attachments
     const customAttachments = group.emailAttachments ? JSON.parse(group.emailAttachments) : [];
     const attachments = [
+      {
+        filename: 'logo.png',
+        path: path.join(process.cwd(), 'public', 'logotlm.png'),
+        cid: 'logo'
+      },
       {
         filename: `Voucher-${group.name}-${participantName}.pdf`,
         content: pdfBuffer,
