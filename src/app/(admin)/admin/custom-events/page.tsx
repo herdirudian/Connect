@@ -749,7 +749,17 @@ export default function AdminCustomEventsPage() {
               <Button variant="ghost" className="text-white hover:bg-white/10 rounded-full h-10 w-10 p-0" onClick={() => {
                 setIsGroupModalOpen(false);
                 setEditingGroupId(null);
-                setGroupFormData({ name: '', description: '', eventDate: '', startTime: '', endTime: '', logos: [] });
+                setGroupFormData({ 
+                  name: '', 
+                  description: '', 
+                  eventDate: '', 
+                  startTime: '', 
+                  endTime: '', 
+                  logos: [],
+                  emailSubject: '',
+                  emailBody: '',
+                  emailAttachments: []
+                });
               }}>
                 <X size={24} />
               </Button>
