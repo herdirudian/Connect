@@ -39,13 +39,8 @@ export async function POST(req: Request) {
     const slug = `${slugBase}-${uniqueSuffix}`;
 
     const id = randomUUID();
-    await prisma.$executeRawUnsafe(
-      'INSERT INTO RoomServiceRoom (id, number, slug, active, createdAt, updatedAt) VALUES (?, ?, ?, ?, NOW(), NOW())',
-      id,
-      number,
-      slug,
-      true
-    );
+    await prisma.$executeRaw`INSERT INTO RoomServiceRoom (id, number, slug, active, createdAt, updatedAt) VALUES (${id}, ${number}, ${slug}, ${true}, NOW(), NOW())`;
+    
     const [room] = await prisma.$queryRaw<any[]>`SELECT id, number, slug, active, createdAt, updatedAt FROM RoomServiceRoom WHERE id = ${id} LIMIT 1`;
     return NextResponse.json(room);
   } catch (error) {

@@ -62,12 +62,8 @@ export async function POST(req: Request) {
             });
 
             const permissionsJson = JSON.stringify(permissions || []);
-            // Use raw query to update the permissions column directly
-            await prisma.$executeRawUnsafe(
-                `UPDATE User SET permissions = ? WHERE id = ?`,
-                permissionsJson,
-                user.id
-            );
+            // Use parameterized raw query to update the permissions column safely
+            await prisma.$executeRaw`UPDATE User SET permissions = ${permissionsJson} WHERE id = ${user.id}`;
             
             (user as any).permissions = permissionsJson;
         } else {
