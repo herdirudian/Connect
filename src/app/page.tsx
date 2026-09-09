@@ -1,12 +1,16 @@
 import { redirect } from "next/navigation";
-import { cookies } from "next/headers";
+import { getAuthUser } from "@/lib/serverAuth";
 
 export default async function Home() {
-  const cookieStore = await cookies();
-  const token = cookieStore.get('token');
+  const auth = await getAuthUser();
 
-  if (token) {
-    redirect("/dashboard");
+  if (auth?.userId) {
+    const adminRoles = new Set(['ADMIN', 'STAFF', 'VERIFICATOR']);
+    if (adminRoles.has(auth.role)) {
+      redirect("/admin");
+    } else {
+      redirect("/dashboard");
+    }
   } else {
     redirect("/login");
   }

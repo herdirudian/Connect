@@ -46,3 +46,4 @@ function generateChimeWav() {
 }
 
 generateChimeWav();
+

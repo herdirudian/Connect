@@ -28,7 +28,7 @@ export default function OfflinePage() {
           Coba Lagi
         </Button>
 
-        <Link href="/">
+        <Link href="/" className="w-full">
           <Button
             variant="outline"
             className="border-emerald-700 text-emerald-100 hover:bg-emerald-900/80 w-full"
