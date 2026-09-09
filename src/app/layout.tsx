@@ -55,12 +55,22 @@ const afNeueBerlin = localFont({
 
 export const metadata: Metadata = {
   title: "The Lodge Connect",
-  description: "Member Dashboard",
+  description: "Integrated digital platform for Members, Greeters, and Visitors at The Lodge Maribaya",
   manifest: "/manifest.json",
+  icons: {
+    icon: [
+      { url: "/icons/icon-192x192.png", sizes: "192x192", type: "image/png" },
+      { url: "/icons/icon-512x512.png", sizes: "512x512", type: "image/png" },
+      { url: "/icon.png", sizes: "512x512", type: "image/png" },
+    ],
+    apple: [
+      { url: "/icons/apple-touch-icon.png", sizes: "180x180", type: "image/png" },
+    ],
+  },
   appleWebApp: {
     capable: true,
-    statusBarStyle: "default",
-    title: "TLM Explore",
+    statusBarStyle: "black-translucent",
+    title: "TLM Connect",
   },
 };
 
@@ -73,6 +83,7 @@ export const viewport: Viewport = {
 };
 
 import { Toaster } from "@/components/ui/toaster";
+import { InstallPWA } from "@/components/InstallPWA";
 import Script from "next/script";
 
 export default function RootLayout({
@@ -96,6 +107,7 @@ export default function RootLayout({
         </Script>
         {children}
         <Toaster />
+        <InstallPWA />
       </body>
     </html>
   );

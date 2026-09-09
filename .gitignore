@@ -48,3 +48,10 @@ PentestTools-WebsiteScanner-report*.pdf
 /public/uploads/
 
 /src/generated/prisma
+
+# pwa
+/public/sw.js
+/public/workbox-*.js
+/public/swe-worker-*.js
+/public/sw.js.map
+/public/workbox-*.js.map

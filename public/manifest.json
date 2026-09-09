@@ -1,25 +1,55 @@
 {
-  "name": "The Lodge Maribaya - Explore Hub",
-  "short_name": "TLM Explore",
-  "description": "Integrated digital platform for Greeter and Visitors at The Lodge Maribaya",
-  "start_url": "/explore",
+  "id": "/",
+  "name": "The Lodge Maribaya - Connect Hub",
+  "short_name": "TLM Connect",
+  "description": "Integrated digital platform for Members, Greeters, and Visitors at The Lodge Maribaya",
+  "start_url": "/",
+  "scope": "/",
   "display": "standalone",
+  "orientation": "portrait",
   "background_color": "#ffffff",
   "theme_color": "#006400",
+  "categories": ["travel", "entertainment", "hospitality"],
   "icons": [
     {
-      "src": "/icon.png",
+      "src": "/icons/icon-192x192.png",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "any maskable"
     },
     {
-      "src": "/icon.png",
+      "src": "/icons/icon-512x512.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any maskable"
+    },
+    {
+      "src": "/icons/apple-touch-icon.png",
+      "sizes": "180x180",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
     }
   ],
-  "orientation": "portrait",
-  "scope": "/"
+  "shortcuts": [
+    {
+      "name": "Explore Hub",
+      "short_name": "Explore",
+      "description": "Explore activities and services",
+      "url": "/explore",
+      "icons": [{ "src": "/icons/icon-192x192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Booking",
+      "short_name": "Booking",
+      "description": "Book tickets and accommodation",
+      "url": "/booking",
+      "icons": [{ "src": "/icons/icon-192x192.png", "sizes": "192x192" }]
+    }
+  ]
 }

@@ -5,6 +5,14 @@ import withPWAInit from "@ducanh2912/next-pwa";
 const withPWA = withPWAInit({
   dest: "public",
   disable: process.env.NODE_ENV === "development",
+  fallbacks: {
+    document: "/offline",
+  },
+  workboxOptions: {
+    disableDevLogs: true,
+  },
+  cacheOnFrontEndNav: true,
+  reloadOnOnline: true,
 });
 
 const nextConfig: NextConfig = {
@@ -56,7 +64,7 @@ const nextConfig: NextConfig = {
           },
           {
             key: 'Content-Security-Policy',
-            value: "default-src 'self'; script-src 'self' 'unsafe-inline' https://*.xendit.co https://*.sentry.io https://*.google-analytics.com https://*.googletagmanager.com https://static.cloudflareinsights.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data: blob: https://*.unsplash.com https://*.xendit.co https://*.cloudinary.com https://www.google.com; font-src 'self' https://fonts.gstatic.com; connect-src 'self' https://*.xendit.co https://*.sentry.io https://*.google-analytics.com https://cloudflareinsights.com; frame-src 'self' https://*.xendit.co; media-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'self'; upgrade-insecure-requests;"
+            value: "default-src 'self'; script-src 'self' 'unsafe-inline' https://*.xendit.co https://*.sentry.io https://*.google-analytics.com https://*.googletagmanager.com https://static.cloudflareinsights.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data: blob: https://*.unsplash.com https://*.xendit.co https://*.cloudinary.com https://www.google.com; font-src 'self' https://fonts.gstatic.com; worker-src 'self' blob:; connect-src 'self' https://*.xendit.co https://*.sentry.io https://*.google-analytics.com https://cloudflareinsights.com; frame-src 'self' https://*.xendit.co; media-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'self'; upgrade-insecure-requests;"
           }
         ],
       },
