@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { usePathname } from "next/navigation";
 import { Download, X, Share } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -10,6 +11,7 @@ interface BeforeInstallPromptEvent extends Event {
 }
 
 export function InstallPWA() {
+  const pathname = usePathname();
   const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
   const [isIOS, setIsIOS] = useState(false);
   const [isStandalone, setIsStandalone] = useState(false);
@@ -30,7 +32,7 @@ export function InstallPWA() {
 
     const handleBeforeInstallPrompt = (e: Event) => {
       e.preventDefault();
-      setDeferredPrompt(e as BeforeInstallPromptEvent);
+      setDeferredPrompt(e as Event & BeforeInstallPromptEvent);
     };
 
     window.addEventListener("beforeinstallprompt", handleBeforeInstallPrompt);
@@ -45,7 +47,12 @@ export function InstallPWA() {
     };
   }, []);
 
-  if (isStandalone || dismissed) {
+  // Hide PWA install prompt banner on Dine-In and Room Service order pages
+  const isOrderPage =
+    pathname?.startsWith("/dine-in") ||
+    pathname?.startsWith("/room-service");
+
+  if (isStandalone || dismissed || isOrderPage) {
     return null;
   }
 
@@ -108,4 +115,3 @@ export function InstallPWA() {
     </div>
   );
 }
-
