@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { ArrowLeft, Loader2, QrCode, Search, Utensils } from 'lucide-react';
+import { ArrowLeft, Loader2, QrCode, Search, Utensils, ShoppingBag } from 'lucide-react';
 import Image from 'next/image';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { PAYMENT_METHODS, calculateFee } from '@/lib/fees';
@@ -46,6 +46,7 @@ export default function DineInPage() {
   const [tableNumber, setTableNumber] = useState('');
   const [guestName, setGuestName] = useState('');
   const [guestPhone, setGuestPhone] = useState('');
+  const [serviceType, setServiceType] = useState<'DINE_IN' | 'TAKE_AWAY'>('DINE_IN');
 
   const [quantities, setQuantities] = useState<Record<string, number>>({});
   const [itemNotes, setItemNotes] = useState<Record<string, string>>({});
@@ -293,6 +294,7 @@ export default function DineInPage() {
           tableSlug: tableSlug || undefined,
           guestName,
           guestPhone,
+          serviceType,
           paymentMethod: methodOverride || selectedMethod
         }),
       });
@@ -394,6 +396,36 @@ export default function DineInPage() {
             </CardHeader>
             <CardContent>
               <div className="grid gap-4 sm:grid-cols-2">
+                <div className="space-y-2 sm:col-span-2">
+                  <Label className="text-sm font-bold text-gray-700">Opsi Penyajian / Layanan</Label>
+                  <div className="grid grid-cols-2 gap-3">
+                    <button
+                      type="button"
+                      onClick={() => setServiceType('DINE_IN')}
+                      className={`p-3 rounded-xl border-2 font-bold text-xs sm:text-sm flex items-center justify-center gap-2 transition ${
+                        serviceType === 'DINE_IN'
+                          ? 'border-brand bg-brand-50 text-brand-dark shadow-sm'
+                          : 'border-gray-200 hover:bg-gray-50 text-gray-600'
+                      }`}
+                    >
+                      <Utensils className="w-4 h-4" />
+                      Makan di Tempat (Dine In)
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setServiceType('TAKE_AWAY')}
+                      className={`p-3 rounded-xl border-2 font-bold text-xs sm:text-sm flex items-center justify-center gap-2 transition ${
+                        serviceType === 'TAKE_AWAY'
+                          ? 'border-orange-500 bg-orange-50 text-orange-800 shadow-sm'
+                          : 'border-gray-200 hover:bg-gray-50 text-gray-600'
+                      }`}
+                    >
+                      <ShoppingBag className="w-4 h-4" />
+                      Bawa Pulang (Take Away)
+                    </button>
+                  </div>
+                </div>
+
                 <div className="space-y-2">
                   <Label>Nomor Meja</Label>
                   <Input value={tableNumber} onChange={(e) => setTableNumber(e.target.value)} placeholder="Misal: 1, 2, VIP1" disabled={!!tableSlug} />
@@ -403,7 +435,7 @@ export default function DineInPage() {
                   <Label>Nama Pemesan</Label>
                   <Input value={guestName} onChange={(e) => setGuestName(e.target.value)} placeholder="Nama lengkap" />
                 </div>
-                <div className="space-y-2">
+                <div className="space-y-2 sm:col-span-2">
                   <Label>No. Handphone</Label>
                   <Input value={guestPhone} onChange={(e) => setGuestPhone(e.target.value)} placeholder="08xxxxxxxxxx" />
                 </div>
@@ -595,6 +627,12 @@ export default function DineInPage() {
             <DialogTitle>Konfirmasi Pesanan</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
+            <div className="p-3 bg-gray-50 rounded-xl border flex items-center justify-between text-xs font-bold">
+              <span className="text-gray-600">Opsi Layanan:</span>
+              <span className={serviceType === 'TAKE_AWAY' ? 'text-orange-700 font-extrabold flex items-center gap-1' : 'text-brand-dark font-extrabold flex items-center gap-1'}>
+                {serviceType === 'TAKE_AWAY' ? '🛍️ Bawa Pulang (Take Away)' : '🍽️ Makan di Tempat (Dine In)'}
+              </span>
+            </div>
             <div className="space-y-2">
               {menu.filter(m => (checkoutQuantities[m.id] || 0) > 0).map((m) => (
                 <div key={m.id} className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">

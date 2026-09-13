@@ -250,7 +250,16 @@ export default function AdminFoodOrdersPaidPage() {
                 <div className="text-xs text-gray-600 space-y-1">
                   <div>
                     {order.channel === 'DINE_IN' ? (
-                      <>Dine-In: Meja {order.tableNumber || '-'} • {order.guestName || '-'} {order.guestPhone ? `(${order.guestPhone})` : ''}</>
+                      <div className="space-y-1">
+                        <div>Dine-In: Meja {order.tableNumber || '-'} • {order.guestName || '-'} {order.guestPhone ? `(${order.guestPhone})` : ''}</div>
+                        <div>
+                          {order.deliveryNotes === 'TAKE_AWAY' ? (
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-black bg-orange-100 text-orange-800 border border-orange-300 uppercase">🛍️ TAKE AWAY (Bawa Pulang)</span>
+                          ) : (
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-black bg-blue-100 text-blue-800 border border-blue-300 uppercase">🍽️ DINE IN (Makan di Tempat)</span>
+                          )}
+                        </div>
+                      </div>
                     ) : order.channel === 'ROOM_SERVICE' ? (
                       <>Room Service: Kamar {order.roomNumber || '-'} • {order.guestName || '-'} {order.guestPhone ? `(${order.guestPhone})` : ''}</>
                     ) : order.user ? (
@@ -261,7 +270,7 @@ export default function AdminFoodOrdersPaidPage() {
                   </div>
                   <div>Resto: {order.restaurant?.name || '-'}</div>
                   <div>
-                    Metode: {order.deliveryNotes === 'DELIVER_TO_ROOM' ? 'Diantar ke Kamar' : order.deliveryNotes === 'DINE_AT_CAFE' ? 'Makan di Cafe' : '-'}
+                    Metode/Opsi: {order.deliveryNotes === 'TAKE_AWAY' ? 'Bawa Pulang (Take Away)' : order.deliveryNotes === 'DINE_IN' ? 'Makan di Tempat (Dine In)' : order.deliveryNotes === 'DELIVER_TO_ROOM' ? 'Diantar ke Kamar' : order.deliveryNotes === 'DINE_AT_CAFE' ? 'Makan di Cafe' : (order.deliveryNotes || '-')}
                   </div>
                   <div>{new Date(order.createdAt).toLocaleString()}</div>
                 </div>

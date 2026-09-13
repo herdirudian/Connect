@@ -33,6 +33,7 @@ export async function GET(req: Request) {
         guestName: true,
         tableNumber: true,
         roomNumber: true,
+        deliveryNotes: true,
         totalAmount: true,
         updatedAt: true,
         restaurant: { select: { name: true } }
@@ -70,7 +71,8 @@ export async function GET(req: Request) {
       ...paidFoodOrders.map(order => {
         let orderTypeLabel = 'Food Order';
         if (order.tableNumber) {
-          orderTypeLabel = `Dine-In (Meja ${order.tableNumber})`;
+          const isTakeAway = order.deliveryNotes === 'TAKE_AWAY';
+          orderTypeLabel = isTakeAway ? `Take Away (Meja ${order.tableNumber})` : `Dine-In (Meja ${order.tableNumber})`;
         } else if (order.roomNumber) {
           orderTypeLabel = `Room Service (Kamar ${order.roomNumber})`;
         }

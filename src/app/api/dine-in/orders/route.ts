@@ -12,6 +12,7 @@ export async function POST(req: Request) {
       tableSlug,
       guestName,
       guestPhone,
+      serviceType,
       paymentMethod
     } = body as {
       restaurantId?: string;
@@ -20,6 +21,7 @@ export async function POST(req: Request) {
       tableSlug?: string;
       guestName?: string;
       guestPhone?: string;
+      serviceType?: 'DINE_IN' | 'TAKE_AWAY';
       paymentMethod?: string;
     };
 
@@ -99,6 +101,7 @@ export async function POST(req: Request) {
     } catch {}
 
     let foodOrderId: string | null = null;
+    const isTakeAway = serviceType === 'TAKE_AWAY';
 
     try {
       const order = await prisma.foodOrder.create({
@@ -111,6 +114,7 @@ export async function POST(req: Request) {
           guestName,
           tableNumber: finalTableNumber,
           guestPhone,
+          deliveryNotes: isTakeAway ? 'TAKE_AWAY' : 'DINE_IN',
           items: {
             create: items.map((it) => ({
               menuItemId: it.menuItemId,
@@ -139,7 +143,7 @@ export async function POST(req: Request) {
         data: {
           externalId: `DINEIN:${foodOrderId}`,
           amount: subtotal + adminFee,
-          description: `Dine In Order - Table ${finalTableNumber}`,
+          description: isTakeAway ? `Dine In Order (Take Away) - Table ${finalTableNumber}` : `Dine In Order - Table ${finalTableNumber}`,
           invoiceDuration: 3600,
           currency: 'IDR',
           paymentMethods: xenditPaymentMethods,
