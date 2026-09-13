@@ -38,6 +38,29 @@ function getVariantsList(variantsStr?: string | null): string[] {
   return variantsStr.split(',').map((s) => s.trim()).filter(Boolean);
 }
 
+function getCartKey(menuItemId: string, variant?: string | null): string {
+  if (!variant) return menuItemId;
+  return `${menuItemId}::${variant}`;
+}
+
+function parseCartKey(cartKey: string): { menuItemId: string; variant: string | null } {
+  const parts = cartKey.split('::');
+  return {
+    menuItemId: parts[0],
+    variant: parts[1] || null,
+  };
+}
+
+function getItemTotalQtyInCart(menuItemId: string, qtyMap: Record<string, number>): number {
+  let count = 0;
+  for (const [key, qty] of Object.entries(qtyMap)) {
+    if (key === menuItemId || key.startsWith(`${menuItemId}::`)) {
+      count += qty;
+    }
+  }
+  return count;
+}
+
 export default function DineInPage() {
   const [restaurants, setRestaurants] = useState<Restaurant[]>([]);
   const [selectedRestaurant, setSelectedRestaurant] = useState<Restaurant | null>(null);
@@ -184,32 +207,48 @@ export default function DineInPage() {
   }
 
   const total = useMemo(() => {
-    return menu.reduce((sum, item) => {
-      const qty = quantities[item.id] || 0;
-      return sum + item.price * qty;
+    return Object.entries(quantities).reduce((sum, [cartKey, qty]) => {
+      if (qty <= 0) return sum;
+      const { menuItemId } = parseCartKey(cartKey);
+      const item = menu.find((m) => m.id === menuItemId);
+      return sum + (item ? item.price * qty : 0);
     }, 0);
   }, [menu, quantities]);
 
   function validateMinOrderPerItem(src: Record<string, number>) {
-    for (const [menuItemId, qty] of Object.entries(src)) {
+    const aggregated: Record<string, number> = {};
+    for (const [cartKey, qty] of Object.entries(src)) {
       if (!qty || qty <= 0) continue;
+      const { menuItemId } = parseCartKey(cartKey);
+      aggregated[menuItemId] = (aggregated[menuItemId] || 0) + qty;
+    }
+
+    for (const [menuItemId, totalQty] of Object.entries(aggregated)) {
       const meta = menu.find((m) => m.id === menuItemId);
       const minQty = Math.max(1, Number(meta?.minOrderQty) || 1);
-      if (qty < minQty) {
+      if (totalQty < minQty) {
         const name = meta?.name || 'Item';
-        return `${name}: minimal order ${minQty}`;
+        return `${name}: minimal order total ${minQty}`;
       }
     }
     return null;
   }
 
-  function setQty(id: string, qty: number) {
-    const item = menu.find((m) => m.id === id);
-    const maxByStock = typeof item?.stock === 'number' ? item.stock : 99;
-    setQuantities(prev => ({ ...prev, [id]: Math.max(0, Math.min(maxByStock, qty)) }));
+  function setQty(cartKey: string, qty: number) {
+    const { menuItemId } = parseCartKey(cartKey);
+    const item = menu.find((m) => m.id === menuItemId);
+    const currentTotal = getItemTotalQtyInCart(menuItemId, quantities);
+    const currentKeyQty = quantities[cartKey] || 0;
+    const otherQty = currentTotal - currentKeyQty;
+    const maxStock = typeof item?.stock === 'number' ? item.stock : 99;
+    const maxAllowedForKey = Math.max(0, maxStock - otherQty);
+    
+    const finalKeyQty = Math.max(0, Math.min(maxAllowedForKey, qty));
+    setQuantities(prev => ({ ...prev, [cartKey]: finalKeyQty }));
   }
-  function setNote(id: string, note: string) {
-    setItemNotes(prev => ({ ...prev, [id]: note.slice(0, 200) }));
+
+  function setNote(cartKey: string, note: string) {
+    setItemNotes(prev => ({ ...prev, [cartKey]: note.slice(0, 200) }));
   }
 
   const normalizedQuery = searchQuery.trim().toLowerCase();
@@ -237,7 +276,7 @@ export default function DineInPage() {
 
   const recommendations = useMemo(() => {
     const available = menu.filter(m => 
-      !(checkoutQuantities[m.id] > 0) && 
+      getItemTotalQtyInCart(m.id, checkoutQuantities) <= 0 && 
       !m.soldOut && 
       (typeof m.stock !== 'number' || m.stock > 0)
     );
@@ -277,13 +316,11 @@ export default function DineInPage() {
     const effectiveFood = checkoutOpen ? checkoutQuantities : quantities;
     const items = Object.entries(effectiveFood)
       .filter(([, qty]) => qty > 0)
-      .map(([menuItemId, quantity]) => {
-        const menuItem = menu.find((m) => m.id === menuItemId);
-        const vList = getVariantsList(menuItem?.variants);
-        const chosenVariant = vList.length > 0 ? (selectedVariants[menuItemId] || vList[0]) : null;
-        const rawNote = itemNotes[menuItemId] || '';
-        const fullNote = chosenVariant
-          ? `[Varian: ${chosenVariant}]${rawNote ? ' ' + rawNote : ''}`
+      .map(([cartKey, quantity]) => {
+        const { menuItemId, variant } = parseCartKey(cartKey);
+        const rawNote = itemNotes[cartKey] || '';
+        const fullNote = variant
+          ? `[Varian: ${variant}]${rawNote ? ' ' + rawNote : ''}`
           : rawNote || undefined;
 
         return { menuItemId, quantity, requestNote: fullNote };
@@ -539,89 +576,121 @@ export default function DineInPage() {
               ) : (
                 /* Items View */
                 <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-                  {filteredMenu.map((item) => (
-                    <Card key={item.id} className="flex flex-col hover:shadow-md transition-shadow border-2 rounded-2xl overflow-hidden">
-                      <div className="relative h-36 bg-gray-50 overflow-hidden">
-                        {item.imageUrl ? (
-                          <Image src={item.imageUrl} alt={item.name} fill className="object-cover" />
-                        ) : (
-                          <div className="flex items-center justify-center h-full text-gray-300">
-                            <Utensils size={28} />
-                          </div>
-                        )}
-                      </div>
-                      <CardContent className="p-4">
-                        <div className="flex justify-between items-start">
-                          <div>
-                            <div className="font-bold text-gray-900">{item.name}</div>
-                            <div className="text-xs font-bold text-gray-500 uppercase tracking-wider">{item.category}</div>
-                            {!!item.description && (
-                              <div className="mt-1 text-xs text-gray-500 line-clamp-2">
-                                {item.description}
-                              </div>
-                            )}
-                          </div>
-                          <div className="font-bold">Rp {item.price.toLocaleString()}</div>
-                        </div>
-                        <div className="mt-2">
-                          {(item.soldOut || (typeof item.stock === 'number' && item.stock <= 0)) ? (
-                            <span className="text-xs px-2 py-1 rounded-full font-medium bg-red-100 text-red-700">Sold Out</span>
+                  {filteredMenu.map((item) => {
+                    const vList = getVariantsList(item.variants);
+                    const activeVariant = vList.length > 0 ? (selectedVariants[item.id] || vList[0]) : null;
+                    const activeCartKey = getCartKey(item.id, activeVariant);
+                    const activeQty = quantities[activeCartKey] || 0;
+                    const totalItemQtyInCart = getItemTotalQtyInCart(item.id, quantities);
+
+                    return (
+                      <Card key={item.id} className="flex flex-col hover:shadow-md transition-shadow border-2 rounded-2xl overflow-hidden">
+                        <div className="relative h-36 bg-gray-50 overflow-hidden">
+                          {item.imageUrl ? (
+                            <Image src={item.imageUrl} alt={item.name} fill className="object-cover" />
                           ) : (
-                            <span className="text-xs px-2 py-1 rounded-full font-medium bg-green-100 text-green-700">Available</span>
+                            <div className="flex items-center justify-center h-full text-gray-300">
+                              <Utensils size={28} />
+                            </div>
                           )}
                         </div>
-                        {getVariantsList(item.variants).length > 0 && (
-                          <div className="mt-3">
-                            <Label className="text-xs font-bold text-gray-600 uppercase tracking-wider block mb-1">Pilih Variasi</Label>
-                            <div className="flex flex-wrap gap-1.5">
-                              {getVariantsList(item.variants).map((v) => {
-                                const currentVariant = selectedVariants[item.id] || getVariantsList(item.variants)[0];
-                                const isSelected = currentVariant === v;
+                        <CardContent className="p-4">
+                          <div className="flex justify-between items-start">
+                            <div>
+                              <div className="font-bold text-gray-900">{item.name}</div>
+                              <div className="text-xs font-bold text-gray-500 uppercase tracking-wider">{item.category}</div>
+                              {!!item.description && (
+                                <div className="mt-1 text-xs text-gray-500 line-clamp-2">
+                                  {item.description}
+                                </div>
+                              )}
+                            </div>
+                            <div className="font-bold">Rp {item.price.toLocaleString()}</div>
+                          </div>
+                          <div className="mt-2">
+                            {(item.soldOut || (typeof item.stock === 'number' && item.stock <= 0)) ? (
+                              <span className="text-xs px-2 py-1 rounded-full font-medium bg-red-100 text-red-700">Sold Out</span>
+                            ) : (
+                              <span className="text-xs px-2 py-1 rounded-full font-medium bg-green-100 text-green-700">Available</span>
+                            )}
+                          </div>
+                          {vList.length > 0 && (
+                            <div className="mt-3">
+                              <Label className="text-xs font-bold text-gray-600 uppercase tracking-wider block mb-1">Pilih Variasi</Label>
+                              <div className="flex flex-wrap gap-1.5">
+                                {vList.map((v) => {
+                                  const isSelected = activeVariant === v;
+                                  const vCartKey = getCartKey(item.id, v);
+                                  const vQty = quantities[vCartKey] || 0;
+                                  return (
+                                    <button
+                                      key={v}
+                                      type="button"
+                                      onClick={() => setSelectedVariants(prev => ({ ...prev, [item.id]: v }))}
+                                      className={`px-2.5 py-1 text-xs rounded-lg font-bold transition border relative ${
+                                        isSelected
+                                          ? 'bg-brand text-white border-brand shadow-sm'
+                                          : 'bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100'
+                                      }`}
+                                    >
+                                      {v}
+                                      {vQty > 0 && (
+                                        <span className={`ml-1 px-1.5 py-0.2 rounded-full text-[10px] font-black ${
+                                          isSelected ? 'bg-white text-brand-dark' : 'bg-brand text-white'
+                                        }`}>
+                                          {vQty}
+                                        </span>
+                                      )}
+                                    </button>
+                                  );
+                                })}
+                              </div>
+                            </div>
+                          )}
+                          <div className="mt-3 flex items-center gap-2">
+                            <Button variant="outline" size="sm" onClick={() => setQty(activeCartKey, activeQty - 1)} disabled={item.soldOut || (typeof item.stock === 'number' && item.stock <= 0)}>-</Button>
+                            <Input
+                              className="w-16 text-center font-bold"
+                              type="number"
+                              min={0}
+                              max={typeof item.stock === 'number' ? item.stock : 99}
+                              value={activeQty}
+                              onChange={(e) => setQty(activeCartKey, parseInt(e.target.value || '0', 10))}
+                              disabled={item.soldOut || (typeof item.stock === 'number' && item.stock <= 0)}
+                            />
+                            <Button size="sm" onClick={() => setQty(activeCartKey, activeQty + 1)} disabled={(typeof item.stock === 'number' && totalItemQtyInCart >= item.stock) || item.soldOut || (typeof item.stock === 'number' && item.stock <= 0)}>+</Button>
+                          </div>
+                          {totalItemQtyInCart > 0 && vList.length > 0 && (
+                            <div className="mt-2 text-xs font-semibold text-brand-dark bg-brand-50 p-2 rounded-lg border border-brand-100 flex flex-wrap gap-1.5 items-center">
+                              <span className="font-bold text-[11px]">Di keranjang:</span>
+                              {vList.map(v => {
+                                const q = quantities[getCartKey(item.id, v)] || 0;
+                                if (q <= 0) return null;
                                 return (
-                                  <button
-                                    key={v}
-                                    type="button"
-                                    onClick={() => setSelectedVariants(prev => ({ ...prev, [item.id]: v }))}
-                                    className={`px-2.5 py-1 text-xs rounded-lg font-bold transition border ${
-                                      isSelected
-                                        ? 'bg-brand text-white border-brand shadow-sm'
-                                        : 'bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100'
-                                    }`}
-                                  >
-                                    {v}
-                                  </button>
+                                  <span key={v} className="bg-white px-2 py-0.5 rounded border text-[11px] font-bold text-gray-800 shadow-xs">
+                                    {q}x {v}
+                                  </span>
                                 );
                               })}
                             </div>
+                          )}
+                          <div className="mt-2 text-xs text-gray-500">
+                            {item.soldOut ? 'Sold' : (typeof item.stock === 'number' ? `Stok: ${item.stock}` : 'Selalu ready')}
                           </div>
-                        )}
-                        <div className="mt-3 flex items-center gap-2">
-                          <Button variant="outline" size="sm" onClick={() => setQty(item.id, (quantities[item.id] || 0) - 1)} disabled={item.soldOut || (typeof item.stock === 'number' && item.stock <= 0)}>-</Button>
-                          <Input
-                            className="w-16 text-center"
-                            type="number"
-                            min={0}
-                            max={typeof item.stock === 'number' ? item.stock : 99}
-                            value={quantities[item.id] || 0}
-                            onChange={(e) => setQty(item.id, parseInt(e.target.value || '0', 10))}
-                            disabled={item.soldOut || (typeof item.stock === 'number' && item.stock <= 0)}
-                          />
-                          <Button size="sm" onClick={() => setQty(item.id, (quantities[item.id] || 0) + 1)} disabled={(typeof item.stock === 'number' && (quantities[item.id] || 0) >= item.stock) || item.soldOut || (typeof item.stock === 'number' && item.stock <= 0)}>+</Button>
-                        </div>
-                        <div className="mt-2 text-xs text-gray-500">
-                          {item.soldOut ? 'Sold' : (typeof item.stock === 'number' ? `Stok: ${item.stock}` : 'Selalu ready')}
-                        </div>
-                        <div className="mt-3">
-                          <Label className="text-xs font-bold text-gray-600 uppercase tracking-wider">Catatan (opsional)</Label>
-                          <Input
-                            value={itemNotes[item.id] || ''}
-                            onChange={(e) => setNote(item.id, e.target.value)}
-                            placeholder="Contoh: tidak pedas / tanpa saus"
-                          />
-                        </div>
-                      </CardContent>
-                    </Card>
-                  ))}
+                          <div className="mt-3">
+                            <Label className="text-xs font-bold text-gray-600 uppercase tracking-wider">
+                              Catatan {activeVariant ? `(${activeVariant})` : ''} (opsional)
+                            </Label>
+                            <Input
+                              value={itemNotes[activeCartKey] || ''}
+                              onChange={(e) => setNote(activeCartKey, e.target.value)}
+                              placeholder="Contoh: tidak pedas / kurang manis"
+                            />
+                          </div>
+                        </CardContent>
+                      </Card>
+                    );
+                  })}
                 </div>
               )}
               <div className="mt-6"></div>
@@ -676,82 +745,88 @@ export default function DineInPage() {
               </span>
             </div>
             <div className="space-y-2">
-              {menu.filter(m => (checkoutQuantities[m.id] || 0) > 0).map((m) => {
-                const vList = getVariantsList(m.variants);
-                const chosenVariant = vList.length > 0 ? (selectedVariants[m.id] || vList[0]) : null;
-                return (
-                  <div key={m.id} className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
-                    <div className="min-w-0 w-full sm:flex-1 sm:mr-3">
-                      <div className="font-medium flex items-center flex-wrap gap-2">
-                        <span>{m.name}</span>
-                        {chosenVariant && (
-                          <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-brand-50 text-brand-dark border border-brand-100">
-                            Varian: {chosenVariant}
-                          </span>
+              {Object.entries(checkoutQuantities)
+                .filter(([, qty]) => qty > 0)
+                .map(([cartKey, qty]) => {
+                  const { menuItemId, variant } = parseCartKey(cartKey);
+                  const m = menu.find((item) => item.id === menuItemId);
+                  if (!m) return null;
+                  return (
+                    <div key={cartKey} className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between p-3 bg-gray-50 rounded-xl border border-gray-100">
+                      <div className="min-w-0 w-full sm:flex-1 sm:mr-3">
+                        <div className="font-bold flex items-center flex-wrap gap-2 text-gray-900">
+                          <span>{m.name}</span>
+                          {variant && (
+                            <span className="px-2 py-0.5 rounded text-[11px] font-bold bg-brand-50 text-brand-dark border border-brand-100">
+                              Varian: {variant}
+                            </span>
+                          )}
+                        </div>
+                        <div className="text-xs text-gray-500 font-semibold mt-0.5">Rp {m.price.toLocaleString()}</div>
+                        {!!m.description && (
+                          <div className="mt-1 text-xs text-gray-500 line-clamp-2">
+                            {m.description}
+                          </div>
                         )}
+                        <Input
+                          className="mt-2 h-8 text-xs px-2.5 w-full bg-white"
+                          placeholder={`Catatan ${variant ? `(${variant})` : ''}...`}
+                          value={itemNotes[cartKey] || ''}
+                          onChange={(e) => setNote(cartKey, e.target.value)}
+                        />
                       </div>
-                      <div className="text-xs text-gray-500">Rp {m.price.toLocaleString()}</div>
-                    {!!m.description && (
-                      <div className="mt-1 text-xs text-gray-500 line-clamp-2">
-                        {m.description}
+                      <div className="flex items-center gap-2 justify-end w-full sm:w-auto sm:flex-shrink-0">
+                        <Button
+                          variant="outline"
+                          size="icon"
+                          className="h-8 w-8"
+                          onClick={() => setCheckoutQuantities(prev => ({ ...prev, [cartKey]: Math.max(0, (prev[cartKey] || 0) - 1) }))}
+                        >
+                          -
+                        </Button>
+                        <Input
+                          className="w-14 h-8 text-center px-2 font-bold"
+                          type="number"
+                          min={0}
+                          value={checkoutQuantities[cartKey] || 0}
+                          onChange={(e) => setCheckoutQuantities(prev => ({ ...prev, [cartKey]: Math.max(0, parseInt(e.target.value || '0', 10)) }))}
+                        />
+                        <Button
+                          size="icon"
+                          className="h-8 w-8"
+                          onClick={() => setCheckoutQuantities(prev => ({ ...prev, [cartKey]: (prev[cartKey] || 0) + 1 }))}
+                        >
+                          +
+                        </Button>
                       </div>
-                    )}
-                    <Input
-                      className="mt-1 h-7 text-[11px] px-2 w-full"
-                      placeholder="Tambah catatan..."
-                      value={itemNotes[m.id] || ''}
-                      onChange={(e) => setNote(m.id, e.target.value)}
-                    />
-                  </div>
-                  <div className="flex items-center gap-2 justify-end w-full sm:w-auto sm:flex-shrink-0">
-                    <Button
-                      variant="outline"
-                      size="icon"
-                      className="h-8 w-8"
-                      onClick={() => setCheckoutQuantities(prev => ({ ...prev, [m.id]: Math.max(0, (prev[m.id] || 0) - 1) }))}
-                    >
-                      -
-                    </Button>
-                    <Input
-                      className="w-14 h-8 text-center px-2"
-                      type="number"
-                      min={0}
-                      value={checkoutQuantities[m.id] || 0}
-                      onChange={(e) => setCheckoutQuantities(prev => ({ ...prev, [m.id]: Math.max(0, parseInt(e.target.value || '0', 10)) }))}
-                    />
-                    <Button
-                      size="icon"
-                      className="h-8 w-8"
-                      onClick={() => setCheckoutQuantities(prev => ({ ...prev, [m.id]: (prev[m.id] || 0) + 1 }))}
-                    >
-                      +
-                    </Button>
-                  </div>
-                </div>
-              );
-            })}
+                    </div>
+                  );
+                })}
             </div>
 
             {recommendations.length > 0 && (
               <div className="space-y-2 pt-2 border-t border-dashed border-gray-200">
                 <div className="text-xs font-bold uppercase tracking-wider text-brand-dark">Rekomendasi Tambahan</div>
                 <div className="grid grid-cols-2 gap-3 sm:flex sm:gap-3 sm:overflow-x-auto sm:pb-2 scrollbar-hide">
-                  {recommendations.map(item => (
-                    <div key={item.id} className="w-full sm:flex-shrink-0 sm:w-36 p-2 border rounded-lg bg-gray-50 flex flex-col justify-between">
-                      <div>
-                        <div className="font-bold text-sm truncate" title={item.name}>{item.name}</div>
-                        <div className="text-xs text-gray-500">Rp {item.price.toLocaleString()}</div>
+                  {recommendations.map(item => {
+                    const recCartKey = getCartKey(item.id, getVariantsList(item.variants)[0]);
+                    return (
+                      <div key={item.id} className="w-full sm:flex-shrink-0 sm:w-36 p-2 border rounded-lg bg-gray-50 flex flex-col justify-between">
+                        <div>
+                          <div className="font-bold text-sm truncate" title={item.name}>{item.name}</div>
+                          <div className="text-xs text-gray-500">Rp {item.price.toLocaleString()}</div>
+                        </div>
+                        <Button 
+                          size="sm" 
+                          variant="outline" 
+                          className="mt-2 w-full text-xs h-7 border-brand text-brand hover:bg-brand hover:text-white font-bold"
+                          onClick={() => setCheckoutQuantities(prev => ({ ...prev, [recCartKey]: (prev[recCartKey] || 0) + 1 }))}
+                        >
+                          + Tambah
+                        </Button>
                       </div>
-                      <Button 
-                        size="sm" 
-                        variant="outline" 
-                        className="mt-2 w-full text-xs h-7 border-brand text-brand hover:bg-brand hover:text-white"
-                        onClick={() => setCheckoutQuantities(prev => ({ ...prev, [item.id]: 1 }))}
-                      >
-                        + Tambah
-                      </Button>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </div>
             )}
@@ -782,7 +857,12 @@ export default function DineInPage() {
             </div>
             <div className="space-y-1 text-sm">
               {(() => {
-                const subtotal = menu.reduce((sum, m) => sum + (checkoutQuantities[m.id] || 0) * m.price, 0);
+                const subtotal = Object.entries(checkoutQuantities).reduce((sum, [cartKey, qty]) => {
+                  if (qty <= 0) return sum;
+                  const { menuItemId } = parseCartKey(cartKey);
+                  const m = menu.find((item) => item.id === menuItemId);
+                  return sum + (m ? m.price * qty : 0);
+                }, 0);
                 const fee = selectedMethod ? calculateFee(subtotal, selectedMethod) : 0;
                 const grand = subtotal + fee;
                 return (
