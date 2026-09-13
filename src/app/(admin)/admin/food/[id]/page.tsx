@@ -25,6 +25,7 @@ interface MenuItem {
   stock?: number | null;
   soldOut?: boolean;
   minOrderQty?: number;
+  variants?: string | null;
 }
 
 export default function AdminRestaurantMenuPage({ params }: { params: Promise<{ id: string }> }) {
@@ -46,7 +47,8 @@ export default function AdminRestaurantMenuPage({ params }: { params: Promise<{ 
     available: true,
     stock: '',
     soldOut: false,
-    minOrderQty: '1'
+    minOrderQty: '1',
+    variants: ''
   });
   const [uploading, setUploading] = useState(false);
   
@@ -89,7 +91,8 @@ export default function AdminRestaurantMenuPage({ params }: { params: Promise<{ 
       available: true,
       stock: '',
       soldOut: false,
-      minOrderQty: '1'
+      minOrderQty: '1',
+      variants: ''
     });
     setIsAdding(false);
     setEditingId(null);
@@ -106,7 +109,8 @@ export default function AdminRestaurantMenuPage({ params }: { params: Promise<{ 
       available: item.available,
       stock: typeof item.stock === 'number' ? String(item.stock) : '',
       soldOut: !!item.soldOut,
-      minOrderQty: String(item.minOrderQty ?? 1)
+      minOrderQty: String(item.minOrderQty ?? 1),
+      variants: item.variants || ''
     });
     setEditingId(item.id);
     setIsAdding(true);
@@ -321,6 +325,15 @@ export default function AdminRestaurantMenuPage({ params }: { params: Promise<{ 
                   placeholder="1"
                 />
                 <p className="text-xs text-gray-500">Minimal jumlah pembelian untuk item ini.</p>
+              </div>
+              <div className="space-y-2 md:col-span-2">
+                <label className="text-sm font-medium">Variasi Menu (Opsional, pisahkan dengan koma)</label>
+                <Input
+                  value={formData.variants}
+                  onChange={(e) => setFormData({ ...formData, variants: e.target.value })}
+                  placeholder="Contoh: Hot, Ice  atau  Normal, Less Sugar, Extra Shot"
+                />
+                <p className="text-xs text-gray-500">Isi variasi produk yang dapat dipilih oleh pembeli di menu Dine In (misal: Hot, Ice).</p>
               </div>
               <div className="space-y-2 md:col-span-2">
                 <label className="text-sm font-medium">Description</label>

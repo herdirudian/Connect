@@ -362,6 +362,7 @@ model MenuItem {
   soldOut       Boolean     @default(false)
   stock         Int?
   minOrderQty   Int         @default(1)
+  variants      String?     // e.g. "Hot, Ice" or "Hot, Ice, Less Sugar"
   
   orderItems    FoodOrderItem[]
   createdAt     DateTime    @default(now())

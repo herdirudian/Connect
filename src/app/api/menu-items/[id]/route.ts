@@ -18,7 +18,7 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
         }
 
         const body = await req.json();
-        const { name, description, price, originalPrice, category, imageUrl, available, stock, soldOut, minOrderQty } = body;
+        const { name, description, price, originalPrice, category, imageUrl, available, stock, soldOut, minOrderQty, variants } = body;
         const minQty = Math.max(1, parseInt(String(minOrderQty ?? 1), 10) || 1);
 
         const menuItem = await prisma.menuItem.update({
@@ -33,7 +33,8 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
                 available,
                 stock: stock === '' || stock === null || typeof stock === 'undefined' ? null : parseInt(String(stock), 10),
                 soldOut: !!soldOut,
-                minOrderQty: minQty
+                minOrderQty: minQty,
+                variants: variants?.trim() || null
             }
         });
 
