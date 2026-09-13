@@ -30,7 +30,13 @@ type MenuItem = {
   soldOut?: boolean;
   stock?: number | null;
   minOrderQty?: number;
+  variants?: string | null;
 };
+
+function getVariantsList(variantsStr?: string | null): string[] {
+  if (!variantsStr) return [];
+  return variantsStr.split(',').map((s) => s.trim()).filter(Boolean);
+}
 
 export default function DineInPage() {
   const [restaurants, setRestaurants] = useState<Restaurant[]>([]);
@@ -49,6 +55,7 @@ export default function DineInPage() {
   const [serviceType, setServiceType] = useState<'DINE_IN' | 'TAKE_AWAY'>('DINE_IN');
 
   const [quantities, setQuantities] = useState<Record<string, number>>({});
+  const [selectedVariants, setSelectedVariants] = useState<Record<string, string>>({});
   const [itemNotes, setItemNotes] = useState<Record<string, string>>({});
   const [paymentUrl, setPaymentUrl] = useState<string | null>(null);
   const [tableSlug, setTableSlug] = useState<string | null>(null);
@@ -270,7 +277,17 @@ export default function DineInPage() {
     const effectiveFood = checkoutOpen ? checkoutQuantities : quantities;
     const items = Object.entries(effectiveFood)
       .filter(([, qty]) => qty > 0)
-      .map(([menuItemId, quantity]) => ({ menuItemId, quantity, requestNote: itemNotes[menuItemId] || undefined }));
+      .map(([menuItemId, quantity]) => {
+        const menuItem = menu.find((m) => m.id === menuItemId);
+        const vList = getVariantsList(menuItem?.variants);
+        const chosenVariant = vList.length > 0 ? (selectedVariants[menuItemId] || vList[0]) : null;
+        const rawNote = itemNotes[menuItemId] || '';
+        const fullNote = chosenVariant
+          ? `[Varian: ${chosenVariant}]${rawNote ? ' ' + rawNote : ''}`
+          : rawNote || undefined;
+
+        return { menuItemId, quantity, requestNote: fullNote };
+      });
     
     if (items.length === 0) {
       alert('Silakan pilih item terlebih dahulu');
@@ -553,6 +570,31 @@ export default function DineInPage() {
                             <span className="text-xs px-2 py-1 rounded-full font-medium bg-green-100 text-green-700">Available</span>
                           )}
                         </div>
+                        {getVariantsList(item.variants).length > 0 && (
+                          <div className="mt-3">
+                            <Label className="text-xs font-bold text-gray-600 uppercase tracking-wider block mb-1">Pilih Variasi</Label>
+                            <div className="flex flex-wrap gap-1.5">
+                              {getVariantsList(item.variants).map((v) => {
+                                const currentVariant = selectedVariants[item.id] || getVariantsList(item.variants)[0];
+                                const isSelected = currentVariant === v;
+                                return (
+                                  <button
+                                    key={v}
+                                    type="button"
+                                    onClick={() => setSelectedVariants(prev => ({ ...prev, [item.id]: v }))}
+                                    className={`px-2.5 py-1 text-xs rounded-lg font-bold transition border ${
+                                      isSelected
+                                        ? 'bg-brand text-white border-brand shadow-sm'
+                                        : 'bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100'
+                                    }`}
+                                  >
+                                    {v}
+                                  </button>
+                                );
+                              })}
+                            </div>
+                          </div>
+                        )}
                         <div className="mt-3 flex items-center gap-2">
                           <Button variant="outline" size="sm" onClick={() => setQty(item.id, (quantities[item.id] || 0) - 1)} disabled={item.soldOut || (typeof item.stock === 'number' && item.stock <= 0)}>-</Button>
                           <Input
@@ -634,11 +676,21 @@ export default function DineInPage() {
               </span>
             </div>
             <div className="space-y-2">
-              {menu.filter(m => (checkoutQuantities[m.id] || 0) > 0).map((m) => (
-                <div key={m.id} className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
-                  <div className="min-w-0 w-full sm:flex-1 sm:mr-3">
-                    <div className="font-medium">{m.name}</div>
-                    <div className="text-xs text-gray-500">Rp {m.price.toLocaleString()}</div>
+              {menu.filter(m => (checkoutQuantities[m.id] || 0) > 0).map((m) => {
+                const vList = getVariantsList(m.variants);
+                const chosenVariant = vList.length > 0 ? (selectedVariants[m.id] || vList[0]) : null;
+                return (
+                  <div key={m.id} className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+                    <div className="min-w-0 w-full sm:flex-1 sm:mr-3">
+                      <div className="font-medium flex items-center flex-wrap gap-2">
+                        <span>{m.name}</span>
+                        {chosenVariant && (
+                          <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-brand-50 text-brand-dark border border-brand-100">
+                            Varian: {chosenVariant}
+                          </span>
+                        )}
+                      </div>
+                      <div className="text-xs text-gray-500">Rp {m.price.toLocaleString()}</div>
                     {!!m.description && (
                       <div className="mt-1 text-xs text-gray-500 line-clamp-2">
                         {m.description}
@@ -676,7 +728,8 @@ export default function DineInPage() {
                     </Button>
                   </div>
                 </div>
-              ))}
+              );
+            })}
             </div>
 
             {recommendations.length > 0 && (
