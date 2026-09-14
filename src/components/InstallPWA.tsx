@@ -47,12 +47,13 @@ export function InstallPWA() {
     };
   }, []);
 
-  // Hide PWA install prompt banner on Dine-In and Room Service order pages
-  const isOrderPage =
+  // Hide PWA install prompt banner on Dine-In, Room Service, and Booking pages
+  const isExcludedPage =
     pathname?.startsWith("/dine-in") ||
-    pathname?.startsWith("/room-service");
+    pathname?.startsWith("/room-service") ||
+    pathname?.startsWith("/booking");
 
-  if (isStandalone || dismissed || isOrderPage) {
+  if (isStandalone || dismissed || isExcludedPage) {
     return null;
   }
 
