@@ -52,7 +52,7 @@ export function PaymentMethodSelector({
                       onClick={() => onSelectMethod(method.id)}
                       className={`relative flex items-center justify-between p-2.5 rounded-xl border text-left transition-all ${
                         isSelected
-                          ? "border-emerald-600 bg-emerald-50/40 shadow-2xs ring-1 ring-emerald-600/30"
+                          ? "border-brand bg-brand-50/60 shadow-2xs ring-1 ring-brand/30"
                           : "border-gray-200 bg-white hover:border-gray-300 hover:bg-gray-50/70"
                       }`}
                     >
@@ -71,7 +71,7 @@ export function PaymentMethodSelector({
                               +Biaya Rp {fee.toLocaleString("id-ID")}
                             </div>
                           ) : (
-                            <div className="text-[11px] text-emerald-600 font-medium">
+                            <div className="text-[11px] text-brand font-medium">
                               Bebas Biaya Admin
                             </div>
                           )}
@@ -83,7 +83,7 @@ export function PaymentMethodSelector({
                         <div
                           className={`w-4 h-4 rounded-full border flex items-center justify-center transition-colors ${
                             isSelected
-                              ? "border-emerald-600 bg-emerald-600"
+                              ? "border-brand bg-brand"
                               : "border-gray-300 bg-white"
                           }`}
                         >
@@ -108,7 +108,7 @@ export function PaymentMethodSelector({
 
         <div className="flex items-center justify-between text-xs text-gray-600">
           <span>Biaya Layanan Admin</span>
-          <span className={`font-semibold ${adminFee > 0 ? "text-amber-700" : "text-emerald-700"}`}>
+          <span className={`font-semibold ${adminFee > 0 ? "text-amber-700" : "text-brand"}`}>
             {adminFee > 0 ? `+Rp ${adminFee.toLocaleString("id-ID")}` : "Rp 0"}
           </span>
         </div>

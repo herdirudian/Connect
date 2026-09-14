@@ -851,7 +851,7 @@ export default function DineInPage() {
           </div>
           <DialogFooter className="pt-2">
             <Button
-              className="bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold h-11 text-sm sm:text-base w-full sm:w-auto shadow-md shadow-emerald-600/20 rounded-xl"
+              className="bg-brand text-white hover:bg-brand-dark font-extrabold h-11 text-sm sm:text-base w-full sm:w-auto shadow-md rounded-xl"
               disabled={submitting || !selectedMethod}
               onClick={() => submitOrder()}
             >
