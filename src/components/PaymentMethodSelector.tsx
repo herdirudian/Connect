@@ -68,9 +68,9 @@ export function PaymentMethodSelector({
                       }`}
                     >
                       <div className="flex items-center gap-3 min-w-0">
-                        {/* Vector SVG Logo */}
-                        <div className="w-14 h-9 shrink-0 flex items-center justify-center bg-white rounded-lg border border-gray-100 p-1 shadow-2xs">
-                          <BankLogo id={method.id} className="h-6 w-full object-contain" />
+                        {/* Bank Logo Image */}
+                        <div className="w-14 h-10 shrink-0 flex items-center justify-center bg-white rounded-lg border border-gray-200/80 p-1 shadow-2xs overflow-hidden">
+                          <BankLogo id={method.id} alt={method.label} className="max-h-full max-w-full object-contain mx-auto" />
                         </div>
 
                         <div className="min-w-0">
