@@ -2,53 +2,13 @@
 
 import React from "react";
 import { PAYMENT_METHODS, calculateFee } from "@/lib/fees";
-import { CheckCircle2, Circle, QrCode, CreditCard, Building2, Wallet, Store, ShieldCheck, Lock, Loader2 } from "lucide-react";
+import { CheckCircle2, Circle, QrCode, CreditCard, Building2, Wallet, Store, ShieldCheck, Lock } from "lucide-react";
+import { BankLogo } from "./PaymentLogos";
 
 interface PaymentMethodSelectorProps {
   selectedMethod: string;
   onSelectMethod: (methodId: string) => void;
   subtotal: number;
-}
-
-// Brand color & logo helper
-function getMethodVisuals(id: string) {
-  switch (id) {
-    case "QRIS":
-      return {
-        bg: "bg-red-50 text-red-700 border-red-200",
-        badgeBg: "bg-red-600 text-white",
-        label: "QRIS",
-        recommended: true,
-      };
-    case "BRI_VA":
-      return { bg: "bg-blue-50 text-blue-800 border-blue-200", badgeBg: "bg-blue-700 text-white", label: "BRI" };
-    case "MANDIRI_VA":
-      return { bg: "bg-amber-50 text-amber-800 border-amber-200", badgeBg: "bg-yellow-600 text-white", label: "Mandiri" };
-    case "BNI_VA":
-      return { bg: "bg-orange-50 text-orange-800 border-orange-200", badgeBg: "bg-orange-600 text-white", label: "BNI" };
-    case "BSI_VA":
-      return { bg: "bg-teal-50 text-teal-800 border-teal-200", badgeBg: "bg-teal-600 text-white", label: "BSI" };
-    case "PERMATA_VA":
-      return { bg: "bg-emerald-50 text-emerald-800 border-emerald-200", badgeBg: "bg-emerald-600 text-white", label: "Permata" };
-    case "CIMB_VA":
-      return { bg: "bg-red-50 text-red-800 border-red-200", badgeBg: "bg-red-700 text-white", label: "CIMB" };
-    case "BJB_VA":
-      return { bg: "bg-sky-50 text-sky-800 border-sky-200", badgeBg: "bg-sky-700 text-white", label: "BJB" };
-    case "SAMPOERNA_VA":
-      return { bg: "bg-indigo-50 text-indigo-800 border-indigo-200", badgeBg: "bg-indigo-600 text-white", label: "Sampoerna" };
-    case "OTHER_VA":
-      return { bg: "bg-gray-50 text-gray-800 border-gray-200", badgeBg: "bg-gray-600 text-white", label: "Bank Lain" };
-    case "CC":
-      return { bg: "bg-slate-100 text-slate-800 border-slate-300", badgeBg: "bg-slate-800 text-white", label: "Visa/Master" };
-    case "SHOPEEPAY":
-      return { bg: "bg-orange-50 text-orange-700 border-orange-200", badgeBg: "bg-orange-500 text-white", label: "ShopeePay" };
-    case "ASTRAPAY":
-      return { bg: "bg-blue-50 text-blue-700 border-blue-200", badgeBg: "bg-blue-600 text-white", label: "AstraPay" };
-    case "INDOMARET":
-      return { bg: "bg-blue-50 text-blue-900 border-blue-300", badgeBg: "bg-blue-700 text-white", label: "Indomaret" };
-    default:
-      return { bg: "bg-gray-50 text-gray-700 border-gray-200", badgeBg: "bg-gray-600 text-white", label: id };
-  }
 }
 
 const GROUPS = [
@@ -94,7 +54,7 @@ export function PaymentMethodSelector({
                 {methods.map((method) => {
                   const isSelected = selectedMethod === method.id;
                   const fee = calculateFee(subtotal, method.id);
-                  const visuals = getMethodVisuals(method.id);
+                  const isPopular = method.id === "QRIS";
 
                   return (
                     <button
@@ -107,12 +67,10 @@ export function PaymentMethodSelector({
                           : "border-gray-200/90 bg-white hover:border-emerald-300 hover:bg-gray-50/60"
                       }`}
                     >
-                      <div className="flex items-center gap-2.5 min-w-0">
-                        {/* Logo Badge */}
-                        <div
-                          className={`w-8 h-8 rounded-lg flex items-center justify-center font-black text-[11px] shrink-0 shadow-xs ${visuals.badgeBg}`}
-                        >
-                          {visuals.label}
+                      <div className="flex items-center gap-3 min-w-0">
+                        {/* Vector SVG Logo */}
+                        <div className="w-14 h-9 shrink-0 flex items-center justify-center bg-white rounded-lg border border-gray-100 p-1 shadow-2xs">
+                          <BankLogo id={method.id} className="h-6 w-full object-contain" />
                         </div>
 
                         <div className="min-w-0">
@@ -120,7 +78,7 @@ export function PaymentMethodSelector({
                             <span className="font-bold text-xs text-gray-900 truncate">
                               {method.label}
                             </span>
-                            {visuals.recommended && (
+                            {isPopular && (
                               <span className="px-1.5 py-0.2 rounded text-[9px] font-black bg-red-100 text-red-700 uppercase tracking-tight">
                                 Populer
                               </span>
