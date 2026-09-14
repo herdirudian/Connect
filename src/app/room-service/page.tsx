@@ -9,6 +9,7 @@ import { Loader2, Utensils } from 'lucide-react';
 import Image from 'next/image';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { PAYMENT_METHODS, calculateFee } from '@/lib/fees';
+import { PaymentMethodSelector } from '@/components/PaymentMethodSelector';
 
 type Restaurant = {
   id: string;
@@ -794,54 +795,34 @@ export default function RoomServicePage() {
               </div>
             )}
 
-            <div className="space-y-2">
-              <Label>Metode Pembayaran</Label>
-              <div className="space-y-4">
-                {['Virtual Accounts','Cards','Retail','E-Wallets','QR Code'].map((grp) => (
-                  <div key={grp} className="space-y-2">
-                    <div className="text-xs font-bold uppercase tracking-wider text-gray-600">{grp}</div>
-                    <div className="flex flex-wrap gap-2">
-                      {PAYMENT_METHODS.filter(pm => pm.group === grp).map(pm => (
-                        <button
-                          key={pm.id}
-                          type="button"
-                          onClick={() => setSelectedMethod(pm.id)}
-                          className={`px-3 py-2 rounded-md border text-sm transition ${
-                            selectedMethod === pm.id ? 'border-brand bg-brand-50 text-brand-dark' : 'border-gray-200 hover:bg-gray-50'
-                          }`}
-                        >
-                          {pm.label}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-            <div className="space-y-1 text-sm">
-              {(() => {
-                const subtotalFood = menu.reduce((sum, m) => sum + (checkoutQuantities[m.id] || 0) * m.price, 0);
-                const subtotalHK = hkItems.reduce((sum, h) => sum + (hkQuantities[h.id] || 0) * h.price, 0);
-                const subtotal = subtotalFood + subtotalHK;
-                const fee = selectedMethod ? calculateFee(subtotal, selectedMethod) : 0;
-                const grand = subtotal + fee;
-                return (
-                  <>
-                    <div className="flex justify-between"><span>Subtotal</span><span>Rp {subtotal.toLocaleString()}</span></div>
-                    <div className="flex justify-between"><span>Admin Fee</span><span>Rp {fee.toLocaleString()}</span></div>
-                    <div className="flex justify-between font-bold"><span>Total Pembayaran</span><span>Rp {grand.toLocaleString()}</span></div>
-                  </>
-                );
-              })()}
-            </div>
+            {(() => {
+              const subtotalFood = menu.reduce((sum, m) => sum + (checkoutQuantities[m.id] || 0) * m.price, 0);
+              const subtotalHK = hkItems.reduce((sum, h) => sum + (hkQuantities[h.id] || 0) * h.price, 0);
+              const subtotal = subtotalFood + subtotalHK;
+
+              return (
+                <PaymentMethodSelector
+                  selectedMethod={selectedMethod}
+                  onSelectMethod={setSelectedMethod}
+                  subtotal={subtotal}
+                />
+              );
+            })()}
           </div>
-          <DialogFooter>
+          <DialogFooter className="pt-2">
             <Button
-                className="bg-brand text-white hover:bg-brand-dark w-full sm:w-auto"
+              className="bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold h-11 text-sm sm:text-base w-full sm:w-auto shadow-md shadow-emerald-600/20 rounded-xl"
               disabled={submitting || !selectedMethod}
               onClick={() => submitOrder()}
             >
-              Lanjutkan ke Pembayaran
+              {submitting ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Memproses Pesanan...
+                </>
+              ) : (
+                'Lanjutkan ke Pembayaran'
+              )}
             </Button>
           </DialogFooter>
         </DialogContent>
