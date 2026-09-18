@@ -287,7 +287,7 @@ export async function GET(req: Request) {
             }
           });
 
-          if (order.channel === 'ROOM_SERVICE') {
+          if (order.channel === 'ROOM_SERVICE' || order.channel === 'DINE_IN') {
             await notifyRoomServiceOrderPaid({ foodOrderId: order.id, hkOrderId: null });
           }
 

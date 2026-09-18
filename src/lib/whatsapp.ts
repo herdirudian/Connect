@@ -210,19 +210,22 @@ function safeText(v: any) {
 function formatFoodOrderMessage(order: any) {
   const lines: string[] = [];
   if (order.channel === 'DINE_IN') {
-    lines.push(`DINE IN ORDER (PAID)`);
+    lines.push(`ONLINE DINE IN ORDER (PAID)`);
   } else {
     lines.push(`ROOM SERVICE - FOOD (PAID)`);
   }
-  lines.push(`Order: #${String(order.id).slice(0, 8)}`);
+  lines.push(`Order ID: #${String(order.id).slice(0, 8)}`);
   if (order.tableNumber) lines.push(`Meja: ${safeText(order.tableNumber)}`);
   if (order.roomNumber) lines.push(`Kamar: ${safeText(order.roomNumber)}`);
-  if (order.guestName) lines.push(`Tamu: ${safeText(order.guestName)}`);
-  if (order.guestPhone) lines.push(`HP: ${safeText(order.guestPhone)}`);
-  if (order.restaurant?.name) lines.push(`Resto: ${safeText(order.restaurant.name)}`);
-  if (order.deliveryNotes) lines.push(`Metode: ${safeText(order.deliveryNotes)}`);
+  if (order.guestName) lines.push(`Nama Tamu: ${safeText(order.guestName)}`);
+  if (order.guestPhone) lines.push(`No HP: ${safeText(order.guestPhone)}`);
+  if (order.restaurant?.name) lines.push(`Restoran: ${safeText(order.restaurant.name)}`);
+  if (order.deliveryNotes) {
+    const isTakeAway = order.deliveryNotes === 'TAKE_AWAY';
+    lines.push(`Tipe Layanan: ${isTakeAway ? 'Take Away (Bawa Pulang)' : 'Dine In (Makan di Tempat)'}`);
+  }
   lines.push('');
-  lines.push('Item:');
+  lines.push('Pesanan:');
   for (const it of order.items || []) {
     const name = it.menuItem?.name || 'Item';
     const qty = it.quantity || 0;
@@ -230,7 +233,7 @@ function formatFoodOrderMessage(order: any) {
     lines.push(`- ${qty}x ${name}${note ? ` (${note})` : ''}`);
   }
   lines.push('');
-  lines.push(`Total: ${formatMoneyIDR(Number(order.totalAmount || 0))}`);
+  lines.push(`Total Pembayaran: ${formatMoneyIDR(Number(order.totalAmount || 0))}`);
   return lines.join('\n');
 }
 
