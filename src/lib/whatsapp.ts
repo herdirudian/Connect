@@ -1,5 +1,9 @@
 import { prisma } from '@/lib/prisma';
 import { getSystemSettings } from '@/lib/systemSettings';
+import { jsPDF } from 'jspdf';
+import QRCode from 'qrcode';
+import fs from 'fs';
+import path from 'path';
 
 type WhatsAppChannel = 'RESTAURANT' | 'HOUSEKEEPING';
 
@@ -585,7 +589,7 @@ export async function notifyBookingPaidWhatsApp(bookingId: string) {
     const itemsLines: string[] = [];
     if (details.items && Array.isArray(details.items)) {
       for (const item of details.items) {
-        const title = item.title || item.name || 'Tiket';
+        const title = item.name || item.title || 'Tiket';
         const qty = item.qty || item.quantity || 1;
         const price = item.price ? ` (${formatMoneyIDR(Number(item.price))})` : '';
         itemsLines.push(`- ${qty}x ${title}${price}`);
@@ -610,7 +614,7 @@ export async function notifyBookingPaidWhatsApp(bookingId: string) {
     lines.push(`💰 *Total Pembayaran:* ${formatMoneyIDR(Number(booking.amount || 0))} (LUNAS)`);
     lines.push(``);
     lines.push(`Silakan tunjukkan pesan ini atau QR Code tiket Anda saat berada di gate/lokasi.`);
-    lines.push(`Lihat e-voucher Anda online: https://family.thelodgegroup.id/booking/tickets`);
+    lines.push(`Lihat e-voucher Anda online: https://family.thelodgegroup.id/dashboard/bookings`);
 
     const textMessage = lines.join('\n');
 
@@ -622,15 +626,78 @@ export async function notifyBookingPaidWhatsApp(bookingId: string) {
       name: guestName,
     });
 
-    // Kirim Media E-Voucher Gambar / PDF jika URL tersedia
-    if (details.qrImageUrl || details.voucherPdfUrl) {
-      const mediaUrl = details.qrImageUrl || details.voucherPdfUrl;
-      const mediaType = details.voucherPdfUrl ? 'document' : 'image';
+    // Generate PDF E-Voucher & simpan ke public/uploads/vouchers
+    let voucherPdfUrl = details.voucherPdfUrl || '';
+    if (!voucherPdfUrl) {
+      try {
+        const publicDir = path.join(process.cwd(), 'public', 'uploads', 'vouchers');
+        if (!fs.existsSync(publicDir)) {
+          fs.mkdirSync(publicDir, { recursive: true });
+        }
+
+        const fileName = `voucher-${String(booking.id).slice(0, 8)}.pdf`;
+        const filePath = path.join(publicDir, fileName);
+
+        const doc = new jsPDF({ unit: 'pt', format: 'a4' });
+        const margin = 40;
+        const w = doc.internal.pageSize.getWidth();
+        const line = (y: number) => doc.line(margin, y, w - margin, y);
+
+        doc.setFont('helvetica', 'bold'); doc.setFontSize(16);
+        doc.text('E-VOUCHER TIKET - THE LODGE MARIBAYA', margin, 60);
+        doc.setFontSize(10);
+        doc.text(`Booking ID: #${String(booking.id).slice(0, 8)}`, margin, 80);
+        doc.text(`Tanggal Kunjungan: ${formattedDate}`, margin, 95);
+        line(110);
+
+        doc.setFont('helvetica', 'bold'); doc.setFontSize(12);
+        doc.text('PEMESAN', margin, 130);
+        doc.setFont('helvetica', 'normal'); doc.setFontSize(10);
+        doc.text(`Nama: ${guestName}`, margin, 145);
+        doc.text(`Telepon: ${recipientPhone}`, margin, 160);
+        doc.text(`Status: LUNAS (PAID)`, margin, 175);
+        line(190);
+
+        doc.setFont('helvetica', 'bold'); doc.setFontSize(12);
+        doc.text('RINCIAN TIKET', margin, 210);
+        doc.setFont('helvetica', 'normal'); doc.setFontSize(10);
+        let curY = 225;
+        if (itemsLines.length > 0) {
+          itemsLines.forEach((l) => {
+            doc.text(l, margin, curY);
+            curY += 15;
+          });
+        } else {
+          doc.text(`- ${displayType}`, margin, curY);
+          curY += 15;
+        }
+
+        doc.setFont('helvetica', 'bold');
+        doc.text(`Total Pembayaran: ${formatMoneyIDR(Number(booking.amount || 0))}`, margin, curY + 10);
+
+        // Render QR Code image into PDF
+        try {
+          const qrDataUrl = await QRCode.toDataURL(String(booking.id));
+          doc.addImage(qrDataUrl, 'PNG', w - margin - 120, 130, 120, 120);
+        } catch {}
+
+        const pdfBuffer = doc.output('arraybuffer');
+        fs.writeFileSync(filePath, Buffer.from(pdfBuffer));
+
+        const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://family.thelodgegroup.id';
+        voucherPdfUrl = `${appUrl.replace(/\/+$/, '')}/uploads/vouchers/${fileName}`;
+      } catch (pdfErr) {
+        console.error('[WhatsApp] Error generating PDF ticket:', pdfErr);
+      }
+    }
+
+    // Kirim File PDF E-Voucher ke WhatsApp Pelanggan
+    if (voucherPdfUrl) {
       await sendWhatsAppPayload({
         to: recipientPhone,
-        type: mediaType,
-        mediaUrl: mediaUrl,
-        caption: `E-Voucher QR Code #${String(booking.id).slice(0, 8)} - The Lodge Maribaya`,
+        type: 'document',
+        mediaUrl: voucherPdfUrl,
+        caption: `E-Voucher Tiket #${String(booking.id).slice(0, 8)} - The Lodge Maribaya`,
       });
     }
 

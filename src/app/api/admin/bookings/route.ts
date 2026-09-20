@@ -232,7 +232,7 @@ export async function GET(request: Request) {
       }
 
       const items = details.items || [];
-      const itemNames = items.map((i: any) => `${i.name} (x${i.qty || 1})`).join(', ');
+      const itemNames = items.map((i: any) => `${i.name || i.title || 'Tiket'} (x${i.qty || 1})`).join(', ');
       const discount = details.promo?.discount || 0;
       const promoCode = details.promo?.code || '';
       const domisili = details.guestCity || (details.ktpPromo ? details.ktpPromo.regency : '');

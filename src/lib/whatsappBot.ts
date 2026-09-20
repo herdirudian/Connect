@@ -340,6 +340,7 @@ export async function handleIncomingWhatsAppBotMessage(fromPhone: string, text: 
           items: [
             {
               id: session.attractionId,
+              name: session.attractionName,
               title: session.attractionName,
               qty: session.pax,
               price: session.attractionPrice,

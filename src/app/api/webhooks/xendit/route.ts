@@ -319,6 +319,9 @@ export async function POST(req: Request) {
               try {
                 const d = JSON.parse(booking.details);
                 return Array.isArray(d.items) ? d.items : undefined;
+                return Array.isArray(d.items)
+                  ? d.items.map((i: any) => ({ name: i.name || i.title || 'Tiket', qty: i.qty || 1, price: i.price || 0 }))
+                  : undefined;
               } catch { return undefined; }
             })(),
             (() => {
