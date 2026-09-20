@@ -48,6 +48,11 @@ const KEYS = {
   restaurantTo: 'WA_RESTO_TO',
   housekeepingTo: 'WA_HK_TO',
   timeoutMs: 'WA_TIMEOUT_MS',
+
+  // Meta Cloud API for Customer Ticketing & E-Vouchers
+  metaEnabled: 'WA_META_ENABLED',
+  metaUrl: 'WA_META_URL',
+  metaApiKey: 'WA_META_API_KEY',
 } as const;
 
 export const WHATSAPP_SETTING_KEYS = KEYS;
@@ -83,20 +88,18 @@ function renderTemplateJson(str: string, vars: Record<string, string>) {
 
 async function getConfig(): Promise<WhatsAppConfig> {
   const map = await getSystemSettings(Object.values(KEYS));
-  const defaultHeadersJson = JSON.stringify({
-    'Content-Type': 'application/json',
-    Authorization: 'Bearer {{apiKey}}',
-  });
+  const defaultHeadersJson = JSON.stringify({ 'Content-Type': 'application/json' });
   const defaultBodyTemplateJson = JSON.stringify({
-    to: '{{to}}',
-    type: 'text',
+    api_key: '{{apiKey}}',
+    number_key: '{{numberKey}}',
+    phone_no: '{{to}}',
     message: '{{message}}',
   });
   return {
     enabled: parseBoolean(map[KEYS.enabled]),
     url: String(map[KEYS.url] || '').trim(),
     method: String(map[KEYS.method] || 'POST').trim().toUpperCase(),
-    apiKey: String(map[KEYS.apiKey] || 'lodge_wa_api_key_2026').trim(),
+    apiKey: String(map[KEYS.apiKey] || '').trim(),
     numberKey: String(map[KEYS.numberKey] || 'ALL').trim(),
     headersJson: String(map[KEYS.headersJson] || defaultHeadersJson).trim(),
     bodyTemplateJson: String(map[KEYS.bodyTemplateJson] || defaultBodyTemplateJson).trim(),
@@ -106,36 +109,38 @@ async function getConfig(): Promise<WhatsAppConfig> {
   };
 }
 
-export async function sendWhatsAppPayload(payload: WhatsAppPayload) {
-  const config = await getConfig();
+/**
+ * OpenWA / Watzap Gateway Provider for Internal Staff Alerts (Dine In & Housekeeping)
+ */
+async function sendOpenWAMessageRaw(config: WhatsAppConfig, to: string, message: string) {
   if (!config.enabled) {
-    console.log('[WhatsApp] Sending skipped: WA_ENABLED is false');
+    console.log('[WhatsApp OpenWA] Sending skipped: WA_ENABLED is false');
     return { ok: false, error: 'DISABLED' as const };
   }
   if (!config.url) {
-    console.error('[WhatsApp] Sending failed: No WA_URL configured');
+    console.error('[WhatsApp OpenWA] Sending failed: No WA_URL configured');
     return { ok: false, error: 'NO_URL' as const };
   }
 
-  const cleanedTo = payload.to.replace(/[^\d+]/g, '').trim();
+  const cleanedTo = to.replace(/[^\d+]/g, '').trim();
   if (!cleanedTo) {
-    console.error('[WhatsApp] Sending failed: Empty recipient phone number');
+    console.error('[WhatsApp OpenWA] Sending failed: Empty recipient phone number');
     return { ok: false, error: 'NO_RECIPIENT' as const };
   }
 
+  console.log(`[WhatsApp OpenWA] Sending order alert to ${cleanedTo}...`);
+
   const vars = {
     to: cleanedTo,
-    message: payload.type === 'text' ? payload.message : (payload as any).caption || '',
+    message,
     apiKey: config.apiKey,
     numberKey: config.numberKey,
   };
 
-  let headers: Record<string, string> = { 'Content-Type': 'application/json' };
-  if (config.apiKey) {
-    headers['Authorization'] = `Bearer ${config.apiKey}`;
-    headers['x-api-key'] = config.apiKey;
-  }
+  const delayMs = Math.floor(Math.random() * 2000) + 1000;
+  await new Promise((resolve) => setTimeout(resolve, delayMs));
 
+  let headers: Record<string, string> = { 'Content-Type': 'application/json' };
   if (config.headersJson) {
     try {
       const rendered = renderTemplateJson(config.headersJson, vars);
@@ -147,14 +152,23 @@ export async function sendWhatsAppPayload(payload: WhatsAppPayload) {
   }
 
   let body: any = {
-    ...payload,
-    to: cleanedTo,
+    api_key: config.apiKey,
+    number_key: config.numberKey,
+    phone_no: cleanedTo,
+    message,
   };
 
-  console.log(`[WhatsApp] Sending ${payload.type} message to ${cleanedTo}...`);
+  if (config.bodyTemplateJson) {
+    try {
+      const rendered = renderTemplateJson(config.bodyTemplateJson, vars);
+      const parsed = JSON.parse(rendered);
+      if (parsed !== null) body = parsed;
+    } catch {}
+  }
 
   const controller = new AbortController();
   const t = setTimeout(() => controller.abort(), config.timeoutMs);
+
   try {
     const res = await fetch(config.url, {
       method: config.method || 'POST',
@@ -162,6 +176,7 @@ export async function sendWhatsAppPayload(payload: WhatsAppPayload) {
       body: config.method === 'GET' ? undefined : JSON.stringify(body),
       signal: controller.signal,
     });
+
     const httpStatus = res.status;
     const text = await res.text();
     let parsed: any = null;
@@ -172,7 +187,7 @@ export async function sendWhatsAppPayload(payload: WhatsAppPayload) {
     }
 
     if (!res.ok) {
-      console.error(`[WhatsApp] HTTP Error ${httpStatus}:`, text);
+      console.error(`[WhatsApp OpenWA] HTTP Error ${httpStatus}:`, text);
       return { ok: false, error: 'HTTP_ERROR' as const, status: httpStatus, responseText: text, responseJson: parsed };
     }
 
@@ -190,14 +205,110 @@ export async function sendWhatsAppPayload(payload: WhatsAppPayload) {
             : true;
 
     if (!providerOk) {
-      console.error(`[WhatsApp] Provider Error:`, text);
+      console.error(`[WhatsApp OpenWA] Provider Error:`, text);
       return { ok: false, error: 'PROVIDER_ERROR' as const, status: httpStatus, responseText: text, responseJson: parsed };
     }
 
-    console.log(`[WhatsApp] Success sending to ${cleanedTo}`);
+    console.log(`[WhatsApp OpenWA] Success sending to ${cleanedTo}`);
     return { ok: true, status: httpStatus, responseText: text, responseJson: parsed };
   } catch (e: any) {
-    console.error(`[WhatsApp] Fetch Error:`, e);
+    console.error(`[WhatsApp OpenWA] Fetch Error:`, e);
+    return { ok: false, error: 'FETCH_ERROR' as const, message: String(e?.message || e) };
+  } finally {
+    clearTimeout(t);
+  }
+}
+
+/**
+ * Meta Cloud API Gateway for Customer Ticketing & E-Voucher Communications
+ */
+export async function sendWhatsAppPayload(payload: WhatsAppPayload) {
+  const map = await getSystemSettings([KEYS.enabled, KEYS.metaEnabled, KEYS.url, KEYS.metaUrl, KEYS.apiKey, KEYS.metaApiKey, KEYS.timeoutMs]);
+  
+  const enabled = parseBoolean(map[KEYS.metaEnabled]) || parseBoolean(map[KEYS.enabled]);
+  if (!enabled) {
+    console.log('[WhatsApp Meta Cloud] Sending skipped: Disabled');
+    return { ok: false, error: 'DISABLED' as const };
+  }
+
+  const url = String(map[KEYS.metaUrl] || process.env.WA_API_ENDPOINT || map[KEYS.url] || '').trim();
+  if (!url) {
+    console.error('[WhatsApp Meta Cloud] Sending failed: No API endpoint URL configured');
+    return { ok: false, error: 'NO_URL' as const };
+  }
+
+  const apiKey = String(map[KEYS.metaApiKey] || process.env.WA_API_KEY || map[KEYS.apiKey] || 'lodge_wa_api_key_2026').trim();
+  const cleanedTo = payload.to.replace(/[^\d+]/g, '').trim();
+
+  if (!cleanedTo) {
+    console.error('[WhatsApp Meta Cloud] Sending failed: Empty recipient phone number');
+    return { ok: false, error: 'NO_RECIPIENT' as const };
+  }
+
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+  };
+
+  if (apiKey) {
+    headers['Authorization'] = `Bearer ${apiKey}`;
+    headers['x-api-key'] = apiKey;
+  }
+
+  const body = {
+    ...payload,
+    to: cleanedTo,
+  };
+
+  console.log(`[WhatsApp Meta Cloud] Sending ${payload.type} message to ${cleanedTo}...`);
+
+  const timeoutMs = Math.max(1000, parseInt(String(map[KEYS.timeoutMs] || '8000'), 10) || 8000);
+  const controller = new AbortController();
+  const t = setTimeout(() => controller.abort(), timeoutMs);
+
+  try {
+    const res = await fetch(url, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify(body),
+      signal: controller.signal,
+    });
+
+    const httpStatus = res.status;
+    const text = await res.text();
+    let parsed: any = null;
+    try {
+      parsed = text ? JSON.parse(text) : null;
+    } catch {
+      parsed = null;
+    }
+
+    if (!res.ok) {
+      console.error(`[WhatsApp Meta Cloud] HTTP Error ${httpStatus}:`, text);
+      return { ok: false, error: 'HTTP_ERROR' as const, status: httpStatus, responseText: text, responseJson: parsed };
+    }
+
+    const providerOk =
+      parsed === null
+        ? true
+        : parsed === true
+          ? true
+          : typeof parsed === 'object'
+            ? parsed.success === true ||
+              parsed.status === true ||
+              parsed.status === '200' ||
+              parsed.ack === 'successfully' ||
+              parsed.message === 'Successfully'
+            : true;
+
+    if (!providerOk) {
+      console.error(`[WhatsApp Meta Cloud] Provider Error:`, text);
+      return { ok: false, error: 'PROVIDER_ERROR' as const, status: httpStatus, responseText: text, responseJson: parsed };
+    }
+
+    console.log(`[WhatsApp Meta Cloud] Success sending to ${cleanedTo}`);
+    return { ok: true, status: httpStatus, responseText: text, responseJson: parsed };
+  } catch (e: any) {
+    console.error(`[WhatsApp Meta Cloud] Fetch Error:`, e);
     return { ok: false, error: 'FETCH_ERROR' as const, message: String(e?.message || e) };
   } finally {
     clearTimeout(t);
@@ -205,11 +316,7 @@ export async function sendWhatsAppPayload(payload: WhatsAppPayload) {
 }
 
 export async function sendWhatsAppMessageRaw(config: WhatsAppConfig, to: string, message: string) {
-  return sendWhatsAppPayload({
-    to,
-    type: 'text',
-    message,
-  });
+  return sendOpenWAMessageRaw(config, to, message);
 }
 
 export async function sendWhatsAppMessage(to: string, message: string, name?: string) {
@@ -312,11 +419,14 @@ function formatHousekeepingOrderMessage(order: any) {
   return lines.join('\n');
 }
 
+/**
+ * Notifikasi Pesanan Makanan & Room Service untuk Tim Internal (via OpenWA / Watzap)
+ */
 export async function notifyRoomServiceOrderPaid(input: { foodOrderId?: string | null; hkOrderId?: string | null }) {
-  console.log('[WhatsApp] notifyRoomServiceOrderPaid triggered', input);
+  console.log('[WhatsApp OpenWA] notifyRoomServiceOrderPaid triggered', input);
   const config = await getConfig();
   if (!config.enabled) {
-    console.log('[WhatsApp] Notification skipped: WA_ENABLED is false');
+    console.log('[WhatsApp OpenWA] Notification skipped: WA_ENABLED is false');
     return { ok: true, skipped: true as const };
   }
 
@@ -338,7 +448,7 @@ export async function notifyRoomServiceOrderPaid(input: { foodOrderId?: string |
     if (order) {
       const message = formatFoodOrderMessage(order);
       const recipients = splitRecipients(config.restaurantTo);
-      console.log(`[WhatsApp] Sending Food Order ${order.id} to ${recipients.length} recipients`);
+      console.log(`[WhatsApp OpenWA] Sending Food Order ${order.id} to ${recipients.length} recipients`);
       for (let i = 0; i < recipients.length; i++) {
         const to = recipients[i];
         if (i > 0) {
@@ -346,7 +456,7 @@ export async function notifyRoomServiceOrderPaid(input: { foodOrderId?: string |
           await new Promise((resolve) => setTimeout(resolve, bulkDelay));
         }
 
-        const r = await sendWhatsAppMessageRaw(config, to, message);
+        const r = await sendOpenWAMessageRaw(config, to, message);
         results.push({
           channel: 'RESTAURANT',
           to,
@@ -358,7 +468,7 @@ export async function notifyRoomServiceOrderPaid(input: { foodOrderId?: string |
         });
       }
     } else {
-      console.warn(`[WhatsApp] Food Order ${input.foodOrderId} not found`);
+      console.warn(`[WhatsApp OpenWA] Food Order ${input.foodOrderId} not found`);
     }
   }
 
@@ -370,14 +480,14 @@ export async function notifyRoomServiceOrderPaid(input: { foodOrderId?: string |
     if (order) {
       const message = formatHousekeepingOrderMessage(order);
       const recipients = splitRecipients(config.housekeepingTo);
-      console.log(`[WhatsApp] Sending HK Order ${order.id} to ${recipients.length} recipients`);
+      console.log(`[WhatsApp OpenWA] Sending HK Order ${order.id} to ${recipients.length} recipients`);
       for (let i = 0; i < recipients.length; i++) {
         const to = recipients[i];
         if (i > 0) {
           const bulkDelay = Math.floor(Math.random() * 2000) + 1000;
           await new Promise((resolve) => setTimeout(resolve, bulkDelay));
         }
-        const r = await sendWhatsAppMessageRaw(config, to, message);
+        const r = await sendOpenWAMessageRaw(config, to, message);
         results.push({
           channel: 'HOUSEKEEPING',
           to,
@@ -389,16 +499,19 @@ export async function notifyRoomServiceOrderPaid(input: { foodOrderId?: string |
         });
       }
     } else {
-      console.warn(`[WhatsApp] HK Order ${input.hkOrderId} not found`);
+      console.warn(`[WhatsApp OpenWA] HK Order ${input.hkOrderId} not found`);
     }
   }
 
-  console.log(`[WhatsApp] Finished sending notifications. Success: ${results.every((r) => r.ok)}`);
+  console.log(`[WhatsApp OpenWA] Finished sending notifications. Success: ${results.every((r) => r.ok)}`);
   return { ok: results.every((r) => r.ok), results };
 }
 
+/**
+ * Notifikasi E-Voucher Tiket & Booking untuk Tamu/Pelanggan (via Meta Cloud API Dashboard)
+ */
 export async function notifyBookingPaidWhatsApp(bookingId: string) {
-  console.log('[WhatsApp] notifyBookingPaidWhatsApp triggered for booking:', bookingId);
+  console.log('[WhatsApp Meta Cloud] notifyBookingPaidWhatsApp triggered for booking:', bookingId);
   try {
     const booking = await prisma.booking.findUnique({
       where: { id: bookingId },
@@ -406,7 +519,7 @@ export async function notifyBookingPaidWhatsApp(bookingId: string) {
     });
 
     if (!booking) {
-      console.warn(`[WhatsApp] Booking ${bookingId} not found`);
+      console.warn(`[WhatsApp Meta Cloud] Booking ${bookingId} not found`);
       return { ok: false, error: 'NOT_FOUND' };
     }
 
@@ -425,7 +538,7 @@ export async function notifyBookingPaidWhatsApp(bookingId: string) {
       '';
 
     if (!recipientPhone) {
-      console.log(`[WhatsApp] Skipped: No phone number found for booking ${bookingId}`);
+      console.log(`[WhatsApp Meta Cloud] Skipped: No phone number found for booking ${bookingId}`);
       return { ok: true, skipped: true, reason: 'NO_PHONE' };
     }
 
@@ -476,7 +589,7 @@ export async function notifyBookingPaidWhatsApp(bookingId: string) {
 
     const textMessage = lines.join('\n');
 
-    // Kirim konfirmasi pesan teks WhatsApp
+    // Kirim konfirmasi pesan teks WhatsApp ke tamu via Meta Cloud API
     const textResult = await sendWhatsAppPayload({
       to: recipientPhone,
       type: 'text',
@@ -498,20 +611,17 @@ export async function notifyBookingPaidWhatsApp(bookingId: string) {
 
     return textResult;
   } catch (error: any) {
-    console.error('[WhatsApp] Error in notifyBookingPaidWhatsApp:', error);
+    console.error('[WhatsApp Meta Cloud] Error in notifyBookingPaidWhatsApp:', error);
     return { ok: false, error: error.message };
   }
 }
 
 export async function sendWhatsAppTest(input: { to: string; message: string }) {
+  const config = await getConfig();
   const to = String(input.to || '').trim();
   const message = String(input.message || '').trim();
   if (!to) return { ok: false, error: 'NO_RECIPIENT' as const };
   if (!message) return { ok: false, error: 'NO_MESSAGE' as const };
-  const r = await sendWhatsAppPayload({
-    to,
-    type: 'text',
-    message,
-  });
+  const r = await sendOpenWAMessageRaw(config, to, message);
   return r;
 }
