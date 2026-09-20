@@ -152,6 +152,25 @@ export default function AdminWhatsappSettingsPage() {
     }
   }
 
+  async function sendTestBot() {
+    setTesting(true);
+    try {
+      const res = await fetch('/api/admin/whatsapp-settings/test-bot', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ phone: testTo, message: testMessage || 'Beli Tiket' }),
+      });
+      const data = await res.json();
+      setLastTestResult(JSON.stringify(data, null, 2));
+      if (!res.ok) throw new Error(data.error || 'Gagal memicu bot');
+      toast({ title: 'Bot Dipicu', description: `Bot WhatsApp merespons untuk nomor ${testTo}. Cek pesan di WA.` });
+    } catch (e: any) {
+      toast({ title: 'Error', description: e.message || 'Gagal memicu bot', variant: 'destructive' });
+    } finally {
+      setTesting(false);
+    }
+  }
+
   async function resendPaid() {
     setResending(true);
     try {
@@ -435,7 +454,16 @@ export default function AdminWhatsappSettingsPage() {
               <Input value={testMessage} onChange={(e) => setTestMessage(e.target.value)} placeholder="Pesan test..." />
             </div>
           </div>
-          <div className="flex justify-end">
+          <div className="flex justify-end gap-3">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={sendTestBot}
+              disabled={testing}
+              className="border-blue-300 text-blue-800 hover:bg-blue-50 font-semibold"
+            >
+              {testing ? <Loader2 className="h-4 w-4 animate-spin" /> : '🤖 Simulasikan Trigger Chat Bot'}
+            </Button>
             <Button onClick={sendTest} disabled={testing}>
               {testing ? <Loader2 className="h-4 w-4 animate-spin" /> : `Kirim Test (${testGateway})`}
             </Button>
