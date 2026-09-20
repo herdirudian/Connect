@@ -59,6 +59,7 @@ interface Attraction {
   active: boolean;
   displayTarget: 'BOTH' | 'BOOKING' | 'EXPLORE';
   allowVoucherClaim: boolean;
+  allowWaBooking?: boolean;
   maxVoucherPax: number;
   voucherExpiry: string | null;
   isEvent?: boolean;
@@ -94,6 +95,7 @@ export default function AdminAttractionsPage() {
     active: true,
     displayTarget: 'BOTH' as 'BOTH' | 'BOOKING' | 'EXPLORE',
       allowVoucherClaim: false,
+      allowWaBooking: true,
       maxVoucherPax: 10,
       voucherExpiry: '2026-12-31',
       isEvent: false,
@@ -169,6 +171,7 @@ export default function AdminAttractionsPage() {
       active: true,
         displayTarget: 'BOTH',
         allowVoucherClaim: false,
+        allowWaBooking: true,
         maxVoucherPax: 10,
         voucherExpiry: '2026-12-31',
         isEvent: false,
@@ -211,6 +214,7 @@ export default function AdminAttractionsPage() {
       active: item.active,
       displayTarget: item.displayTarget || 'BOTH',
       allowVoucherClaim: item.allowVoucherClaim || false,
+      allowWaBooking: item.allowWaBooking !== false,
         maxVoucherPax: item.maxVoucherPax || 10,
         voucherExpiry: item.voucherExpiry ? new Date(item.voucherExpiry).toISOString().split('T')[0] : '2026-12-31',
         isEvent: item.isEvent || false,
@@ -695,6 +699,19 @@ export default function AdminAttractionsPage() {
                           </div>
                         </div>
                       )}
+                  </div>
+
+                  <div className="flex items-center justify-between p-4 bg-emerald-50/50 rounded-lg border border-emerald-200">
+                    <div className="space-y-0.5">
+                      <label className="text-sm font-bold uppercase tracking-wider text-emerald-900 flex items-center gap-1.5">
+                        <span>💬 Beli Tiket via WhatsApp Bot</span>
+                      </label>
+                      <p className="text-xs text-emerald-700">Tampilkan produk/tiket ini di katalog pemesanan WhatsApp Bot (Meta API)</p>
+                    </div>
+                    <Checkbox 
+                      checked={formData.allowWaBooking}
+                      onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData({...formData, allowWaBooking: e.target.checked})}
+                    />
                   </div>
   
                   <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg border border-gray-200">

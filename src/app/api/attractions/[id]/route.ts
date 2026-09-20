@@ -24,7 +24,7 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
     }
 
     const body = await req.json();
-    const { name, description, category, price, originalPrice, points, benefits, imageUrl, videoUrl, images, status, waitTime, tags, active, rating, displayTarget, allowVoucherClaim, maxVoucherPax, voucherExpiry, isEvent, eventDate, eventMaxQuota, eventPromoPrice, eventPromoQuota, sortOrder, isLandingHub } = body;
+    const { name, description, category, price, originalPrice, points, benefits, imageUrl, videoUrl, images, status, waitTime, tags, active, rating, displayTarget, allowVoucherClaim, allowWaBooking, maxVoucherPax, voucherExpiry, isEvent, eventDate, eventMaxQuota, eventPromoPrice, eventPromoQuota, sortOrder, isLandingHub } = body;
     const { id } = await params;
 
     console.log(`[Attractions API] Updating attraction ${id}:`, JSON.stringify(body));
@@ -49,6 +49,7 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
         active,
         displayTarget,
         allowVoucherClaim: allowVoucherClaim !== undefined ? allowVoucherClaim : undefined,
+        allowWaBooking: allowWaBooking !== undefined ? allowWaBooking : undefined,
         maxVoucherPax: maxVoucherPax !== undefined ? parseInt(maxVoucherPax) : undefined,
         voucherExpiry: voucherExpiry !== undefined ? (voucherExpiry ? new Date(voucherExpiry) : null) : undefined,
         isEvent: isEvent !== undefined ? isEvent : undefined,

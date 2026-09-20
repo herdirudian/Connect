@@ -119,7 +119,7 @@ export async function handleIncomingWhatsAppBotMessage(fromPhone: string, text: 
   // If initial message or reset, show attractions catalog
   if (session.step === 'START' || ['halo', 'hi', 'tiket', 'pesan', 'beli', 'help', 'start'].includes(lowerText)) {
     const attractions = await prisma.attraction.findMany({
-      where: { active: true },
+      where: { active: true, allowWaBooking: true },
       orderBy: { sortOrder: 'asc' },
       take: 10,
     });
@@ -160,7 +160,7 @@ export async function handleIncomingWhatsAppBotMessage(fromPhone: string, text: 
   // STEP 1: SELECT ATTRACTION
   if (session.step === 'SELECT_ATTRACTION') {
     const attractions = await prisma.attraction.findMany({
-      where: { active: true },
+      where: { active: true, allowWaBooking: true },
       orderBy: { sortOrder: 'asc' },
       take: 10,
     });
