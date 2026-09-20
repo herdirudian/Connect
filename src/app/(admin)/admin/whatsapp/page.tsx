@@ -26,6 +26,10 @@ type FormState = {
   metaMethod: string;
   metaApiKey: string;
   metaHeadersJson: string;
+
+  // Bot Ticket Purchasing Service Control
+  botEnabled: boolean;
+  botMaintenanceMsg: string;
 };
 
 export default function AdminWhatsappSettingsPage() {
@@ -58,6 +62,10 @@ export default function AdminWhatsappSettingsPage() {
     metaMethod: 'POST',
     metaApiKey: 'lodge_wa_api_key_2026',
     metaHeadersJson: JSON.stringify({ 'Content-Type': 'application/json', Authorization: 'Bearer {{apiKey}}' }, null, 2),
+
+    botEnabled: true,
+    botMaintenanceMsg:
+      '⚠️ Mohon maaf, layanan pemesanan tiket via WhatsApp sedang nonaktif / maintenance sementara waktu. Silakan melakukan pemesanan tiket melalui website kami di https://family.thelodgegroup.id/booking/tickets. Terima kasih!',
   });
 
   useEffect(() => {
@@ -87,6 +95,11 @@ export default function AdminWhatsappSettingsPage() {
         metaMethod: data.metaMethod || 'POST',
         metaApiKey: data.metaApiKey || 'lodge_wa_api_key_2026',
         metaHeadersJson: data.metaHeadersJson || JSON.stringify({ 'Content-Type': 'application/json', Authorization: 'Bearer {{apiKey}}' }, null, 2),
+
+        botEnabled: String(data.botEnabled || '').toLowerCase() === 'true' || String(data.botEnabled || '') === '1',
+        botMaintenanceMsg:
+          data.botMaintenanceMsg ||
+          '⚠️ Mohon maaf, layanan pemesanan tiket via WhatsApp sedang nonaktif / maintenance sementara waktu. Silakan melakukan pemesanan tiket melalui website kami di https://family.thelodgegroup.id/booking/tickets. Terima kasih!',
       });
       const firstResto = String(data.restaurantTo || '').split(/[,;\n\r\t ]+/g).map((s: string) => s.trim()).filter(Boolean)[0];
       if (firstResto && !testTo) setTestTo(firstResto);
@@ -120,6 +133,9 @@ export default function AdminWhatsappSettingsPage() {
           metaMethod: form.metaMethod,
           metaApiKey: form.metaApiKey,
           metaHeadersJson: form.metaHeadersJson,
+
+          botEnabled: form.botEnabled ? 'true' : 'false',
+          botMaintenanceMsg: form.botMaintenanceMsg,
         }),
       });
       const data = await res.json();
@@ -364,6 +380,49 @@ export default function AdminWhatsappSettingsPage() {
             >
               ⚡ Set Preset Meta API
             </Button>
+          </div>
+
+          {/* KONTROL MAINTENANCE BOT WHATSAPP */}
+          <div className="p-4 rounded-lg border border-amber-200 bg-amber-50/40 space-y-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <input
+                  type="checkbox"
+                  id="botEnabled"
+                  className="h-4 w-4 rounded border-amber-400 text-amber-600 focus:ring-amber-500"
+                  checked={form.botEnabled}
+                  onChange={(e) => setForm((s) => ({ ...s, botEnabled: e.target.checked }))}
+                />
+                <label htmlFor="botEnabled" className="text-sm font-bold text-amber-950 cursor-pointer flex items-center gap-2">
+                  <span>🤖 Status Bot Pembelian Tiket WA</span>
+                  {form.botEnabled ? (
+                    <span className="text-[10px] px-2 py-0.5 rounded bg-emerald-100 text-emerald-800 font-semibold border border-emerald-300">
+                      ● AKTIF (Layanan Buka)
+                    </span>
+                  ) : (
+                    <span className="text-[10px] px-2 py-0.5 rounded bg-red-100 text-red-800 font-semibold border border-red-300">
+                      ⛔ MAINTENANCE / NONAKTIF (Layanan Ditutup)
+                    </span>
+                  )}
+                </label>
+              </div>
+            </div>
+
+            <p className="text-xs text-amber-900">
+              Hapus centang di atas untuk mematikan sementara fitur pemesanan tiket via WhatsApp saat terjadi maintenance.
+            </p>
+
+            {!form.botEnabled && (
+              <div className="space-y-1.5 pt-2">
+                <label className="text-xs font-semibold text-amber-950">Pesan Balasan Otomatis Saat Maintenance Mode:</label>
+                <textarea
+                  className="w-full border border-amber-300 rounded-md px-3 py-2 text-xs bg-white focus:outline-hidden focus:ring-1 focus:ring-amber-500 min-h-[70px]"
+                  value={form.botMaintenanceMsg}
+                  onChange={(e) => setForm((s) => ({ ...s, botMaintenanceMsg: e.target.value }))}
+                  placeholder="Ketik pesan yang dikirimkan ke pelanggan saat bot maintenance..."
+                />
+              </div>
+            )}
           </div>
 
           <div className="grid gap-4 md:grid-cols-2">

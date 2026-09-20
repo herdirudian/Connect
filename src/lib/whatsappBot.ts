@@ -109,6 +109,24 @@ export async function handleIncomingWhatsAppBotMessage(fromPhone: string, text: 
   const trimmedText = text.trim();
   const lowerText = trimmedText.toLowerCase();
 
+  // Check Maintenance / Service Enabled Status
+  const botSettings = await getSystemSettings(['WA_BOT_ENABLED', 'WA_META_ENABLED', 'WA_BOT_MAINTENANCE_MSG']);
+  const isBotEnabled = (botSettings['WA_BOT_ENABLED'] ?? 'true').toLowerCase();
+  const isMetaEnabled = (botSettings['WA_META_ENABLED'] ?? 'true').toLowerCase();
+
+  if (isBotEnabled === 'false' || isBotEnabled === '0' || isMetaEnabled === 'false' || isMetaEnabled === '0') {
+    const maintenanceMessage =
+      botSettings['WA_BOT_MAINTENANCE_MSG'] ||
+      '⚠️ Mohon maaf, layanan pemesanan tiket via WhatsApp sedang nonaktif / maintenance sementara waktu. Silakan melakukan pemesanan tiket melalui website kami di https://family.thelodgegroup.id/booking/tickets. Terima kasih!';
+
+    await sendWhatsAppPayload({
+      to: cleanPhone,
+      type: 'text',
+      message: maintenanceMessage,
+    });
+    return;
+  }
+
   // Handle reset commands
   if (['batal', 'reset', 'ulang', 'cancel', 'menu'].includes(lowerText)) {
     await clearBotSession(cleanPhone);

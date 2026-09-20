@@ -89,6 +89,12 @@ export async function GET() {
     metaMethod: map[WHATSAPP_SETTING_KEYS.metaMethod] ?? 'POST',
     metaApiKey: map[WHATSAPP_SETTING_KEYS.metaApiKey] ?? process.env.WA_API_KEY ?? 'lodge_wa_api_key_2026',
     metaHeadersJson: map[WHATSAPP_SETTING_KEYS.metaHeadersJson] ?? defaultMetaHeadersJson,
+
+    // Bot Ticket Service Control
+    botEnabled: map[WHATSAPP_SETTING_KEYS.botEnabled] ?? 'true',
+    botMaintenanceMsg:
+      map[WHATSAPP_SETTING_KEYS.botMaintenanceMsg] ??
+      '⚠️ Mohon maaf, layanan pemesanan tiket via WhatsApp sedang nonaktif / maintenance sementara waktu. Silakan melakukan pemesanan tiket melalui website kami di https://family.thelodgegroup.id/booking/tickets. Terima kasih!',
   });
 }
 
@@ -117,6 +123,10 @@ export async function POST(req: Request) {
     const metaApiKey = normalizeString(body.metaApiKey);
     const metaHeadersJson = normalizeString(body.metaHeadersJson);
 
+    // Bot Service Control
+    const botEnabled = normalizeString(body.botEnabled ?? 'true');
+    const botMaintenanceMsg = normalizeString(body.botMaintenanceMsg);
+
     await Promise.all([
       // Gateway 1
       upsertSystemSetting(WHATSAPP_SETTING_KEYS.enabled, enabled, 'Enable/disable staff WhatsApp notifications'),
@@ -136,6 +146,10 @@ export async function POST(req: Request) {
       upsertSystemSetting(WHATSAPP_SETTING_KEYS.metaMethod, metaMethod, 'Meta Cloud API HTTP method'),
       upsertSystemSetting(WHATSAPP_SETTING_KEYS.metaApiKey, metaApiKey, 'Meta Cloud API key/token'),
       upsertSystemSetting(WHATSAPP_SETTING_KEYS.metaHeadersJson, metaHeadersJson, 'Meta Cloud API headers JSON'),
+
+      // Bot Service Control
+      upsertSystemSetting(WHATSAPP_SETTING_KEYS.botEnabled, botEnabled, 'Enable/disable WhatsApp ticket booking bot'),
+      upsertSystemSetting(WHATSAPP_SETTING_KEYS.botMaintenanceMsg, botMaintenanceMsg, 'WhatsApp bot maintenance response message'),
     ]);
 
     return NextResponse.json({ success: true });

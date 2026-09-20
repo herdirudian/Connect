@@ -60,6 +60,10 @@ const KEYS = {
   metaMethod: 'WA_META_METHOD',
   metaApiKey: 'WA_META_API_KEY',
   metaHeadersJson: 'WA_META_HEADERS_JSON',
+
+  // Bot Ticket Purchasing Service Control
+  botEnabled: 'WA_BOT_ENABLED',
+  botMaintenanceMsg: 'WA_BOT_MAINTENANCE_MSG',
 } as const;
 
 export const WHATSAPP_SETTING_KEYS = KEYS;
