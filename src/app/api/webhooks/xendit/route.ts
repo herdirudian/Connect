@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { createNotification } from '@/lib/notifications';
 import { sendBookingSuccessEmail, sendBookingNotificationToReception } from '@/lib/email';
-import { notifyRoomServiceOrderPaid } from '@/lib/whatsapp';
+import { notifyRoomServiceOrderPaid, notifyBookingPaidWhatsApp } from '@/lib/whatsapp';
 
 export const dynamic = 'force-dynamic';
 
@@ -328,6 +328,13 @@ export async function POST(req: Request) {
               } catch { return undefined; }
             })()
             );
+
+            // Send WhatsApp E-Voucher Notification to Customer
+            try {
+              await notifyBookingPaidWhatsApp(booking.id);
+            } catch (waErr) {
+              console.error('Error sending WhatsApp booking notification:', waErr);
+            }
 
             // Send Notification to Reception (if GLAMPING)
             if (booking.type === 'GLAMPING') {

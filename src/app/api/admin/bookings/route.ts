@@ -5,6 +5,7 @@ import { verifyToken } from '@/lib/auth';
 import { Invoice, PaymentRequest as XenditPaymentRequest } from '@/lib/xendit';
 import { sendBookingSuccessEmail, sendBookingNotificationToReception } from '@/lib/email';
 import { createNotification } from '@/lib/notifications';
+import { notifyBookingPaidWhatsApp } from '@/lib/whatsapp';
 
 async function isAdmin() {
   const cookieStore = await cookies();
@@ -138,6 +139,12 @@ export async function GET(request: Request) {
                   } catch { return undefined; }
                 })()
               );
+
+              try {
+                await notifyBookingPaidWhatsApp(b.id);
+              } catch (waErr) {
+                console.error('Error sending WhatsApp booking notification in admin:', waErr);
+              }
               
               if (b.type === 'GLAMPING') {
                 const det = typeof b.details === 'string' ? JSON.parse(b.details) : b.details;

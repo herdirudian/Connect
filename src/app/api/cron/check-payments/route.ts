@@ -3,7 +3,7 @@ import { prisma } from '@/lib/prisma';
 import { Invoice, PaymentRequest as XenditPaymentRequest } from '@/lib/xendit';
 import { sendBookingSuccessEmail, sendBookingNotificationToReception } from '@/lib/email';
 import { createNotification } from '@/lib/notifications';
-import { notifyRoomServiceOrderPaid } from '@/lib/whatsapp';
+import { notifyRoomServiceOrderPaid, notifyBookingPaidWhatsApp } from '@/lib/whatsapp';
 
 export const dynamic = 'force-dynamic';
 
@@ -189,6 +189,13 @@ export async function GET(req: Request) {
                   } catch { return undefined; }
                 })()
               );
+
+              // 2b. WhatsApp E-Voucher Notification to Customer
+              try {
+                await notifyBookingPaidWhatsApp(booking.id);
+              } catch (waErr) {
+                console.error('Error sending WhatsApp booking notification in cron:', waErr);
+              }
 
               // 3. Email to Reception (Glamping only)
               if (booking.type === 'GLAMPING' && details.items) {

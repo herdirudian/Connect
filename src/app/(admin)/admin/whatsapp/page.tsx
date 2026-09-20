@@ -169,13 +169,34 @@ export default function AdminWhatsappSettingsPage() {
           <CardTitle>Pengaturan</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="flex items-center gap-3">
-            <input
-              type="checkbox"
-              checked={form.enabled}
-              onChange={(e) => setForm((s) => ({ ...s, enabled: e.target.checked }))}
-            />
-            <div className="text-sm font-medium">Aktifkan notifikasi WhatsApp</div>
+          <div className="flex flex-wrap items-center justify-between gap-3 bg-brand-50/50 p-3 rounded-xl border border-brand/20">
+            <div className="flex items-center gap-3">
+              <input
+                type="checkbox"
+                className="h-4 w-4 rounded border-gray-300 text-brand focus:ring-brand"
+                checked={form.enabled}
+                onChange={(e) => setForm((s) => ({ ...s, enabled: e.target.checked }))}
+              />
+              <div className="text-sm font-semibold text-gray-900">Aktifkan Notifikasi WhatsApp (Cloud API Resmi)</div>
+            </div>
+
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="text-xs bg-white border-brand/30 text-brand hover:bg-brand-50 font-medium"
+              onClick={() => {
+                setForm((s) => ({
+                  ...s,
+                  apiKey: s.apiKey || 'lodge_wa_api_key_2026',
+                  headersJson: JSON.stringify({ 'Content-Type': 'application/json', Authorization: 'Bearer {{apiKey}}' }, null, 2),
+                  bodyTemplateJson: JSON.stringify({ to: '{{to}}', type: 'text', message: '{{message}}' }, null, 2),
+                }));
+                toast({ title: 'Preset Terpasang', description: 'Format Meta Cloud API Resmi terpasang.' });
+              }}
+            >
+              ⚡ Preset Meta API Dashboard
+            </Button>
           </div>
 
           <div className="grid gap-4 md:grid-cols-2">

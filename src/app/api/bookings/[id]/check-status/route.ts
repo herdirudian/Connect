@@ -5,6 +5,7 @@ import { cookies } from 'next/headers';
 import { Invoice, PaymentRequest as XenditPaymentRequest } from '@/lib/xendit';
 import { sendBookingSuccessEmail, sendBookingNotificationToReception } from '@/lib/email';
 import { createNotification } from '@/lib/notifications';
+import { notifyBookingPaidWhatsApp } from '@/lib/whatsapp';
 
 export async function POST(req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
@@ -205,6 +206,13 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
                   } catch { return undefined; }
                 })()
             );
+
+            // Send WhatsApp E-Voucher Notification to Customer
+            try {
+              await notifyBookingPaidWhatsApp(booking.id);
+            } catch (waErr) {
+              console.error('Error sending WhatsApp booking notification in check-status:', waErr);
+            }
 
             // Send Notification to Reception (if GLAMPING)
             if (booking.type === 'GLAMPING') {

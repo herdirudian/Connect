@@ -3,6 +3,27 @@ import { getSystemSettings } from '@/lib/systemSettings';
 
 type WhatsAppChannel = 'RESTAURANT' | 'HOUSEKEEPING';
 
+export type WhatsAppPayload =
+  | {
+      to: string;
+      type: 'text';
+      message: string;
+      name?: string;
+    }
+  | {
+      to: string;
+      type: 'template';
+      templateName: string;
+      languageCode?: string;
+      components?: any[];
+    }
+  | {
+      to: string;
+      type: 'image' | 'document' | 'audio' | 'video';
+      mediaUrl: string;
+      caption?: string;
+    };
+
 type WhatsAppConfig = {
   enabled: boolean;
   url: string;
@@ -43,17 +64,10 @@ function splitRecipients(v?: string) {
     .filter(Boolean);
   const out: string[] = [];
   for (const r of raw) {
-    // Mengizinkan angka, tanda +, dan akhiran @c.us atau @g.us
     const cleaned = r.replace(/[^\d+@.a-zA-Z]/g, '');
     if (cleaned) out.push(cleaned);
   }
   return Array.from(new Set(out));
-}
-
-function renderTemplate(str: string, vars: Record<string, string>) {
-  return str.replace(/\{\{\s*([a-zA-Z0-9_]+)\s*\}\}/g, (_, key) => {
-    return vars[key] ?? '';
-  });
 }
 
 function escapeForJsonString(value: string) {
@@ -69,18 +83,20 @@ function renderTemplateJson(str: string, vars: Record<string, string>) {
 
 async function getConfig(): Promise<WhatsAppConfig> {
   const map = await getSystemSettings(Object.values(KEYS));
-  const defaultHeadersJson = JSON.stringify({ 'Content-Type': 'application/json' });
+  const defaultHeadersJson = JSON.stringify({
+    'Content-Type': 'application/json',
+    Authorization: 'Bearer {{apiKey}}',
+  });
   const defaultBodyTemplateJson = JSON.stringify({
-    api_key: '{{apiKey}}',
-    number_key: '{{numberKey}}',
-    phone_no: '{{to}}',
+    to: '{{to}}',
+    type: 'text',
     message: '{{message}}',
   });
   return {
     enabled: parseBoolean(map[KEYS.enabled]),
     url: String(map[KEYS.url] || '').trim(),
     method: String(map[KEYS.method] || 'POST').trim().toUpperCase(),
-    apiKey: String(map[KEYS.apiKey] || '').trim(),
+    apiKey: String(map[KEYS.apiKey] || 'lodge_wa_api_key_2026').trim(),
     numberKey: String(map[KEYS.numberKey] || 'ALL').trim(),
     headersJson: String(map[KEYS.headersJson] || defaultHeadersJson).trim(),
     bodyTemplateJson: String(map[KEYS.bodyTemplateJson] || defaultBodyTemplateJson).trim(),
@@ -90,32 +106,36 @@ async function getConfig(): Promise<WhatsAppConfig> {
   };
 }
 
-async function sendWhatsAppMessageRaw(config: WhatsAppConfig, to: string, message: string) {
+export async function sendWhatsAppPayload(payload: WhatsAppPayload) {
+  const config = await getConfig();
   if (!config.enabled) {
-    console.log('[WhatsApp] Sending skipped: Disabled');
+    console.log('[WhatsApp] Sending skipped: WA_ENABLED is false');
     return { ok: false, error: 'DISABLED' as const };
   }
   if (!config.url) {
-    console.error('[WhatsApp] Sending failed: No URL configured');
+    console.error('[WhatsApp] Sending failed: No WA_URL configured');
     return { ok: false, error: 'NO_URL' as const };
   }
 
-  console.log(`[WhatsApp] Sending message to ${to}...`);
+  const cleanedTo = payload.to.replace(/[^\d+]/g, '').trim();
+  if (!cleanedTo) {
+    console.error('[WhatsApp] Sending failed: Empty recipient phone number');
+    return { ok: false, error: 'NO_RECIPIENT' as const };
+  }
 
   const vars = {
-    to,
-    message,
+    to: cleanedTo,
+    message: payload.type === 'text' ? payload.message : (payload as any).caption || '',
     apiKey: config.apiKey,
     numberKey: config.numberKey,
   };
 
-  // DELAY UNTUK MENCEGAH SPAM / BOT DETECTION
-  // Memberikan jeda acak antara 3000ms (3 detik) sampai 7000ms (7 detik) sebelum request dikirim
-  const delayMs = Math.floor(Math.random() * 4000) + 3000;
-  console.log(`[WhatsApp] Applying anti-spam delay of ${delayMs}ms before sending to ${to}...`);
-  await new Promise((resolve) => setTimeout(resolve, delayMs));
-
   let headers: Record<string, string> = { 'Content-Type': 'application/json' };
+  if (config.apiKey) {
+    headers['Authorization'] = `Bearer ${config.apiKey}`;
+    headers['x-api-key'] = config.apiKey;
+  }
+
   if (config.headersJson) {
     try {
       const rendered = renderTemplateJson(config.headersJson, vars);
@@ -127,18 +147,11 @@ async function sendWhatsAppMessageRaw(config: WhatsAppConfig, to: string, messag
   }
 
   let body: any = {
-    api_key: config.apiKey,
-    number_key: config.numberKey,
-    phone_no: to,
-    message,
+    ...payload,
+    to: cleanedTo,
   };
-  if (config.bodyTemplateJson) {
-    try {
-      const rendered = renderTemplateJson(config.bodyTemplateJson, vars);
-      const parsed = JSON.parse(rendered);
-      if (parsed !== null) body = parsed;
-    } catch {}
-  }
+
+  console.log(`[WhatsApp] Sending ${payload.type} message to ${cleanedTo}...`);
 
   const controller = new AbortController();
   const t = setTimeout(() => controller.abort(), config.timeoutMs);
@@ -169,7 +182,8 @@ async function sendWhatsAppMessageRaw(config: WhatsAppConfig, to: string, messag
         : parsed === true
           ? true
           : typeof parsed === 'object'
-            ? parsed.status === true ||
+            ? parsed.success === true ||
+              parsed.status === true ||
               parsed.status === '200' ||
               parsed.ack === 'successfully' ||
               parsed.message === 'Successfully'
@@ -180,7 +194,7 @@ async function sendWhatsAppMessageRaw(config: WhatsAppConfig, to: string, messag
       return { ok: false, error: 'PROVIDER_ERROR' as const, status: httpStatus, responseText: text, responseJson: parsed };
     }
 
-    console.log(`[WhatsApp] Success sending to ${to}`);
+    console.log(`[WhatsApp] Success sending to ${cleanedTo}`);
     return { ok: true, status: httpStatus, responseText: text, responseJson: parsed };
   } catch (e: any) {
     console.error(`[WhatsApp] Fetch Error:`, e);
@@ -190,9 +204,50 @@ async function sendWhatsAppMessageRaw(config: WhatsAppConfig, to: string, messag
   }
 }
 
-export async function sendWhatsAppMessage(to: string, message: string) {
-  const config = await getConfig();
-  return sendWhatsAppMessageRaw(config, to, message);
+export async function sendWhatsAppMessageRaw(config: WhatsAppConfig, to: string, message: string) {
+  return sendWhatsAppPayload({
+    to,
+    type: 'text',
+    message,
+  });
+}
+
+export async function sendWhatsAppMessage(to: string, message: string, name?: string) {
+  return sendWhatsAppPayload({
+    to,
+    type: 'text',
+    message,
+    name,
+  });
+}
+
+export async function sendWhatsAppMedia(input: {
+  to: string;
+  type: 'image' | 'document' | 'audio' | 'video';
+  mediaUrl: string;
+  caption?: string;
+}) {
+  return sendWhatsAppPayload({
+    to: input.to,
+    type: input.type,
+    mediaUrl: input.mediaUrl,
+    caption: input.caption,
+  });
+}
+
+export async function sendWhatsAppTemplate(input: {
+  to: string;
+  templateName: string;
+  languageCode?: string;
+  components?: any[];
+}) {
+  return sendWhatsAppPayload({
+    to: input.to,
+    type: 'template',
+    templateName: input.templateName,
+    languageCode: input.languageCode || 'id',
+    components: input.components || [],
+  });
 }
 
 function formatMoneyIDR(amount: number) {
@@ -240,10 +295,10 @@ function formatFoodOrderMessage(order: any) {
 function formatHousekeepingOrderMessage(order: any) {
   const lines: string[] = [];
   lines.push(`ROOM SERVICE - HOUSEKEEPING (PAID)`);
-  lines.push(`Order: #${String(order.id).slice(0, 8)}`);
+  lines.push(`Order ID: #${String(order.id).slice(0, 8)}`);
   if (order.roomNumber) lines.push(`Kamar: ${safeText(order.roomNumber)}`);
-  if (order.guestName) lines.push(`Tamu: ${safeText(order.guestName)}`);
-  if (order.guestPhone) lines.push(`HP: ${safeText(order.guestPhone)}`);
+  if (order.guestName) lines.push(`Nama Tamu: ${safeText(order.guestName)}`);
+  if (order.guestPhone) lines.push(`No HP: ${safeText(order.guestPhone)}`);
   lines.push('');
   lines.push('Item:');
   for (const it of order.items || []) {
@@ -253,7 +308,7 @@ function formatHousekeepingOrderMessage(order: any) {
     lines.push(`- ${qty}x ${name}${note ? ` (${note})` : ''}`);
   }
   lines.push('');
-  lines.push(`Total: ${formatMoneyIDR(Number(order.totalAmount || 0))}`);
+  lines.push(`Total Pembayaran: ${formatMoneyIDR(Number(order.totalAmount || 0))}`);
   return lines.join('\n');
 }
 
@@ -286,11 +341,9 @@ export async function notifyRoomServiceOrderPaid(input: { foodOrderId?: string |
       console.log(`[WhatsApp] Sending Food Order ${order.id} to ${recipients.length} recipients`);
       for (let i = 0; i < recipients.length; i++) {
         const to = recipients[i];
-        // Jeda tambahan antar nomor secara sekuensial (untuk bulk sending)
         if (i > 0) {
-            const bulkDelay = Math.floor(Math.random() * 5000) + 5000; // 5-10 detik
-            console.log(`[WhatsApp] Waiting ${bulkDelay}ms before sending to next recipient...`);
-            await new Promise((resolve) => setTimeout(resolve, bulkDelay));
+          const bulkDelay = Math.floor(Math.random() * 2000) + 1000;
+          await new Promise((resolve) => setTimeout(resolve, bulkDelay));
         }
 
         const r = await sendWhatsAppMessageRaw(config, to, message);
@@ -320,11 +373,9 @@ export async function notifyRoomServiceOrderPaid(input: { foodOrderId?: string |
       console.log(`[WhatsApp] Sending HK Order ${order.id} to ${recipients.length} recipients`);
       for (let i = 0; i < recipients.length; i++) {
         const to = recipients[i];
-        // Jeda tambahan antar nomor secara sekuensial (untuk bulk sending)
         if (i > 0) {
-            const bulkDelay = Math.floor(Math.random() * 5000) + 5000; // 5-10 detik
-            console.log(`[WhatsApp] Waiting ${bulkDelay}ms before sending to next recipient...`);
-            await new Promise((resolve) => setTimeout(resolve, bulkDelay));
+          const bulkDelay = Math.floor(Math.random() * 2000) + 1000;
+          await new Promise((resolve) => setTimeout(resolve, bulkDelay));
         }
         const r = await sendWhatsAppMessageRaw(config, to, message);
         results.push({
@@ -346,12 +397,121 @@ export async function notifyRoomServiceOrderPaid(input: { foodOrderId?: string |
   return { ok: results.every((r) => r.ok), results };
 }
 
+export async function notifyBookingPaidWhatsApp(bookingId: string) {
+  console.log('[WhatsApp] notifyBookingPaidWhatsApp triggered for booking:', bookingId);
+  try {
+    const booking = await prisma.booking.findUnique({
+      where: { id: bookingId },
+      include: { user: true },
+    });
+
+    if (!booking) {
+      console.warn(`[WhatsApp] Booking ${bookingId} not found`);
+      return { ok: false, error: 'NOT_FOUND' };
+    }
+
+    let details: any = {};
+    try {
+      details = typeof booking.details === 'string' ? JSON.parse(booking.details) : booking.details || {};
+    } catch (e) {
+      details = {};
+    }
+
+    const recipientPhone =
+      details.guestPhone ||
+      details.recipientPhone ||
+      details.phone ||
+      booking.user?.phoneNumber ||
+      '';
+
+    if (!recipientPhone) {
+      console.log(`[WhatsApp] Skipped: No phone number found for booking ${bookingId}`);
+      return { ok: true, skipped: true, reason: 'NO_PHONE' };
+    }
+
+    const guestName = details.guestName || details.recipientName || booking.user?.name || 'Tamu';
+    const displayType =
+      booking.type === 'WAHANA'
+        ? 'E-Voucher Tiket / Wahana'
+        : booking.type === 'GLAMPING'
+          ? 'Menginap / Glamping'
+          : booking.type;
+
+    const formattedDate = new Date(booking.date).toLocaleDateString('id-ID', {
+      weekday: 'long',
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+    });
+
+    const itemsLines: string[] = [];
+    if (details.items && Array.isArray(details.items)) {
+      for (const item of details.items) {
+        const title = item.title || item.name || 'Tiket';
+        const qty = item.qty || item.quantity || 1;
+        const price = item.price ? ` (${formatMoneyIDR(Number(item.price))})` : '';
+        itemsLines.push(`- ${qty}x ${title}${price}`);
+      }
+    }
+
+    const lines: string[] = [];
+    lines.push(`🎉 PEMBAYARAN E-VOUCHER BERHASIL!`);
+    lines.push(``);
+    lines.push(`Halo *${guestName}*, terima kasih atas pemesanan Anda di *The Lodge Maribaya*.`);
+    lines.push(``);
+    lines.push(`📋 *Detail Booking:*`);
+    lines.push(`• Booking ID: #${String(booking.id).slice(0, 8)}`);
+    lines.push(`• Jenis: ${displayType}`);
+    lines.push(`• Tanggal Kunjungan: ${formattedDate}`);
+    if (itemsLines.length > 0) {
+      lines.push(``);
+      lines.push(`🎟️ *Rincian Tiket:*`);
+      lines.push(...itemsLines);
+    }
+    lines.push(``);
+    lines.push(`💰 *Total Pembayaran:* ${formatMoneyIDR(Number(booking.amount || 0))} (LUNAS)`);
+    lines.push(``);
+    lines.push(`Silakan tunjukkan pesan ini atau QR Code tiket Anda saat berada di gate/lokasi.`);
+    lines.push(`Lihat e-voucher Anda online: https://family.thelodgegroup.id/booking/tickets`);
+
+    const textMessage = lines.join('\n');
+
+    // Kirim konfirmasi pesan teks WhatsApp
+    const textResult = await sendWhatsAppPayload({
+      to: recipientPhone,
+      type: 'text',
+      message: textMessage,
+      name: guestName,
+    });
+
+    // Kirim Media E-Voucher Gambar / PDF jika URL tersedia
+    if (details.qrImageUrl || details.voucherPdfUrl) {
+      const mediaUrl = details.qrImageUrl || details.voucherPdfUrl;
+      const mediaType = details.voucherPdfUrl ? 'document' : 'image';
+      await sendWhatsAppPayload({
+        to: recipientPhone,
+        type: mediaType,
+        mediaUrl: mediaUrl,
+        caption: `E-Voucher QR Code #${String(booking.id).slice(0, 8)} - The Lodge Maribaya`,
+      });
+    }
+
+    return textResult;
+  } catch (error: any) {
+    console.error('[WhatsApp] Error in notifyBookingPaidWhatsApp:', error);
+    return { ok: false, error: error.message };
+  }
+}
+
 export async function sendWhatsAppTest(input: { to: string; message: string }) {
-  const config = await getConfig();
   const to = String(input.to || '').trim();
   const message = String(input.message || '').trim();
   if (!to) return { ok: false, error: 'NO_RECIPIENT' as const };
   if (!message) return { ok: false, error: 'NO_MESSAGE' as const };
-  const r = await sendWhatsAppMessageRaw(config, to, message);
+  const r = await sendWhatsAppPayload({
+    to,
+    type: 'text',
+    message,
+  });
   return r;
 }
