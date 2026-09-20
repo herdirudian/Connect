@@ -16,7 +16,8 @@ export async function POST(req: Request) {
     const body = await req.json();
     const to = String(body.to || '').trim();
     const message = String(body.message || '').trim();
-    const result = await sendWhatsAppTest({ to, message });
+    const gateway = body.gateway === 'META' ? 'META' : 'STAFF';
+    const result = await sendWhatsAppTest({ to, message, gateway });
     if (!result.ok) {
       return NextResponse.json({ success: false, ...result }, { status: 400 });
     }
