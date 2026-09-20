@@ -38,6 +38,7 @@ type WhatsAppConfig = {
 };
 
 const KEYS = {
+  // Gateway 1: Staff Order Alerts (OpenWA / Watzap)
   enabled: 'WA_ENABLED',
   url: 'WA_URL',
   method: 'WA_METHOD',
@@ -49,10 +50,12 @@ const KEYS = {
   housekeepingTo: 'WA_HK_TO',
   timeoutMs: 'WA_TIMEOUT_MS',
 
-  // Meta Cloud API for Customer Ticketing & E-Vouchers
+  // Gateway 2: Customer Ticketing & E-Voucher (Meta Cloud API)
   metaEnabled: 'WA_META_ENABLED',
   metaUrl: 'WA_META_URL',
+  metaMethod: 'WA_META_METHOD',
   metaApiKey: 'WA_META_API_KEY',
+  metaHeadersJson: 'WA_META_HEADERS_JSON',
 } as const;
 
 export const WHATSAPP_SETTING_KEYS = KEYS;
@@ -75,14 +78,10 @@ function splitRecipients(v?: string) {
   return Array.from(new Set(out));
 }
 
-function escapeForJsonString(value: string) {
-  const s = JSON.stringify(String(value ?? ''));
-  return s.length >= 2 ? s.slice(1, -1) : '';
-}
-
 function renderTemplateJson(str: string, vars: Record<string, string>) {
   return str.replace(/\{\{\s*([a-zA-Z0-9_]+)\s*\}\}/g, (_, key) => {
-    return escapeForJsonString(vars[key] ?? '');
+    const s = JSON.stringify(String(vars[key] ?? ''));
+    return s.length >= 2 ? s.slice(1, -1) : '';
   });
 }
 
@@ -110,9 +109,9 @@ async function getConfig(): Promise<WhatsAppConfig> {
 }
 
 /**
- * OpenWA / Watzap Gateway Provider for Internal Staff Alerts (Dine In & Housekeeping)
+ * OpenWA / Watzap Gateway Provider for Internal Staff Alerts (Online Dine In & Housekeeping)
  */
-async function sendOpenWAMessageRaw(config: WhatsAppConfig, to: string, message: string) {
+export async function sendOpenWAMessageRaw(config: WhatsAppConfig, to: string, message: string) {
   if (!config.enabled) {
     console.log('[WhatsApp OpenWA] Sending skipped: WA_ENABLED is false');
     return { ok: false, error: 'DISABLED' as const };
@@ -122,7 +121,7 @@ async function sendOpenWAMessageRaw(config: WhatsAppConfig, to: string, message:
     return { ok: false, error: 'NO_URL' as const };
   }
 
-  const cleanedTo = to.replace(/[^\d+]/g, '').trim();
+  const cleanedTo = to.replace(/[^\d+@.a-zA-Z]/g, '').trim();
   if (!cleanedTo) {
     console.error('[WhatsApp OpenWA] Sending failed: Empty recipient phone number');
     return { ok: false, error: 'NO_RECIPIENT' as const };
@@ -141,6 +140,10 @@ async function sendOpenWAMessageRaw(config: WhatsAppConfig, to: string, message:
   await new Promise((resolve) => setTimeout(resolve, delayMs));
 
   let headers: Record<string, string> = { 'Content-Type': 'application/json' };
+  if (config.apiKey) {
+    headers['Authorization'] = `Bearer ${config.apiKey}`;
+    headers['x-api-key'] = config.apiKey;
+  }
   if (config.headersJson) {
     try {
       const rendered = renderTemplateJson(config.headersJson, vars);
@@ -223,8 +226,18 @@ async function sendOpenWAMessageRaw(config: WhatsAppConfig, to: string, message:
  * Meta Cloud API Gateway for Customer Ticketing & E-Voucher Communications
  */
 export async function sendWhatsAppPayload(payload: WhatsAppPayload) {
-  const map = await getSystemSettings([KEYS.enabled, KEYS.metaEnabled, KEYS.url, KEYS.metaUrl, KEYS.apiKey, KEYS.metaApiKey, KEYS.timeoutMs]);
-  
+  const map = await getSystemSettings([
+    KEYS.enabled,
+    KEYS.metaEnabled,
+    KEYS.url,
+    KEYS.metaUrl,
+    KEYS.metaMethod,
+    KEYS.apiKey,
+    KEYS.metaApiKey,
+    KEYS.metaHeadersJson,
+    KEYS.timeoutMs,
+  ]);
+
   const enabled = parseBoolean(map[KEYS.metaEnabled]) || parseBoolean(map[KEYS.enabled]);
   if (!enabled) {
     console.log('[WhatsApp Meta Cloud] Sending skipped: Disabled');
@@ -245,13 +258,25 @@ export async function sendWhatsAppPayload(payload: WhatsAppPayload) {
     return { ok: false, error: 'NO_RECIPIENT' as const };
   }
 
-  const headers: Record<string, string> = {
+  const method = String(map[KEYS.metaMethod] || 'POST').trim().toUpperCase();
+  let headers: Record<string, string> = {
     'Content-Type': 'application/json',
   };
 
   if (apiKey) {
     headers['Authorization'] = `Bearer ${apiKey}`;
     headers['x-api-key'] = apiKey;
+  }
+
+  if (map[KEYS.metaHeadersJson]) {
+    try {
+      const vars = { to: cleanedTo, apiKey };
+      const rendered = renderTemplateJson(map[KEYS.metaHeadersJson], vars);
+      const parsed = JSON.parse(rendered);
+      if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
+        headers = { ...headers, ...parsed };
+      }
+    } catch {}
   }
 
   const body = {
@@ -267,9 +292,9 @@ export async function sendWhatsAppPayload(payload: WhatsAppPayload) {
 
   try {
     const res = await fetch(url, {
-      method: 'POST',
+      method,
       headers,
-      body: JSON.stringify(body),
+      body: method === 'GET' ? undefined : JSON.stringify(body),
       signal: controller.signal,
     });
 
@@ -420,7 +445,7 @@ function formatHousekeepingOrderMessage(order: any) {
 }
 
 /**
- * Notifikasi Pesanan Makanan & Room Service untuk Tim Internal (via OpenWA / Watzap)
+ * Notifikasi Pesanan Makanan & Room Service untuk Tim Internal Staf (via OpenWA / Watzap)
  */
 export async function notifyRoomServiceOrderPaid(input: { foodOrderId?: string | null; hkOrderId?: string | null }) {
   console.log('[WhatsApp OpenWA] notifyRoomServiceOrderPaid triggered', input);
@@ -616,12 +641,24 @@ export async function notifyBookingPaidWhatsApp(bookingId: string) {
   }
 }
 
-export async function sendWhatsAppTest(input: { to: string; message: string }) {
-  const config = await getConfig();
+export async function sendWhatsAppTest(input: { to: string; message: string; gateway?: 'STAFF' | 'META' }) {
   const to = String(input.to || '').trim();
   const message = String(input.message || '').trim();
+  const gateway = input.gateway || 'STAFF';
+
   if (!to) return { ok: false, error: 'NO_RECIPIENT' as const };
   if (!message) return { ok: false, error: 'NO_MESSAGE' as const };
-  const r = await sendOpenWAMessageRaw(config, to, message);
-  return r;
+
+  if (gateway === 'META') {
+    const r = await sendWhatsAppPayload({
+      to,
+      type: 'text',
+      message,
+    });
+    return r;
+  } else {
+    const config = await getConfig();
+    const r = await sendOpenWAMessageRaw(config, to, message);
+    return r;
+  }
 }

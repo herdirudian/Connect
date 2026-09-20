@@ -37,6 +37,14 @@ export async function GET() {
   const needsBodySeed =
     map[WHATSAPP_SETTING_KEYS.bodyTemplateJson] === undefined || map[WHATSAPP_SETTING_KEYS.bodyTemplateJson] === legacyBodyTemplateJson;
   const needsNumberKeySeed = map[WHATSAPP_SETTING_KEYS.numberKey] === undefined;
+  const defaultMetaHeadersJson = JSON.stringify(
+    {
+      'Content-Type': 'application/json',
+      Authorization: 'Bearer {{apiKey}}',
+    },
+    null,
+    2
+  );
 
   const missingUpserts: Array<Promise<any>> = [];
   if (map[WHATSAPP_SETTING_KEYS.method] === undefined) {
@@ -63,6 +71,7 @@ export async function GET() {
   const numberKey = map[WHATSAPP_SETTING_KEYS.numberKey] ?? 'ALL';
 
   return NextResponse.json({
+    // Gateway 1: Staff Order Notifications (OpenWA / Watzap)
     enabled: map[WHATSAPP_SETTING_KEYS.enabled] ?? 'false',
     url: map[WHATSAPP_SETTING_KEYS.url] ?? '',
     method: map[WHATSAPP_SETTING_KEYS.method] ?? 'POST',
@@ -73,6 +82,13 @@ export async function GET() {
     restaurantTo: map[WHATSAPP_SETTING_KEYS.restaurantTo] ?? '',
     housekeepingTo: map[WHATSAPP_SETTING_KEYS.housekeepingTo] ?? '',
     timeoutMs: map[WHATSAPP_SETTING_KEYS.timeoutMs] ?? '8000',
+
+    // Gateway 2: Customer Ticketing & E-Voucher (Meta Cloud API)
+    metaEnabled: map[WHATSAPP_SETTING_KEYS.metaEnabled] ?? 'true',
+    metaUrl: map[WHATSAPP_SETTING_KEYS.metaUrl] ?? process.env.WA_API_ENDPOINT ?? '',
+    metaMethod: map[WHATSAPP_SETTING_KEYS.metaMethod] ?? 'POST',
+    metaApiKey: map[WHATSAPP_SETTING_KEYS.metaApiKey] ?? process.env.WA_API_KEY ?? 'lodge_wa_api_key_2026',
+    metaHeadersJson: map[WHATSAPP_SETTING_KEYS.metaHeadersJson] ?? defaultMetaHeadersJson,
   });
 }
 
@@ -82,6 +98,7 @@ export async function POST(req: Request) {
   try {
     const body = await req.json();
 
+    // Gateway 1
     const enabled = normalizeString(body.enabled);
     const url = normalizeString(body.url);
     const method = normalizeString(body.method || 'POST').toUpperCase();
@@ -93,17 +110,32 @@ export async function POST(req: Request) {
     const housekeepingTo = normalizeString(body.housekeepingTo);
     const timeoutMs = normalizeString(body.timeoutMs || '8000');
 
+    // Gateway 2
+    const metaEnabled = normalizeString(body.metaEnabled);
+    const metaUrl = normalizeString(body.metaUrl);
+    const metaMethod = normalizeString(body.metaMethod || 'POST').toUpperCase();
+    const metaApiKey = normalizeString(body.metaApiKey);
+    const metaHeadersJson = normalizeString(body.metaHeadersJson);
+
     await Promise.all([
-      upsertSystemSetting(WHATSAPP_SETTING_KEYS.enabled, enabled, 'Enable/disable WhatsApp notifications'),
-      upsertSystemSetting(WHATSAPP_SETTING_KEYS.url, url, 'WhatsApp provider endpoint URL'),
-      upsertSystemSetting(WHATSAPP_SETTING_KEYS.method, method, 'WhatsApp provider HTTP method'),
-      upsertSystemSetting(WHATSAPP_SETTING_KEYS.apiKey, apiKey, 'WhatsApp provider API key/token'),
-      upsertSystemSetting(WHATSAPP_SETTING_KEYS.numberKey, numberKey, 'WhatsApp provider number key (Watzap)'),
-      upsertSystemSetting(WHATSAPP_SETTING_KEYS.headersJson, headersJson, 'WhatsApp provider headers JSON'),
-      upsertSystemSetting(WHATSAPP_SETTING_KEYS.bodyTemplateJson, bodyTemplateJson, 'WhatsApp provider body template JSON'),
+      // Gateway 1
+      upsertSystemSetting(WHATSAPP_SETTING_KEYS.enabled, enabled, 'Enable/disable staff WhatsApp notifications'),
+      upsertSystemSetting(WHATSAPP_SETTING_KEYS.url, url, 'Staff WhatsApp provider endpoint URL'),
+      upsertSystemSetting(WHATSAPP_SETTING_KEYS.method, method, 'Staff WhatsApp provider HTTP method'),
+      upsertSystemSetting(WHATSAPP_SETTING_KEYS.apiKey, apiKey, 'Staff WhatsApp provider API key/token'),
+      upsertSystemSetting(WHATSAPP_SETTING_KEYS.numberKey, numberKey, 'Staff WhatsApp provider number key'),
+      upsertSystemSetting(WHATSAPP_SETTING_KEYS.headersJson, headersJson, 'Staff WhatsApp provider headers JSON'),
+      upsertSystemSetting(WHATSAPP_SETTING_KEYS.bodyTemplateJson, bodyTemplateJson, 'Staff WhatsApp provider body template JSON'),
       upsertSystemSetting(WHATSAPP_SETTING_KEYS.restaurantTo, restaurantTo, 'Restaurant team recipients'),
       upsertSystemSetting(WHATSAPP_SETTING_KEYS.housekeepingTo, housekeepingTo, 'Housekeeping team recipients'),
       upsertSystemSetting(WHATSAPP_SETTING_KEYS.timeoutMs, timeoutMs, 'WhatsApp request timeout (ms)'),
+
+      // Gateway 2
+      upsertSystemSetting(WHATSAPP_SETTING_KEYS.metaEnabled, metaEnabled, 'Enable/disable Meta Cloud WhatsApp ticketing'),
+      upsertSystemSetting(WHATSAPP_SETTING_KEYS.metaUrl, metaUrl, 'Meta Cloud API endpoint URL'),
+      upsertSystemSetting(WHATSAPP_SETTING_KEYS.metaMethod, metaMethod, 'Meta Cloud API HTTP method'),
+      upsertSystemSetting(WHATSAPP_SETTING_KEYS.metaApiKey, metaApiKey, 'Meta Cloud API key/token'),
+      upsertSystemSetting(WHATSAPP_SETTING_KEYS.metaHeadersJson, metaHeadersJson, 'Meta Cloud API headers JSON'),
     ]);
 
     return NextResponse.json({ success: true });
