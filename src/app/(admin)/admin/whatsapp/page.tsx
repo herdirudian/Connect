@@ -30,6 +30,7 @@ type FormState = {
   // Bot Ticket Purchasing Service Control
   botEnabled: boolean;
   botMaintenanceMsg: string;
+  botSilentMaintenance: boolean;
 };
 
 export default function AdminWhatsappSettingsPage() {
@@ -66,6 +67,7 @@ export default function AdminWhatsappSettingsPage() {
     botEnabled: true,
     botMaintenanceMsg:
       '⚠️ Mohon maaf, layanan pemesanan tiket via WhatsApp sedang nonaktif / maintenance sementara waktu. Silakan melakukan pemesanan tiket melalui website kami di https://family.thelodgegroup.id/booking/tickets. Terima kasih!',
+    botSilentMaintenance: false,
   });
 
   useEffect(() => {
@@ -100,6 +102,7 @@ export default function AdminWhatsappSettingsPage() {
         botMaintenanceMsg:
           data.botMaintenanceMsg ||
           '⚠️ Mohon maaf, layanan pemesanan tiket via WhatsApp sedang nonaktif / maintenance sementara waktu. Silakan melakukan pemesanan tiket melalui website kami di https://family.thelodgegroup.id/booking/tickets. Terima kasih!',
+        botSilentMaintenance: String(data.botSilentMaintenance || '').toLowerCase() === 'true' || String(data.botSilentMaintenance || '') === '1',
       });
       const firstResto = String(data.restaurantTo || '').split(/[,;\n\r\t ]+/g).map((s: string) => s.trim()).filter(Boolean)[0];
       if (firstResto && !testTo) setTestTo(firstResto);
@@ -136,6 +139,7 @@ export default function AdminWhatsappSettingsPage() {
 
           botEnabled: form.botEnabled ? 'true' : 'false',
           botMaintenanceMsg: form.botMaintenanceMsg,
+          botSilentMaintenance: form.botSilentMaintenance ? 'true' : 'false',
         }),
       });
       const data = await res.json();
@@ -413,14 +417,35 @@ export default function AdminWhatsappSettingsPage() {
             </p>
 
             {!form.botEnabled && (
-              <div className="space-y-1.5 pt-2">
-                <label className="text-xs font-semibold text-amber-950">Pesan Balasan Otomatis Saat Maintenance Mode:</label>
-                <textarea
-                  className="w-full border border-amber-300 rounded-md px-3 py-2 text-xs bg-white focus:outline-hidden focus:ring-1 focus:ring-amber-500 min-h-[70px]"
-                  value={form.botMaintenanceMsg}
-                  onChange={(e) => setForm((s) => ({ ...s, botMaintenanceMsg: e.target.value }))}
-                  placeholder="Ketik pesan yang dikirimkan ke pelanggan saat bot maintenance..."
-                />
+              <div className="space-y-3 pt-2 border-t border-amber-200">
+                <div className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    id="botSilentMaintenance"
+                    className="h-4 w-4 rounded border-amber-400 text-amber-600 focus:ring-amber-500"
+                    checked={form.botSilentMaintenance}
+                    onChange={(e) => setForm((s) => ({ ...s, botSilentMaintenance: e.target.checked }))}
+                  />
+                  <label htmlFor="botSilentMaintenance" className="text-xs font-bold text-amber-950 cursor-pointer">
+                    🤫 Mode Senyap (Tanpa Balasan) — Abaikan semua pesan masuk & jangan kirim balasan apapun saat bot nonaktif
+                  </label>
+                </div>
+
+                {!form.botSilentMaintenance ? (
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-semibold text-amber-950">Pesan Balasan Otomatis Saat Maintenance Mode:</label>
+                    <textarea
+                      className="w-full border border-amber-300 rounded-md px-3 py-2 text-xs bg-white focus:outline-hidden focus:ring-1 focus:ring-amber-500 min-h-[70px]"
+                      value={form.botMaintenanceMsg}
+                      onChange={(e) => setForm((s) => ({ ...s, botMaintenanceMsg: e.target.value }))}
+                      placeholder="Ketik pesan yang dikirimkan ke pelanggan saat bot maintenance..."
+                    />
+                  </div>
+                ) : (
+                  <p className="text-[11px] italic text-amber-800 bg-amber-100/60 p-2 rounded border border-amber-200">
+                    ℹ️ Mode Senyap Aktif: Setiap pesan WhatsApp dari pelanggan tidak akan mendapatkan pesan balasan otomatis.
+                  </p>
+                )}
               </div>
             )}
           </div>

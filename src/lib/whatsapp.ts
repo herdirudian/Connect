@@ -64,6 +64,7 @@ const KEYS = {
   // Bot Ticket Purchasing Service Control
   botEnabled: 'WA_BOT_ENABLED',
   botMaintenanceMsg: 'WA_BOT_MAINTENANCE_MSG',
+  botSilentMaintenance: 'WA_BOT_SILENT_MAINTENANCE',
 } as const;
 
 export const WHATSAPP_SETTING_KEYS = KEYS;

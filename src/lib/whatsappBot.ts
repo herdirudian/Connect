@@ -110,11 +110,18 @@ export async function handleIncomingWhatsAppBotMessage(fromPhone: string, text: 
   const lowerText = trimmedText.toLowerCase();
 
   // Check Maintenance / Service Enabled Status
-  const botSettings = await getSystemSettings(['WA_BOT_ENABLED', 'WA_META_ENABLED', 'WA_BOT_MAINTENANCE_MSG']);
+  const botSettings = await getSystemSettings(['WA_BOT_ENABLED', 'WA_META_ENABLED', 'WA_BOT_MAINTENANCE_MSG', 'WA_BOT_SILENT_MAINTENANCE']);
   const isBotEnabled = (botSettings['WA_BOT_ENABLED'] ?? 'true').toLowerCase();
   const isMetaEnabled = (botSettings['WA_META_ENABLED'] ?? 'true').toLowerCase();
+  const isSilentMaintenance = (botSettings['WA_BOT_SILENT_MAINTENANCE'] ?? 'false').toLowerCase();
 
   if (isBotEnabled === 'false' || isBotEnabled === '0' || isMetaEnabled === 'false' || isMetaEnabled === '0') {
+    // If silent mode is enabled, drop message without any reply
+    if (isSilentMaintenance === 'true' || isSilentMaintenance === '1' || isSilentMaintenance === 'yes') {
+      console.log(`[WhatsApp Bot Maintenance] Silent mode active. Suppressing reply to ${cleanPhone}`);
+      return;
+    }
+
     const maintenanceMessage =
       botSettings['WA_BOT_MAINTENANCE_MSG'] ||
       '⚠️ Mohon maaf, layanan pemesanan tiket via WhatsApp sedang nonaktif / maintenance sementara waktu. Silakan melakukan pemesanan tiket melalui website kami di https://family.thelodgegroup.id/booking/tickets. Terima kasih!';

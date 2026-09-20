@@ -95,6 +95,7 @@ export async function GET() {
     botMaintenanceMsg:
       map[WHATSAPP_SETTING_KEYS.botMaintenanceMsg] ??
       '⚠️ Mohon maaf, layanan pemesanan tiket via WhatsApp sedang nonaktif / maintenance sementara waktu. Silakan melakukan pemesanan tiket melalui website kami di https://family.thelodgegroup.id/booking/tickets. Terima kasih!',
+    botSilentMaintenance: map[WHATSAPP_SETTING_KEYS.botSilentMaintenance] ?? 'false',
   });
 }
 
@@ -126,6 +127,7 @@ export async function POST(req: Request) {
     // Bot Service Control
     const botEnabled = normalizeString(body.botEnabled ?? 'true');
     const botMaintenanceMsg = normalizeString(body.botMaintenanceMsg);
+    const botSilentMaintenance = normalizeString(body.botSilentMaintenance ?? 'false');
 
     await Promise.all([
       // Gateway 1
@@ -150,6 +152,7 @@ export async function POST(req: Request) {
       // Bot Service Control
       upsertSystemSetting(WHATSAPP_SETTING_KEYS.botEnabled, botEnabled, 'Enable/disable WhatsApp ticket booking bot'),
       upsertSystemSetting(WHATSAPP_SETTING_KEYS.botMaintenanceMsg, botMaintenanceMsg, 'WhatsApp bot maintenance response message'),
+      upsertSystemSetting(WHATSAPP_SETTING_KEYS.botSilentMaintenance, botSilentMaintenance, 'Silent maintenance mode (no reply)'),
     ]);
 
     return NextResponse.json({ success: true });
