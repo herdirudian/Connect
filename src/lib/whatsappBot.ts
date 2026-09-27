@@ -39,8 +39,43 @@ function getSessionKey(phone: string) {
   return `WA_BOT_SESSION_${clean}`;
 }
 
+// High-performance in-memory session cache (1 hour TTL)
+const sessionMemoryCache = new Map<string, { session: BotSession; expiresAt: number }>();
+const SESSION_CACHE_TTL_MS = 60 * 60 * 1000;
+
+// In-memory cache for WA-enabled attractions (60s TTL)
+let cachedWaAttractions: any[] | null = null;
+let attractionsCacheExpiresAt = 0;
+const ATTRACTIONS_CACHE_TTL_MS = 60_000;
+
+export async function getWaAttractions() {
+  const now = Date.now();
+  if (cachedWaAttractions && attractionsCacheExpiresAt > now) {
+    return cachedWaAttractions;
+  }
+  try {
+    const list = await prisma.attraction.findMany({
+      where: { active: true, allowWaBooking: true },
+      orderBy: { sortOrder: 'asc' },
+      take: 10,
+    });
+    cachedWaAttractions = list;
+    attractionsCacheExpiresAt = now + ATTRACTIONS_CACHE_TTL_MS;
+    return list;
+  } catch (err) {
+    console.error('[WhatsApp Bot] Error querying attractions from DB:', err);
+    return cachedWaAttractions || [];
+  }
+}
+
 async function getBotSession(phone: string): Promise<BotSession> {
-  const key = getSessionKey(phone);
+  const clean = phone.replace(/[^\d]/g, '');
+  const cached = sessionMemoryCache.get(clean);
+  if (cached && cached.expiresAt > Date.now()) {
+    return { ...cached.session };
+  }
+
+  const key = getSessionKey(clean);
   const settings = await getSystemSettings([key]);
   const raw = settings[key];
   if (raw) {
@@ -48,22 +83,37 @@ async function getBotSession(phone: string): Promise<BotSession> {
       const parsed = JSON.parse(raw);
       // Expire session if older than 24 hours
       if (Date.now() - (parsed.updatedAt || 0) < 86400000) {
+        sessionMemoryCache.set(clean, { session: parsed, expiresAt: Date.now() + SESSION_CACHE_TTL_MS });
         return parsed;
       }
     } catch {}
   }
-  return { step: 'START', updatedAt: Date.now() };
+  const newSession: BotSession = { step: 'START', updatedAt: Date.now() };
+  sessionMemoryCache.set(clean, { session: newSession, expiresAt: Date.now() + SESSION_CACHE_TTL_MS });
+  return newSession;
 }
 
 async function saveBotSession(phone: string, session: BotSession) {
-  const key = getSessionKey(phone);
+  const clean = phone.replace(/[^\d]/g, '');
+  const key = getSessionKey(clean);
   session.updatedAt = Date.now();
-  await upsertSystemSetting(key, JSON.stringify(session), `WhatsApp Bot session for ${phone}`);
+  sessionMemoryCache.set(clean, { session: { ...session }, expiresAt: Date.now() + SESSION_CACHE_TTL_MS });
+
+  // Persist asynchronously in background so message responses are not delayed
+  upsertSystemSetting(key, JSON.stringify(session), `WhatsApp Bot session for ${phone}`).catch((err) => {
+    console.error(`[WhatsApp Bot] Failed to persist session for ${phone}:`, err);
+  });
 }
 
 async function clearBotSession(phone: string) {
-  const key = getSessionKey(phone);
-  await upsertSystemSetting(key, '', `WhatsApp Bot session for ${phone}`);
+  const clean = phone.replace(/[^\d]/g, '');
+  const key = getSessionKey(clean);
+  sessionMemoryCache.delete(clean);
+
+  // Clear in DB in background
+  upsertSystemSetting(key, '', `WhatsApp Bot session for ${phone}`).catch((err) => {
+    console.error(`[WhatsApp Bot] Failed to clear session for ${phone}:`, err);
+  });
 }
 
 function parseDateInput(input: string): string | null {
@@ -121,11 +171,7 @@ function isBackCommand(text: string): boolean {
 
 // 1. Send Ticket Catalog
 async function sendAttractionsCatalog(cleanPhone: string, session: BotSession, isChange: boolean = false) {
-  const attractions = await prisma.attraction.findMany({
-    where: { active: true, allowWaBooking: true },
-    orderBy: { sortOrder: 'asc' },
-    take: 10,
-  });
+  const attractions = await getWaAttractions();
 
   if (attractions.length === 0) {
     await sendWhatsAppPayload({
@@ -417,11 +463,7 @@ export async function handleIncomingWhatsAppBotMessage(fromPhone: string, text: 
       return;
     }
 
-    const attractions = await prisma.attraction.findMany({
-      where: { active: true, allowWaBooking: true },
-      orderBy: { sortOrder: 'asc' },
-      take: 10,
-    });
+    const attractions = await getWaAttractions();
 
     const choiceIdx = parseInt(trimmedText, 10) - 1;
     let selected = attractions[choiceIdx];

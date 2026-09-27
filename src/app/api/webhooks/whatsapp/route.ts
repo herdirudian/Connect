@@ -78,7 +78,9 @@ export async function POST(req: Request) {
 
     if (from && text) {
       console.log(`[WhatsApp Webhook Relay] Received message from ${from}: "${text}"`);
-      await handleIncomingWhatsAppBotMessage(from, text);
+      handleIncomingWhatsAppBotMessage(from, text).catch((err) => {
+        console.error('[WhatsApp Webhook Relay] Error in bot processing:', err);
+      });
       return NextResponse.json({ status: 'success' }, { status: 200 });
     }
 
