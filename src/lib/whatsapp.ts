@@ -288,8 +288,15 @@ export async function sendWhatsAppPayload(payload: WhatsAppPayload) {
     } catch {}
   }
 
+  const cleanedPayload: any = { ...payload };
+  if (cleanedPayload.mediaUrl && typeof cleanedPayload.mediaUrl === 'string') {
+    cleanedPayload.mediaUrl = cleanedPayload.mediaUrl
+      .replace(/https?:\/\/connect\.thelodgegroup\.id/g, 'https://family.thelodgegroup.id')
+      .replace(/https?:\/\/localhost(:\d+)?/g, 'https://family.thelodgegroup.id');
+  }
+
   const body = {
-    ...payload,
+    ...cleanedPayload,
     to: cleanedTo,
   };
 
@@ -633,6 +640,12 @@ export async function notifyBookingPaidWhatsApp(bookingId: string) {
 
     // Generate PDF E-Voucher & simpan ke public/uploads/vouchers
     let voucherPdfUrl = details.voucherPdfUrl || '';
+    if (voucherPdfUrl && typeof voucherPdfUrl === 'string') {
+      voucherPdfUrl = voucherPdfUrl
+        .replace(/https?:\/\/connect\.thelodgegroup\.id/g, 'https://family.thelodgegroup.id')
+        .replace(/https?:\/\/localhost(:\d+)?/g, 'https://family.thelodgegroup.id');
+    }
+
     if (!voucherPdfUrl) {
       try {
         const publicDir = path.join(process.cwd(), 'public', 'uploads', 'vouchers');
@@ -689,8 +702,21 @@ export async function notifyBookingPaidWhatsApp(bookingId: string) {
         const pdfBuffer = doc.output('arraybuffer');
         fs.writeFileSync(filePath, Buffer.from(pdfBuffer));
 
-        const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://family.thelodgegroup.id';
-        voucherPdfUrl = `${appUrl.replace(/\/+$/, '')}/uploads/vouchers/${fileName}`;
+        const envAppUrl = process.env.NEXT_PUBLIC_APP_URL || '';
+        const appUrl =
+          envAppUrl && !envAppUrl.includes('connect.thelodgegroup.id') && !envAppUrl.includes('localhost')
+            ? envAppUrl.replace(/\/+$/, '')
+            : 'https://family.thelodgegroup.id';
+        voucherPdfUrl = `${appUrl}/uploads/vouchers/${fileName}`;
+
+        // Simpan voucherPdfUrl ke booking.details
+        try {
+          details.voucherPdfUrl = voucherPdfUrl;
+          await prisma.booking.update({
+            where: { id: booking.id },
+            data: { details: JSON.stringify(details) },
+          });
+        } catch {}
       } catch (pdfErr) {
         console.error('[WhatsApp] Error generating PDF ticket:', pdfErr);
       }

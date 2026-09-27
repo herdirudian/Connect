@@ -13,7 +13,11 @@ const transporter = nodemailer.createTransport({
   },
 });
 
-const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+const rawAppUrl = process.env.NEXT_PUBLIC_APP_URL || '';
+const APP_URL =
+  rawAppUrl && !rawAppUrl.includes('connect.thelodgegroup.id')
+    ? rawAppUrl.replace(/\/+$/, '')
+    : 'https://family.thelodgegroup.id';
 
 export async function sendVerificationEmail(to: string, code: string) {
   const mailOptions = {

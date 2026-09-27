@@ -25,7 +25,7 @@ Create a `.env` file in the root directory of your project on the VPS. You can c
 DATABASE_URL="mysql://USER:PASSWORD@localhost:3306/familythelodge"
 
 # App URL (Important for Email Links)
-NEXT_PUBLIC_APP_URL="https://connect.thelodgegroup.id"
+NEXT_PUBLIC_APP_URL="https://family.thelodgegroup.id"
 
 # Payment Gateway (Xendit) - LIVE KEYS
 XENDIT_SECRET_KEY="xnd_production_bJPYaeqnIop0gwQ3ZAMyiYeyRy6mycrNd2xbHYt5FBnMPFD78w9iBCzSzkXuy"
