@@ -660,65 +660,35 @@ export async function notifyBookingPaidWhatsApp(bookingId: string) {
       const margin = 36;
       const contentWidth = w - margin * 2;
 
-      // 1. Top Header Background (The Lodge Brand Green)
+      // 1. Top Decorative Brand Accent Line (Forest Green)
       doc.setFillColor(26, 67, 50); // #1a4332
-      doc.rect(0, 0, w, 82, 'F');
+      doc.rect(0, 0, w, 4, 'F');
 
-      // 2. Gold Accent Line
-      doc.setFillColor(234, 179, 8); // #eab308
-      doc.rect(0, 82, w, 3.5, 'F');
-
-      // 3. Official Logo
+      // 2. Official Brand Logo on Crisp White Canvas
       const logoPath = path.join(process.cwd(), 'public', 'logotlm.png');
       if (fs.existsSync(logoPath)) {
         try {
           const logoBuf = fs.readFileSync(logoPath);
-          doc.addImage(logoBuf, 'PNG', margin, 18, 56, 46, undefined, 'FAST');
+          doc.addImage(logoBuf, 'PNG', margin, 18, 71, 55, undefined, 'FAST');
         } catch {}
       }
 
-      // 4. Header Titles
-      doc.setTextColor(255, 255, 255);
-      doc.setFont('helvetica', 'bold');
-      doc.setFontSize(16);
-      doc.text('THE LODGE MARIBAYA', margin + 66, 38);
-
-      doc.setFont('helvetica', 'bold');
-      doc.setFontSize(8.5);
-      doc.setTextColor(167, 243, 208); // Emerald-200
-      doc.text('OFFICIAL E-VOUCHER & ACCESS PASS', margin + 66, 52);
-
+      // Address subtitle below logo
       doc.setFont('helvetica', 'normal');
-      doc.setFontSize(7.5);
-      doc.setTextColor(209, 250, 229); // Emerald-100
-      doc.text('Kawasan Wisata Alam & Rekreasi Lembang, Bandung Barat', margin + 66, 64);
+      doc.setFontSize(7);
+      doc.setTextColor(100, 116, 139);
+      doc.text('Jl. Maribaya No. 149/252, Cibodas, Lembang, Kab. Bandung Barat', margin, 85);
 
-      // 5. Status Verified Pill Badge
-      doc.setFillColor(20, 83, 45); // Green-900
-      doc.roundedRect(w - margin - 110, 26, 110, 28, 4, 4, 'F');
-      doc.setDrawColor(74, 222, 128); // Green-400
-      doc.setLineWidth(0.8);
-      doc.roundedRect(w - margin - 110, 26, 110, 28, 4, 4, 'D');
-      doc.setTextColor(240, 253, 244);
+      // 3. Right Header: Official Document Title & Metadata
       doc.setFont('helvetica', 'bold');
-      doc.setFontSize(9);
-      doc.text('LUNAS / VERIFIED', w - margin - 55, 43, { align: 'center' });
-
-      // 6. Booking Reference Bar
-      const barY = 96;
-      doc.setFillColor(248, 250, 252);
-      doc.setDrawColor(226, 232, 240);
-      doc.setLineWidth(0.6);
-      doc.roundedRect(margin, barY, contentWidth, 30, 4, 4, 'FD');
+      doc.setFontSize(13);
+      doc.setTextColor(26, 67, 50);
+      doc.text('E-VOUCHER TIKET RESMI', w - margin, 30, { align: 'right' });
 
       doc.setFont('helvetica', 'bold');
       doc.setFontSize(8.5);
       doc.setTextColor(71, 85, 105);
-      doc.text('KODE BOOKING:', margin + 12, barY + 19);
-
-      doc.setTextColor(26, 67, 50);
-      doc.setFontSize(11);
-      doc.text(`#${String(booking.id).slice(0, 8)}`, margin + 95, barY + 19);
+      doc.text(`KODE BOOKING: #${String(booking.id).slice(0, 8)}`, w - margin, 44, { align: 'right' });
 
       const issueDateStr = new Date(booking.createdAt || Date.now()).toLocaleDateString('id-ID', {
         day: 'numeric',
@@ -726,12 +696,27 @@ export async function notifyBookingPaidWhatsApp(bookingId: string) {
         year: 'numeric',
       });
       doc.setFont('helvetica', 'normal');
-      doc.setFontSize(8);
-      doc.setTextColor(100, 116, 139);
-      doc.text(`Diterbitkan: ${issueDateStr}`, w - margin - 12, barY + 19, { align: 'right' });
+      doc.setFontSize(7.5);
+      doc.setTextColor(148, 163, 184);
+      doc.text(`Diterbitkan: ${issueDateStr}`, w - margin, 56, { align: 'right' });
 
-      // 7. Content Cards: Left (Guest Info) & Right (QR Code Pass)
-      const cardsY = 135;
+      // Status Badge (Understated, clean border pill)
+      doc.setFillColor(240, 253, 244);
+      doc.setDrawColor(187, 247, 208);
+      doc.setLineWidth(0.75);
+      doc.roundedRect(w - margin - 90, 64, 90, 18, 3, 3, 'FD');
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(7.5);
+      doc.setTextColor(22, 101, 52);
+      doc.text('STATUS: LUNAS', w - margin - 45, 76, { align: 'center' });
+
+      // 4. Subtle Header Divider Line
+      doc.setDrawColor(226, 232, 240);
+      doc.setLineWidth(0.8);
+      doc.line(margin, 95, w - margin, 95);
+
+      // 5. Visitor & Pass Section
+      const cardsY = 108;
       const leftW = contentWidth - 165;
       const rightW = 155;
       const cardH = 130;
@@ -739,12 +724,16 @@ export async function notifyBookingPaidWhatsApp(bookingId: string) {
       // Left Card: Customer & Visit Information
       doc.setFillColor(255, 255, 255);
       doc.setDrawColor(226, 232, 240);
-      doc.roundedRect(margin, cardsY, leftW, cardH, 5, 5, 'FD');
+      doc.roundedRect(margin, cardsY, leftW, cardH, 4, 4, 'FD');
 
       doc.setFillColor(241, 245, 249);
-      doc.rect(margin, cardsY, leftW, 22, 'F');
+      doc.roundedRect(margin, cardsY, leftW, 22, 4, 4, 'F');
+      doc.rect(margin, cardsY + 18, leftW, 4, 'F');
+      doc.setDrawColor(226, 232, 240);
+      doc.line(margin, cardsY + 22, margin + leftW, cardsY + 22);
+
       doc.setFont('helvetica', 'bold');
-      doc.setFontSize(8.5);
+      doc.setFontSize(8);
       doc.setTextColor(30, 41, 59);
       doc.text('INFORMASI PENGUNJUNG & JADWAL', margin + 12, cardsY + 15);
 
@@ -755,7 +744,7 @@ export async function notifyBookingPaidWhatsApp(bookingId: string) {
         doc.text(label, margin + 12, yPos);
         doc.setFont('helvetica', isBold ? 'bold' : 'normal');
         doc.setTextColor(15, 23, 42);
-        doc.text(val, margin + 120, yPos);
+        doc.text(val, margin + 115, yPos);
       };
 
       drawRow('Nama Pemesan', guestName, cardsY + 42, true);
@@ -767,10 +756,11 @@ export async function notifyBookingPaidWhatsApp(bookingId: string) {
       const qrX = w - margin - rightW;
       doc.setFillColor(255, 255, 255);
       doc.setDrawColor(226, 232, 240);
-      doc.roundedRect(qrX, cardsY, rightW, cardH, 5, 5, 'FD');
+      doc.roundedRect(qrX, cardsY, rightW, cardH, 4, 4, 'FD');
 
       doc.setFillColor(26, 67, 50);
-      doc.rect(qrX, cardsY, rightW, 22, 'F');
+      doc.roundedRect(qrX, cardsY, rightW, 22, 4, 4, 'F');
+      doc.rect(qrX, cardsY + 18, rightW, 4, 'F');
       doc.setFont('helvetica', 'bold');
       doc.setFontSize(8);
       doc.setTextColor(255, 255, 255);
@@ -781,16 +771,16 @@ export async function notifyBookingPaidWhatsApp(bookingId: string) {
           margin: 1,
           color: { dark: '#1a4332', light: '#ffffff' },
         });
-        doc.addImage(qrDataUrl, 'PNG', qrX + (rightW - 75) / 2, cardsY + 28, 75, 75, undefined, 'FAST');
+        doc.addImage(qrDataUrl, 'PNG', qrX + (rightW - 74) / 2, cardsY + 28, 74, 74, undefined, 'FAST');
       } catch {}
 
       doc.setFont('helvetica', 'bold');
       doc.setFontSize(8);
       doc.setTextColor(71, 85, 105);
-      doc.text(`#${String(booking.id).slice(0, 8)}`, qrX + rightW / 2, cardsY + 118, { align: 'center' });
+      doc.text(`#${String(booking.id).slice(0, 8)}`, qrX + rightW / 2, cardsY + 117, { align: 'center' });
 
-      // 8. Rincian Tiket Table
-      const tableY = 276;
+      // 6. Rincian Tiket Table
+      const tableY = 250;
       doc.setFillColor(241, 245, 249);
       doc.setDrawColor(226, 232, 240);
       doc.rect(margin, tableY, contentWidth, 22, 'FD');
@@ -842,31 +832,31 @@ export async function notifyBookingPaidWhatsApp(bookingId: string) {
         curY += 22;
       });
 
-      // 9. Total Summary Row
+      // 7. Total Summary Row
       doc.setFillColor(240, 253, 244);
       doc.setDrawColor(187, 247, 208);
-      doc.rect(margin, curY, contentWidth, 32, 'FD');
+      doc.rect(margin, curY, contentWidth, 30, 'FD');
 
       doc.setFont('helvetica', 'bold');
-      doc.setFontSize(9.5);
+      doc.setFontSize(9);
       doc.setTextColor(22, 101, 52);
-      doc.text('TOTAL PEMBAYARAN (LUNAS)', margin + 12, curY + 20);
+      doc.text('TOTAL PEMBAYARAN (LUNAS)', margin + 12, curY + 19);
 
-      doc.setFontSize(13);
+      doc.setFontSize(12);
       doc.setTextColor(21, 128, 61);
-      doc.text(formatMoneyIDR(Number(booking.amount || 0)), w - margin - 12, curY + 21, { align: 'right' });
+      doc.text(formatMoneyIDR(Number(booking.amount || 0)), w - margin - 12, curY + 20, { align: 'right' });
 
-      curY += 45;
+      curY += 42;
 
-      // 10. Syarat & Ketentuan Kunjungan
+      // 8. Syarat & Ketentuan Kunjungan
       doc.setFillColor(248, 250, 252);
       doc.setDrawColor(226, 232, 240);
-      doc.roundedRect(margin, curY, contentWidth, 80, 5, 5, 'FD');
+      doc.roundedRect(margin, curY, contentWidth, 75, 4, 4, 'FD');
 
       doc.setFont('helvetica', 'bold');
-      doc.setFontSize(8.5);
+      doc.setFontSize(8);
       doc.setTextColor(30, 41, 59);
-      doc.text('SYARAT & KETENTUAN KUNJUNGAN:', margin + 12, curY + 16);
+      doc.text('SYARAT & KETENTUAN KUNJUNGAN:', margin + 12, curY + 15);
 
       doc.setFont('helvetica', 'normal');
       doc.setFontSize(7.5);
@@ -878,7 +868,7 @@ export async function notifyBookingPaidWhatsApp(bookingId: string) {
         '4. Harap menjaga kebersihan area wisata dan selalu mematuhi petunjuk keselamatan staf The Lodge Maribaya.',
       ];
       terms.forEach((t, i) => {
-        doc.text(t, margin + 12, curY + 31 + i * 11);
+        doc.text(t, margin + 12, curY + 28 + i * 11);
       });
 
       // 11. Official Footer
