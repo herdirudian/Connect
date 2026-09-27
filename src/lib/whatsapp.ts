@@ -881,7 +881,7 @@ export async function notifyBookingPaidWhatsApp(bookingId: string) {
       doc.setFontSize(7);
       doc.setTextColor(100, 116, 139);
       doc.text('The Lodge Maribaya • Jl. Maribaya No. 149/252, Cibodas, Lembang, Kab. Bandung Barat, Jawa Barat 40391', w / 2, footerY + 4, { align: 'center' });
-      doc.text('WhatsApp Service: +62 811-2264-808 • Website Resmi: https://family.thelodgegroup.id', w / 2, footerY + 16, { align: 'center' });
+      doc.text('WhatsApp CS: +62 811-2253-299 • Website Resmi: https://thelodgegroup.id', w / 2, footerY + 16, { align: 'center' });
       doc.text('Dokumen elektronik ini diterbitkan secara otomatis dan sah tanpa tanda tangan basah.', w / 2, footerY + 28, { align: 'center' });
 
       const pdfBuffer = doc.output('arraybuffer');
