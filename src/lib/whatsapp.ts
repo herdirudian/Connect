@@ -625,8 +625,8 @@ export async function notifyBookingPaidWhatsApp(bookingId: string) {
     lines.push(``);
     lines.push(`💰 *Total Pembayaran:* ${formatMoneyIDR(Number(booking.amount || 0))} (LUNAS)`);
     lines.push(``);
-    lines.push(`Silakan tunjukkan pesan ini atau QR Code tiket Anda saat berada di gate/lokasi.`);
-    lines.push(`Lihat e-voucher Anda online: https://family.thelodgegroup.id/dashboard/bookings`);
+    lines.push(`📄 *Dokumen E-Voucher Resmi (PDF) dilampirkan bersama pesan ini.*`);
+    lines.push(`Silakan simpan file PDF tersebut dan tunjukkan QR Code tiket kepada petugas di gate/loket masuk saat kunjungan.`);
 
     const textMessage = lines.join('\n');
 
@@ -638,88 +638,275 @@ export async function notifyBookingPaidWhatsApp(bookingId: string) {
       name: guestName,
     });
 
-    // Generate PDF E-Voucher & simpan ke public/uploads/vouchers
-    let voucherPdfUrl = details.voucherPdfUrl || '';
-    if (voucherPdfUrl && typeof voucherPdfUrl === 'string') {
-      voucherPdfUrl = voucherPdfUrl
-        .replace(/https?:\/\/connect\.thelodgegroup\.id/g, 'https://family.thelodgegroup.id')
-        .replace(/https?:\/\/localhost(:\d+)?/g, 'https://family.thelodgegroup.id');
+    // Generate Dokumen PDF E-Voucher Resmi & simpan ke public/uploads/vouchers
+    const fileName = `voucher-${String(booking.id).slice(0, 8)}.pdf`;
+    const publicDir = path.join(process.cwd(), 'public', 'uploads', 'vouchers');
+    if (!fs.existsSync(publicDir)) {
+      fs.mkdirSync(publicDir, { recursive: true });
     }
+    const filePath = path.join(publicDir, fileName);
 
-    if (!voucherPdfUrl) {
-      try {
-        const publicDir = path.join(process.cwd(), 'public', 'uploads', 'vouchers');
-        if (!fs.existsSync(publicDir)) {
-          fs.mkdirSync(publicDir, { recursive: true });
-        }
+    const envAppUrl = process.env.NEXT_PUBLIC_APP_URL || '';
+    const appUrl =
+      envAppUrl && !envAppUrl.includes('connect.thelodgegroup.id') && !envAppUrl.includes('localhost')
+        ? envAppUrl.replace(/\/+$/, '')
+        : 'https://family.thelodgegroup.id';
+    let voucherPdfUrl = `${appUrl}/uploads/vouchers/${fileName}`;
 
-        const fileName = `voucher-${String(booking.id).slice(0, 8)}.pdf`;
-        const filePath = path.join(publicDir, fileName);
+    try {
+      const doc = new jsPDF({ unit: 'pt', format: 'a4' });
+      const w = doc.internal.pageSize.getWidth();
+      const h = doc.internal.pageSize.getHeight();
+      const margin = 36;
+      const contentWidth = w - margin * 2;
 
-        const doc = new jsPDF({ unit: 'pt', format: 'a4' });
-        const margin = 40;
-        const w = doc.internal.pageSize.getWidth();
-        const line = (y: number) => doc.line(margin, y, w - margin, y);
+      // 1. Top Header Background (The Lodge Brand Green)
+      doc.setFillColor(26, 67, 50); // #1a4332
+      doc.rect(0, 0, w, 82, 'F');
 
-        doc.setFont('helvetica', 'bold'); doc.setFontSize(16);
-        doc.text('E-VOUCHER TIKET - THE LODGE MARIBAYA', margin, 60);
-        doc.setFontSize(10);
-        doc.text(`Booking ID: #${String(booking.id).slice(0, 8)}`, margin, 80);
-        doc.text(`Tanggal Kunjungan: ${formattedDate}`, margin, 95);
-        line(110);
+      // 2. Gold Accent Line
+      doc.setFillColor(234, 179, 8); // #eab308
+      doc.rect(0, 82, w, 3.5, 'F');
 
-        doc.setFont('helvetica', 'bold'); doc.setFontSize(12);
-        doc.text('PEMESAN', margin, 130);
-        doc.setFont('helvetica', 'normal'); doc.setFontSize(10);
-        doc.text(`Nama: ${guestName}`, margin, 145);
-        doc.text(`Telepon: ${recipientPhone}`, margin, 160);
-        doc.text(`Status: LUNAS (PAID)`, margin, 175);
-        line(190);
-
-        doc.setFont('helvetica', 'bold'); doc.setFontSize(12);
-        doc.text('RINCIAN TIKET', margin, 210);
-        doc.setFont('helvetica', 'normal'); doc.setFontSize(10);
-        let curY = 225;
-        if (itemsLines.length > 0) {
-          itemsLines.forEach((l) => {
-            doc.text(l, margin, curY);
-            curY += 15;
-          });
-        } else {
-          doc.text(`- ${displayType}`, margin, curY);
-          curY += 15;
-        }
-
-        doc.setFont('helvetica', 'bold');
-        doc.text(`Total Pembayaran: ${formatMoneyIDR(Number(booking.amount || 0))}`, margin, curY + 10);
-
-        // Render QR Code image into PDF
+      // 3. Official Logo
+      const logoPath = path.join(process.cwd(), 'public', 'logotlm.png');
+      if (fs.existsSync(logoPath)) {
         try {
-          const qrDataUrl = await QRCode.toDataURL(String(booking.id));
-          doc.addImage(qrDataUrl, 'PNG', w - margin - 120, 130, 120, 120);
+          const logoBuf = fs.readFileSync(logoPath);
+          doc.addImage(logoBuf, 'PNG', margin, 18, 56, 46, undefined, 'FAST');
         } catch {}
-
-        const pdfBuffer = doc.output('arraybuffer');
-        fs.writeFileSync(filePath, Buffer.from(pdfBuffer));
-
-        const envAppUrl = process.env.NEXT_PUBLIC_APP_URL || '';
-        const appUrl =
-          envAppUrl && !envAppUrl.includes('connect.thelodgegroup.id') && !envAppUrl.includes('localhost')
-            ? envAppUrl.replace(/\/+$/, '')
-            : 'https://family.thelodgegroup.id';
-        voucherPdfUrl = `${appUrl}/uploads/vouchers/${fileName}`;
-
-        // Simpan voucherPdfUrl ke booking.details
-        try {
-          details.voucherPdfUrl = voucherPdfUrl;
-          await prisma.booking.update({
-            where: { id: booking.id },
-            data: { details: JSON.stringify(details) },
-          });
-        } catch {}
-      } catch (pdfErr) {
-        console.error('[WhatsApp] Error generating PDF ticket:', pdfErr);
       }
+
+      // 4. Header Titles
+      doc.setTextColor(255, 255, 255);
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(16);
+      doc.text('THE LODGE MARIBAYA', margin + 66, 38);
+
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(8.5);
+      doc.setTextColor(167, 243, 208); // Emerald-200
+      doc.text('OFFICIAL E-VOUCHER & ACCESS PASS', margin + 66, 52);
+
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(7.5);
+      doc.setTextColor(209, 250, 229); // Emerald-100
+      doc.text('Kawasan Wisata Alam & Rekreasi Lembang, Bandung Barat', margin + 66, 64);
+
+      // 5. Status Verified Pill Badge
+      doc.setFillColor(20, 83, 45); // Green-900
+      doc.roundedRect(w - margin - 110, 26, 110, 28, 4, 4, 'F');
+      doc.setDrawColor(74, 222, 128); // Green-400
+      doc.setLineWidth(0.8);
+      doc.roundedRect(w - margin - 110, 26, 110, 28, 4, 4, 'D');
+      doc.setTextColor(240, 253, 244);
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(9);
+      doc.text('LUNAS / VERIFIED', w - margin - 55, 43, { align: 'center' });
+
+      // 6. Booking Reference Bar
+      const barY = 96;
+      doc.setFillColor(248, 250, 252);
+      doc.setDrawColor(226, 232, 240);
+      doc.setLineWidth(0.6);
+      doc.roundedRect(margin, barY, contentWidth, 30, 4, 4, 'FD');
+
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(8.5);
+      doc.setTextColor(71, 85, 105);
+      doc.text('KODE BOOKING:', margin + 12, barY + 19);
+
+      doc.setTextColor(26, 67, 50);
+      doc.setFontSize(11);
+      doc.text(`#${String(booking.id).slice(0, 8)}`, margin + 95, barY + 19);
+
+      const issueDateStr = new Date(booking.createdAt || Date.now()).toLocaleDateString('id-ID', {
+        day: 'numeric',
+        month: 'long',
+        year: 'numeric',
+      });
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(8);
+      doc.setTextColor(100, 116, 139);
+      doc.text(`Diterbitkan: ${issueDateStr}`, w - margin - 12, barY + 19, { align: 'right' });
+
+      // 7. Content Cards: Left (Guest Info) & Right (QR Code Pass)
+      const cardsY = 135;
+      const leftW = contentWidth - 165;
+      const rightW = 155;
+      const cardH = 130;
+
+      // Left Card: Customer & Visit Information
+      doc.setFillColor(255, 255, 255);
+      doc.setDrawColor(226, 232, 240);
+      doc.roundedRect(margin, cardsY, leftW, cardH, 5, 5, 'FD');
+
+      doc.setFillColor(241, 245, 249);
+      doc.rect(margin, cardsY, leftW, 22, 'F');
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(8.5);
+      doc.setTextColor(30, 41, 59);
+      doc.text('INFORMASI PENGUNJUNG & JADWAL', margin + 12, cardsY + 15);
+
+      const drawRow = (label: string, val: string, yPos: number, isBold = false) => {
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(8.5);
+        doc.setTextColor(100, 116, 139);
+        doc.text(label, margin + 12, yPos);
+        doc.setFont('helvetica', isBold ? 'bold' : 'normal');
+        doc.setTextColor(15, 23, 42);
+        doc.text(val, margin + 120, yPos);
+      };
+
+      drawRow('Nama Pemesan', guestName, cardsY + 42, true);
+      drawRow('No. Telepon / WA', recipientPhone, cardsY + 63);
+      drawRow('Tgl. Kunjungan', formattedDate, cardsY + 84, true);
+      drawRow('Tipe Booking', displayType, cardsY + 105);
+
+      // Right Card: High-Contrast QR Code Pass
+      const qrX = w - margin - rightW;
+      doc.setFillColor(255, 255, 255);
+      doc.setDrawColor(226, 232, 240);
+      doc.roundedRect(qrX, cardsY, rightW, cardH, 5, 5, 'FD');
+
+      doc.setFillColor(26, 67, 50);
+      doc.rect(qrX, cardsY, rightW, 22, 'F');
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(8);
+      doc.setTextColor(255, 255, 255);
+      doc.text('SCAN QR DI GATE MASUK', qrX + rightW / 2, cardsY + 15, { align: 'center' });
+
+      try {
+        const qrDataUrl = await QRCode.toDataURL(String(booking.id), {
+          margin: 1,
+          color: { dark: '#1a4332', light: '#ffffff' },
+        });
+        doc.addImage(qrDataUrl, 'PNG', qrX + (rightW - 75) / 2, cardsY + 28, 75, 75, undefined, 'FAST');
+      } catch {}
+
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(8);
+      doc.setTextColor(71, 85, 105);
+      doc.text(`#${String(booking.id).slice(0, 8)}`, qrX + rightW / 2, cardsY + 118, { align: 'center' });
+
+      // 8. Rincian Tiket Table
+      const tableY = 276;
+      doc.setFillColor(241, 245, 249);
+      doc.setDrawColor(226, 232, 240);
+      doc.rect(margin, tableY, contentWidth, 22, 'FD');
+
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(8);
+      doc.setTextColor(71, 85, 105);
+      doc.text('NO.', margin + 12, tableY + 14);
+      doc.text('DESKRIPSI TIKET / WAHANA', margin + 45, tableY + 14);
+      doc.text('QTY', w - margin - 190, tableY + 14, { align: 'center' });
+      doc.text('HARGA', w - margin - 110, tableY + 14, { align: 'right' });
+      doc.text('TOTAL', w - margin - 12, tableY + 14, { align: 'right' });
+
+      let curY = tableY + 22;
+      const list: Array<{ name: string; qty: number; price: number }> = [];
+      if (details.items && Array.isArray(details.items)) {
+        for (const item of details.items) {
+          list.push({
+            name: item.name || item.title || 'Tiket',
+            qty: Number(item.qty || item.quantity || 1),
+            price: Number(item.price || 0),
+          });
+        }
+      }
+      if (list.length === 0) {
+        list.push({
+          name: displayType,
+          qty: Number(details.pax || details.guests || (booking as any).guests || 1),
+          price: Number(booking.amount || 0),
+        });
+      }
+
+      list.forEach((it, idx) => {
+        const subtotal = it.qty * it.price;
+        const isEven = idx % 2 === 0;
+        doc.setFillColor(isEven ? 255 : 250, isEven ? 255 : 250, isEven ? 255 : 250);
+        doc.rect(margin, curY, contentWidth, 22, 'F');
+        doc.setDrawColor(241, 245, 249);
+        doc.line(margin, curY + 22, w - margin, curY + 22);
+
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(8.5);
+        doc.setTextColor(51, 65, 85);
+        doc.text(String(idx + 1), margin + 12, curY + 14);
+        doc.text(it.name, margin + 45, curY + 14);
+        doc.text(String(it.qty), w - margin - 190, curY + 14, { align: 'center' });
+        doc.text(formatMoneyIDR(it.price), w - margin - 110, curY + 14, { align: 'right' });
+        doc.text(formatMoneyIDR(subtotal), w - margin - 12, curY + 14, { align: 'right' });
+        curY += 22;
+      });
+
+      // 9. Total Summary Row
+      doc.setFillColor(240, 253, 244);
+      doc.setDrawColor(187, 247, 208);
+      doc.rect(margin, curY, contentWidth, 32, 'FD');
+
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(9.5);
+      doc.setTextColor(22, 101, 52);
+      doc.text('TOTAL PEMBAYARAN (LUNAS)', margin + 12, curY + 20);
+
+      doc.setFontSize(13);
+      doc.setTextColor(21, 128, 61);
+      doc.text(formatMoneyIDR(Number(booking.amount || 0)), w - margin - 12, curY + 21, { align: 'right' });
+
+      curY += 45;
+
+      // 10. Syarat & Ketentuan Kunjungan
+      doc.setFillColor(248, 250, 252);
+      doc.setDrawColor(226, 232, 240);
+      doc.roundedRect(margin, curY, contentWidth, 80, 5, 5, 'FD');
+
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(8.5);
+      doc.setTextColor(30, 41, 59);
+      doc.text('SYARAT & KETENTUAN KUNJUNGAN:', margin + 12, curY + 16);
+
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(7.5);
+      doc.setTextColor(71, 85, 105);
+      const terms = [
+        '1. Tunjukkan QR Code pada e-voucher ini langsung dari layar ponsel Anda kepada petugas di pintu masuk/loket.',
+        '2. E-Voucher ini sah dan berlaku hanya pada tanggal kunjungan yang tertera sesuai dengan jumlah pax terdaftar.',
+        '3. Tiket yang sudah dibeli bersifat non-refundable (tidak dapat diuangkan atau dibatalkan kembali).',
+        '4. Harap menjaga kebersihan area wisata dan selalu mematuhi petunjuk keselamatan staf The Lodge Maribaya.',
+      ];
+      terms.forEach((t, i) => {
+        doc.text(t, margin + 12, curY + 31 + i * 11);
+      });
+
+      // 11. Official Footer
+      const footerY = h - 45;
+      doc.setDrawColor(226, 232, 240);
+      doc.setLineWidth(0.5);
+      doc.line(margin, footerY - 8, w - margin, footerY - 8);
+
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(7);
+      doc.setTextColor(100, 116, 139);
+      doc.text('The Lodge Maribaya • Jl. Maribaya No. 149/252, Cibodas, Lembang, Kab. Bandung Barat, Jawa Barat 40391', w / 2, footerY + 4, { align: 'center' });
+      doc.text('WhatsApp Service: +62 811-2264-808 • Website Resmi: https://family.thelodgegroup.id', w / 2, footerY + 16, { align: 'center' });
+      doc.text('Dokumen elektronik ini diterbitkan secara otomatis dan sah tanpa tanda tangan basah.', w / 2, footerY + 28, { align: 'center' });
+
+      const pdfBuffer = doc.output('arraybuffer');
+      fs.writeFileSync(filePath, Buffer.from(pdfBuffer));
+
+      // Simpan voucherPdfUrl ke booking.details
+      try {
+        details.voucherPdfUrl = voucherPdfUrl;
+        await prisma.booking.update({
+          where: { id: booking.id },
+          data: { details: JSON.stringify(details) },
+        });
+      } catch {}
+    } catch (pdfErr) {
+      console.error('[WhatsApp] Error generating PDF ticket:', pdfErr);
     }
 
     // Kirim File PDF E-Voucher ke WhatsApp Pelanggan
