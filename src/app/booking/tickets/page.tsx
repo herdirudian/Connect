@@ -83,14 +83,8 @@ export default function PublicTicketsPage() {
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
         {attractions.filter(item => {
           const isVisible = item.displayTarget === 'BOTH' || item.displayTarget === 'BOOKING' || !item.displayTarget;
-          return item.active && isVisible;
-        })
-        .sort((a, b) => {
-            const aIsEvent = a.category === 'EVENT' || a.isEvent;
-            const bIsEvent = b.category === 'EVENT' || b.isEvent;
-            if (aIsEvent && !bIsEvent) return -1;
-            if (!aIsEvent && bIsEvent) return 1;
-            return 0;
+          const isEvent = item.category === 'EVENT' || item.isEvent;
+          return item.active && isVisible && !isEvent;
         })
         .map((item) => {
            let benefits = [];
@@ -208,7 +202,8 @@ export default function PublicTicketsPage() {
         } : null}
         allItems={attractions.filter(a => {
             const isVisible = a.displayTarget === 'BOTH' || a.displayTarget === 'BOOKING' || !a.displayTarget;
-            return a.active && isVisible;
+            const isEvent = a.category === 'EVENT' || a.isEvent;
+            return a.active && isVisible && !isEvent;
         }).map(a => {
             const isEvent = a.category === 'EVENT' || a.isEvent;
             const hasEB = isEvent && a.eventPromoQuota && a.eventPromoQuota > 0 && (a.eventSoldQuota || 0) < a.eventPromoQuota;

@@ -35,7 +35,8 @@ import {
     Map as MapIcon,
     Heart,
     Edit2,
-    Calendar
+    Calendar,
+    Clock
   } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import AdminPriceScheduleDialog from '@/components/admin/AdminPriceScheduleDialog';
@@ -68,6 +69,7 @@ interface Attraction {
   eventSoldQuota?: number;
   eventPromoPrice?: number | null;
   eventPromoQuota?: number | null;
+  eventTime?: string;
   sortOrder?: number;
   isLandingHub?: boolean;
 }
@@ -100,6 +102,7 @@ export default function AdminAttractionsPage() {
       voucherExpiry: '2026-12-31',
       isEvent: false,
       eventDate: '',
+      eventTime: '',
       eventMaxQuota: '',
       eventPromoPrice: '',
       eventPromoQuota: '',
@@ -176,6 +179,7 @@ export default function AdminAttractionsPage() {
         voucherExpiry: '2026-12-31',
         isEvent: false,
         eventDate: '',
+        eventTime: '',
         eventMaxQuota: '',
         eventPromoPrice: '',
         eventPromoQuota: '',
@@ -217,8 +221,9 @@ export default function AdminAttractionsPage() {
       allowWaBooking: item.allowWaBooking !== false,
         maxVoucherPax: item.maxVoucherPax || 10,
         voucherExpiry: item.voucherExpiry ? new Date(item.voucherExpiry).toISOString().split('T')[0] : '2026-12-31',
-        isEvent: item.isEvent || false,
+        isEvent: item.isEvent || item.category === 'EVENT' || false,
         eventDate: item.eventDate ? new Date(item.eventDate).toISOString().split('T')[0] : '',
+        eventTime: (item.isEvent || item.category === 'EVENT') ? (item.waitTime || '') : '',
         eventMaxQuota: item.eventMaxQuota ? item.eventMaxQuota.toString() : '',
         eventPromoPrice: item.eventPromoPrice ? item.eventPromoPrice.toString() : '',
         eventPromoQuota: item.eventPromoQuota ? item.eventPromoQuota.toString() : '',
@@ -318,8 +323,11 @@ export default function AdminAttractionsPage() {
     try {
       const benefitsArray = formData.benefits.split(',').map(b => b.trim()).filter(b => b);
       
+      const isEventItem = formData.isEvent || formData.category === 'EVENT';
       const payload = {
         ...formData,
+        isEvent: isEventItem,
+        waitTime: isEventItem ? (formData.eventTime || null) : (formData.waitTime || null),
         price: parseFloat(formData.price),
         points: parseInt(formData.points) || 0,
         benefits: benefitsArray,
@@ -436,7 +444,14 @@ export default function AdminAttractionsPage() {
                   <label className="text-sm font-medium">Product Category</label>
                   <select 
                     value={formData.category}
-                    onChange={(e) => setFormData({...formData, category: e.target.value})}
+                    onChange={(e) => {
+                      const newCat = e.target.value;
+                      setFormData(prev => ({
+                        ...prev,
+                        category: newCat,
+                        isEvent: newCat === 'EVENT' ? true : prev.isEvent,
+                      }));
+                    }}
                     className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                   >
                     <option value="TICKET">Tiket Masuk</option>
@@ -732,12 +747,12 @@ export default function AdminAttractionsPage() {
                        <p className="text-xs text-purple-600/70">Jadikan produk ini sebagai tiket event khusus (Tanggal tetap, kuota, harga dinamis)</p>
                      </div>
                      <Checkbox 
-                        checked={formData.isEvent}
+                        checked={formData.isEvent || formData.category === 'EVENT'}
                         onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData({...formData, isEvent: e.target.checked})}
                       />
                     </div>
                     
-                    {formData.isEvent && (
+                    {(formData.isEvent || formData.category === 'EVENT') && (
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 animate-in fade-in slide-in-from-top-2 duration-200">
                           <div className="space-y-2">
                             <label className="text-xs font-bold text-gray-600 uppercase">Tanggal Event</label>
@@ -746,9 +761,22 @@ export default function AdminAttractionsPage() {
                               value={formData.eventDate || ''}
                               onChange={(e) => setFormData({...formData, eventDate: e.target.value})}
                               className="bg-white"
-                              required={formData.isEvent}
+                              required={formData.isEvent || formData.category === 'EVENT'}
                             />
                             <p className="text-[10px] text-gray-500 italic">* Tamu tidak bisa ubah tanggal ini.</p>
+                          </div>
+                          <div className="space-y-2">
+                            <label className="text-xs font-bold text-gray-700 uppercase flex items-center gap-1.5">
+                              <Clock size={14} className="text-purple-600" />
+                              Jam / Waktu Pelaksanaan (Custom Time)
+                            </label>
+                            <Input 
+                              value={formData.eventTime || ''}
+                              onChange={(e) => setFormData({...formData, eventTime: e.target.value})}
+                              placeholder="Contoh: 06:00 - 09:00 WIB"
+                              className="bg-white"
+                            />
+                            <p className="text-[10px] text-gray-500 italic">* Tampil di kartu tiket (default: 09:00 - 17:00 WIB jika kosong).</p>
                           </div>
                           <div className="space-y-2">
                             <label className="text-xs font-bold text-gray-600 uppercase">Kuota Total Event</label>
@@ -855,7 +883,16 @@ export default function AdminAttractionsPage() {
                 {item.status === 'OPEN' && <Badge className="bg-green-500 text-[10px] h-5">OPEN</Badge>}
                 {item.status === 'MAINTENANCE' && <Badge variant="destructive" className="text-[10px] h-5">MAINTENANCE</Badge>}
                 {item.status === 'CROWDED' && <Badge className="bg-orange-500 text-[10px] h-5">CROWDED</Badge>}
-                {item.waitTime && <Badge variant="outline" className="text-[10px] h-5">⏳ {item.waitTime}</Badge>}
+                {item.waitTime && (
+                  <Badge variant="outline" className={`text-[10px] h-5 ${item.category === 'EVENT' || item.isEvent ? 'bg-purple-50 text-purple-700 border-purple-200' : ''}`}>
+                    {item.category === 'EVENT' || item.isEvent ? '🕒' : '⏳'} {item.waitTime}
+                  </Badge>
+                )}
+                {(item.category === 'EVENT' || item.isEvent) && item.eventDate && (
+                  <Badge variant="outline" className="text-[10px] h-5 bg-emerald-50 text-emerald-700 border-emerald-200">
+                    📅 {new Date(item.eventDate).toLocaleDateString('id-ID', { day: 'numeric', month: 'short' })}
+                  </Badge>
+                )}
                 {item.videoUrl && <Badge variant="secondary" className="text-[10px] h-5">🎥 VIDEO</Badge>}
                 <Badge variant="outline" className={`text-[10px] h-5 ${
                   item.displayTarget === 'BOTH' ? 'bg-blue-50 text-blue-700' :

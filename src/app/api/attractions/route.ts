@@ -42,6 +42,7 @@ export async function GET(req: Request) {
           eventPromoQuota: a.eventPromoQuota,
           normalPrice: a.price,
           isLandingHub: a.isLandingHub,
+          waitTime: a.waitTime,
         };
       });
       return NextResponse.json(mapped);

@@ -27,6 +27,7 @@ interface AttractionEvent {
   eventSoldQuota?: number | null;
   eventPromoPrice?: number | null;
   eventPromoQuota?: number | null;
+  waitTime?: string;
 }
 
 export default function PublicEventsPage() {
@@ -283,7 +284,7 @@ export default function PublicEventsPage() {
                     {/* Operational Time & Location */}
                     <div className="flex items-center gap-3 text-xs text-gray-500 font-medium mt-1">
                       <span className="flex items-center gap-1">
-                        <Clock className="h-3.5 w-3.5 text-gray-400" /> 09:00 - 17:00 WIB
+                        <Clock className="h-3.5 w-3.5 text-gray-400" /> {item.waitTime || '09:00 - 17:00 WIB'}
                       </span>
                       <span className="flex items-center gap-1">
                         <MapPin className="h-3.5 w-3.5 text-gray-400" /> The Lodge Maribaya
