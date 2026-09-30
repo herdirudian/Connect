@@ -100,16 +100,11 @@ export default function PublicEventsPage() {
               </Button>
             </Link>
             <div>
-              <div className="flex items-center gap-2">
-                <h1 className="text-2xl md:text-3xl font-black text-brand-dark uppercase tracking-tight">
-                  Events & Festival
-                </h1>
-                <span className="text-xs font-bold uppercase tracking-wider bg-brand/10 text-brand px-2.5 py-0.5 rounded-full">
-                  Kategori Event
-                </span>
-              </div>
+              <h1 className="text-2xl md:text-3xl font-black text-brand-dark uppercase tracking-tight">
+                Events
+              </h1>
               <p className="text-gray-600 font-medium mt-1 text-sm md:text-base">
-                Temukan dan pesan tiket event spesial, konser, dan perayaan di The Lodge Maribaya.
+                Temukan dan pesan tiket event spesial di The Lodge Maribaya.
               </p>
             </div>
           </div>
